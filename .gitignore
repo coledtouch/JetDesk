@@ -1,4 +1,13 @@
-site/dist/
+site/dist/index.html
+site/dist/sw.js
+site/dist/manifest.webmanifest
+site/dist/_headers
+site/dist/robots.txt
+site/dist/sitemap.xml
+site/dist/terms/
+site/dist/privacy/
+site/dist/notes/
+site/dist/icons/*.????????.png
 __pycache__/
 .wrangler/
 .dev.vars
