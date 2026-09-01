@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How JetDesk computes trip cost | JetDesk.AI</title>
+<meta name="description" content="The inputs behind the per-leg cost on the Trip tab: distance, winds aloft, block overhead, taxi fuel, cruise burn and a planning price, plus what is deliberately left out.">
+<meta name="robots" content="index,follow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F6FA">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070B14">
+<link rel="canonical" href="https://www.jetdesk.ai/notes/how-jetdesk-computes-trip-cost/">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="JetDesk.AI">
+<meta property="og:title" content="How JetDesk computes trip cost | JetDesk.AI">
+<meta property="og:description" content="The inputs behind the per-leg cost on the Trip tab: distance, winds aloft, block overhead, taxi fuel, cruise burn and a planning price, plus what is deliberately left out.">
+<meta property="og:url" content="https://www.jetdesk.ai/notes/how-jetdesk-computes-trip-cost/">
+<style>
+:root{
+  --bg:#F4F6FA; --card:#FFFFFF; --card2:#EEF2F7; --line:#DCE3EC; --line2:#C5CFDB;
+  --ink:#0F172A; --ink2:#475569; --ink3:#5B6779;
+  --acc:#0E7CFF; --acc2:#0B5FCC;
+  --disp:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:'B612 Mono',ui-monospace,Menlo,Consolas,monospace;
+  --wordmark:'Michroma','Arial Black',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#070B14; --card:#0B1220; --card2:#121C2E; --line:#1E2A40; --line2:#2A3A55;
+    --ink:#E6EAF2; --ink2:#A7B2C3; --ink3:#8492A6;
+    --acc:#4CC9FF; --acc2:#7CC4FF;
+  }
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--disp);font-size:15.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--acc2);text-decoration:underline;text-underline-offset:2px}
+a:hover{color:var(--acc)}
+header.legal{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 94%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+header.legal .inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px}
+header.legal a.home{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
+header.legal .mark{width:30px;height:30px;flex:none}
+header.legal .wordmark{font-family:var(--wordmark);font-weight:400;font-size:14px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+header.legal .wordmark .tld{color:var(--acc2);font-size:.62em;letter-spacing:.18em;margin-left:3px}
+header.legal .back{margin-left:auto;font-size:13px;font-weight:700;text-decoration:none;border:1px solid var(--line2);background:var(--card);border-radius:8px;padding:8px 12px;color:var(--ink2)}
+main{max-width:760px;margin:0 auto;padding:28px 18px 40px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(28px,6vw,38px);letter-spacing:-.02em;line-height:1.08;margin:0 0 6px;text-wrap:balance}
+.effdate{font-family:var(--mono);font-size:12.5px;color:var(--ink3);margin-bottom:22px}
+h2{font-family:var(--disp);font-weight:800;font-size:19px;letter-spacing:-.01em;margin:30px 0 8px}
+h2 .num{font-family:var(--mono);font-weight:700;color:var(--acc);font-size:13px;margin-right:8px}
+p{margin:0 0 12px;color:var(--ink2)}
+p b,li b{color:var(--ink)}
+ul{margin:0 0 12px;padding-left:22px;color:var(--ink2)}
+li{margin-bottom:6px}
+.lead{font-size:16.5px;color:var(--ink2)}
+.callout{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;padding:14px 16px;margin:16px 0;color:var(--ink2)}
+.callout.safety{border-left-color:#FFB020}
+.callout b{color:var(--ink)}
+.toc{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:18px 0 6px}
+.toc .t{font-family:var(--wordmark);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.toc ol{margin:0;padding-left:20px;columns:2;column-gap:28px;font-size:13.5px}
+@media (max-width:560px){.toc ol{columns:1}}
+.toc a{text-decoration:none;color:var(--acc2)}
+.toc li{margin-bottom:4px;break-inside:avoid}
+table{border-collapse:collapse;width:100%;margin:0 0 12px;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;color:var(--ink2)}
+th{background:var(--card2);color:var(--ink);font-weight:700}
+.tablewrap{overflow-x:auto}
+footer.legal{border-top:1px solid var(--line);margin-top:36px;padding:18px 4px 6px;font-size:12.5px;color:var(--ink3)}
+footer.legal a{color:var(--ink3)}
+</style>
+</head>
+<body>
+<header class="legal"><div class="inner">
+  <a class="home" href="/" aria-label="JetDesk.AI home"><svg class="mark" viewBox="0 0 72 72" fill="none" aria-hidden="true"><rect x="2" y="2" width="68" height="68" rx="18" fill="var(--card)" stroke="var(--line2)" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="var(--acc)"/><path d="M22 54 H50" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.55"/></svg><span class="wordmark">Jet<span>Desk</span><span class="tld">.AI</span></span></a>
+  <a class="back" href="/">Open the app &#8594;</a>
+</div></header>
+<main>
+<h1>How JetDesk computes trip cost</h1><div class="effdate">FIELD NOTES · SEPTEMBER 2026</div>
+<p class="lead">The Trip tab turns a list of airport codes into a number with a dollar sign. Here is exactly how, so you can tune the inputs to your airplane and trust the result.</p>
+
+<h2><span class="num">01</span>Distance</h2>
+<p>Great-circle distance between airport reference points, in nautical miles, from the FAA airport file. No routing, no airways, no SIDs. For a light turboprop flying direct or near-direct in the Northeast, real tracks run 2 to 5 percent longer; add block overhead (below) to cover it.</p>
+
+<h2><span class="num">02</span>Speed and winds</h2>
+<p>Cruise true airspeed comes from Settings. With Pro, JetDesk pulls the FAA winds aloft forecast (FB) for the station nearest each leg at your cruise altitude, interpolates between forecast levels, solves the wind triangle, and uses the resulting groundspeed. Without winds, it uses your KTAS as is. The leg card shows the wind used and its source station.</p>
+
+<h2><span class="num">03</span>Time</h2>
+<p>Block time = distance ÷ groundspeed + block overhead. The overhead (12 minutes by default) covers taxi, climb below cruise speed, descent, vectors and the approach. Tune it to your operation; a Meridian into Westchester on a Friday deserves more than 12.</p>
+
+<h2><span class="num">04</span>Fuel</h2>
+<p>Burn = block time × cruise gallons per hour + taxi and takeoff gallons. Both come from Settings, and the presets load typical figures. Cruise burn is the number to get right: it is 80 percent of the answer.</p>
+
+<h2><span class="num">05</span>Cost</h2>
+<p>Cost = burn × the planning price per gallon. The planning price is a single number for the whole trip (edit it right on the Trip tab), because a trip cost estimate is for budgeting, not for a fuel receipt. The Fuel Stop tab is where airport-specific prices matter.</p>
+
+<h2><span class="num">06</span>What is left out on purpose</h2>
+<ul>
+<li>Landing, ramp, handling and overnight fees. They vary by FBO and by whether you buy fuel; log them in the FBO notes.</li>
+<li>Engine reserves, maintenance accruals and crew costs. Add them to the owner brief notes if the owner wants the fully loaded number.</li>
+<li>Alternate fuel and reserves. The estimate is burn to destination; your dispatch fuel is a different conversation.</li>
+</ul>
+
+<h2><span class="num">07</span>Runway verdicts on the leg</h2>
+<p>Each leg grades the arrival airport's best runway: wide open at 5,000 × 100 ft or better, workable at 4,000 × 75, tight below that. Those are comfort labels based on runway size. The airport page adds real distance estimates for your airplane corrected for density altitude and wind; read <a href="/notes/density-altitude-turboprops/">the density altitude note</a> for how those work.</p>
+
+<h2><span class="num">08</span>The owner brief</h2>
+<p>Pro accounts can share a trip as a clean one-page brief: legs, miles, block, gallons and cost, with the price basis stated. It is a link that prints, meant to be sent to the owner before the trip so the number is agreed before the fuel is bought.</p>
+<p style="margin-top:26px"><a href="/notes/">All field notes</a> · <a href="/">Open JetDesk</a></p>
+<footer class="legal">
+  JetDesk.AI · <a href="/notes/">Field notes</a> · <a href="/terms/">Terms of Service</a> · <a href="/privacy/">Privacy Policy</a> · <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a><br>
+  Planning aid only, not for navigation.
+</footer>
+</main>
+</body>
+</html>

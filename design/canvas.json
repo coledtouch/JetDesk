@@ -1,0 +1,19 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Brand and site" },
+    { "id": "page-2", "name": "Alternate directions" }
+  ],
+  "artboards": [
+    { "file": "Brand.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1560, "title": "Brand system", "page": "page-1" },
+    { "file": "Main.dc.html", "x": 0, "y": 1720, "w": 1440, "h": 4320, "title": "Landing page · desktop", "page": "page-1", "expand": "fill" },
+    { "file": "Mobile.dc.html", "x": 1560, "y": 1720, "w": 390, "h": 1500, "title": "Landing page · phone", "page": "page-1" },
+    { "file": "AppScreens.dc.html", "x": 1560, "y": 0, "w": 1320, "h": 900, "title": "App screens in the new brand", "page": "page-1" },
+    { "file": "DirectionContrail.dc.html", "x": 0, "y": 0, "w": 720, "h": 520, "title": "Alt B · Contrail", "page": "page-2" },
+    { "file": "DirectionAfterburner.dc.html", "x": 820, "y": 0, "w": 720, "h": 520, "title": "Alt C · Afterburner", "page": "page-2" }
+  ],
+  "annotations": [
+    { "id": "note-brief", "x": 0, "y": -150, "w": 560, "page": "page-1", "text": "Chosen direction: Midnight + Ion. Business-jet cabin finish with cockpit numerals. Michroma wordmark, Manrope for reading, B612 Mono for every number.\nAll dollar figures on the site are the calculator's own sample trip (KHPN vs KBDR, 150 gal, $2.30 gap), not customer results." },
+    { "id": "note-alts", "x": 0, "y": -110, "w": 480, "page": "page-2", "text": "Two low-fi alternates kept beside the chosen direction. Pick one here and the site gets rebuilt in that skin; otherwise these can be deleted." }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

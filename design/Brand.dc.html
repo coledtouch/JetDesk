@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600;700;800&family=B612+Mono:wght@400;700&display=swap">
+  <style>
+    body { margin: 0; background: #070B14; color: #E6EAF2; font-family: Manrope, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    a { color: #4CC9FF; } a:hover { color: #8FDFFF; }
+    .lab { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #6B7A90; font-weight: 700; }
+    .mono { font-family: 'B612 Mono', ui-monospace, Menlo, monospace; }
+  </style>
+</helmet>
+<div style="width: 1440px; min-height: 1560px; background: #070B14; padding: 64px 72px 72px; box-sizing: border-box; display: flex; flex-direction: column; gap: 56px;">
+
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div class="lab">Brand system · v1</div>
+      <div style="font-size: 44px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;">JetDesk.AI identity</div>
+      <div style="font-size: 16px; color: #A7B2C3; max-width: 640px; line-height: 1.5;">Cockpit-at-night confidence with the finish of a business-jet cabin: deep midnight surfaces, titanium neutrals, one electric accent, and numerals set in the typeface Airbus designed for flight decks.</div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <div style="padding: 8px 14px; border: 1px solid #1E2A40; border-radius: 999px; font-size: 12px; color: #A7B2C3;">Tone: sleek, numerate, pilot-to-pilot</div>
+      <div style="padding: 8px 14px; border: 1px solid #1E2A40; border-radius: 999px; font-size: 12px; color: #A7B2C3;">Mode: dark first, light second</div>
+    </div>
+  </div>
+
+  <!-- LOGO -->
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+    <div style="grid-column: span 2; background: #0B1220; border: 1px solid #1E2A40; border-radius: 20px; padding: 40px; display: flex; flex-direction: column; gap: 28px;">
+      <div class="lab">Primary lockup</div>
+      <div style="display: flex; align-items: center; gap: 22px;">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-label="JetDesk mark">
+          <rect x="2" y="2" width="68" height="68" rx="18" fill="#0B1220" stroke="#1E2A40" stroke-width="2"/>
+          <path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="#4CC9FF"/>
+          <path d="M22 54 H50" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+          <path d="M30 60 H42" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+        <div style="display: flex; align-items: baseline; gap: 6px;">
+          <span style="font-family: Michroma, 'Arial Black', sans-serif; font-size: 40px; letter-spacing: 0.06em; color: #F4F6FA;">JETDESK</span>
+          <span style="font-family: Michroma, 'Arial Black', sans-serif; font-size: 18px; letter-spacing: 0.16em; color: #4CC9FF;">.AI</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+        <div style="background: #F4F6FA; border-radius: 14px; padding: 22px; display: flex; align-items: center; gap: 12px;">
+          <svg width="36" height="36" viewBox="0 0 72 72" fill="none"><rect x="2" y="2" width="68" height="68" rx="18" fill="#0B1220"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="#4CC9FF"/><path d="M22 54 H50" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.55"/></svg>
+          <span style="font-family: Michroma, 'Arial Black', sans-serif; font-size: 18px; letter-spacing: 0.06em; color: #0B1220;">JETDESK</span>
+        </div>
+        <div style="background: #4CC9FF; border-radius: 14px; padding: 22px; display: flex; align-items: center; gap: 12px;">
+          <svg width="36" height="36" viewBox="0 0 72 72" fill="none"><rect x="2" y="2" width="68" height="68" rx="18" fill="#0B1220"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="#4CC9FF"/></svg>
+          <span style="font-family: Michroma, 'Arial Black', sans-serif; font-size: 18px; letter-spacing: 0.06em; color: #0B1220;">JETDESK</span>
+        </div>
+        <div style="background: #121C2E; border-radius: 14px; padding: 22px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+          <span style="font-family: Michroma, 'Arial Black', sans-serif; font-size: 30px; letter-spacing: 0.06em; color: #4CC9FF;">JD</span>
+          <span style="font-size: 12px; color: #6B7A90;">app icon monogram</span>
+        </div>
+      </div>
+      <div style="font-size: 13px; color: #A7B2C3; line-height: 1.5;">The mark is a delta wing seen from above with a fading contrail: a jet planform, not a generic paper airplane. Clear space equals the height of the wing. Never stretch, outline, or add gradients to the mark.</div>
+    </div>
+
+    <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 20px; padding: 40px; display: flex; flex-direction: column; gap: 18px;">
+      <div class="lab">Voice</div>
+      <div style="font-size: 22px; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em;">Plain, numerate, pilot-to-pilot.</div>
+      <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: #A7B2C3; line-height: 1.5;">
+        <div><span style="color: #2FD27D; font-weight: 700;">Say</span> "Worth the stop: +$191 after the extra landing."</div>
+        <div><span style="color: #FF5A5F; font-weight: 700;">Never</span> "Optimize your fuel strategy with AI-powered insights."</div>
+        <div><span style="color: #2FD27D; font-weight: 700;">Say</span> "16/34, 6,549 by 150, lit. Wide open."</div>
+        <div><span style="color: #FF5A5F; font-weight: 700;">Never</span> "Seamless, effortless, revolutionary."</div>
+      </div>
+      <div style="font-size: 13px; color: #6B7A90; line-height: 1.5;">Verbs over adjectives. Numbers over claims. Every screen answers a question a pilot actually asks on the ramp.</div>
+    </div>
+  </div>
+
+  <!-- COLOR -->
+  <div style="display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;"><div class="lab">Color</div><div style="font-size: 13px; color: #6B7A90;">Midnight surfaces, titanium text, one electric accent. Semantic colors are reserved for verdicts and never used decoratively.</div></div>
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px;">
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #070B14;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Midnight 950</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#070B14 · page</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #0B1220;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Deck 900</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#0B1220 · surface</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #121C2E;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Panel 800</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#121C2E · cards</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #1E2A40;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Line 700</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#1E2A40 · borders</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #6B7A90;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Slate 500</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#6B7A90 · muted</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #C9D1DC;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Titanium 200</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#C9D1DC · secondary</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #F4F6FA;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Cloud 50</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#F4F6FA · light mode</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #4CC9FF;"><div style="height: 96px; background: #4CC9FF;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Ion 400</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#4CC9FF · accent, CTAs</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: #0E7CFF;"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Ion 600</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#0E7CFF · light-mode accent</div></div></div>
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid #1E2A40;"><div style="height: 96px; background: linear-gradient(90deg, #2FD27D 0 33.3%, #FFB020 33.3% 66.6%, #FF5A5F 66.6%);"></div><div style="padding: 12px 14px; background: #0B1220;"><div style="font-weight: 700; font-size: 13px;">Verdicts</div><div class="mono" style="font-size: 12px; color: #6B7A90;">#2FD27D · #FFB020 · #FF5A5F</div></div></div>
+    </div>
+  </div>
+
+  <!-- TYPE + COMPONENTS -->
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;">
+    <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 20px; padding: 36px; display: flex; flex-direction: column; gap: 22px;">
+      <div class="lab">Typography</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: Michroma, 'Arial Black', sans-serif; font-size: 26px; letter-spacing: 0.06em;">MICHROMA</div>
+        <div style="font-size: 13px; color: #6B7A90;">Wordmark and section eyebrows only. Wide, aerospace, used sparingly.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 40px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;">Manrope 800 for headlines</div>
+        <div style="font-size: 16px; color: #C9D1DC; line-height: 1.5;">Manrope 400 to 600 for everything you read. Tight tracking on big sizes, generous line height on body.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div class="mono" style="font-size: 30px; font-weight: 700; color: #4CC9FF;">219 kt · 6,549 × 150 · +$191</div>
+        <div style="font-size: 13px; color: #6B7A90;">B612 Mono for every number, code and METAR. Designed by Airbus for cockpit displays; tabular, unmistakable at a glance.</div>
+      </div>
+    </div>
+
+    <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 20px; padding: 36px; display: flex; flex-direction: column; gap: 22px;">
+      <div class="lab">Components</div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <div style="background: #4CC9FF; color: #06131F; font-weight: 800; font-size: 14px; padding: 14px 22px; border-radius: 12px; letter-spacing: 0.01em;">Start free trial</div>
+        <div style="border: 1px solid #2A3A55; color: #E6EAF2; font-weight: 700; font-size: 14px; padding: 13px 20px; border-radius: 12px;">See it work</div>
+        <div style="color: #4CC9FF; font-weight: 700; font-size: 14px; padding: 13px 4px;">Sign in →</div>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(47,210,125,.14); color: #2FD27D; border: 1px solid rgba(47,210,125,.35);">VFR</span>
+        <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(76,201,255,.14); color: #4CC9FF; border: 1px solid rgba(76,201,255,.35);">MVFR</span>
+        <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(255,90,95,.14); color: #FF5A5F; border: 1px solid rgba(255,90,95,.35);">IFR</span>
+        <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(47,210,125,.14); color: #2FD27D; border: 1px solid rgba(47,210,125,.35);">WIDE OPEN</span>
+        <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(255,176,32,.14); color: #FFB020; border: 1px solid rgba(255,176,32,.35);">WORKABLE</span>
+        <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(255,90,95,.14); color: #FF5A5F; border: 1px solid rgba(255,90,95,.35);">TIGHT</span>
+        <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(76,201,255,.14); color: #4CC9FF; border: 1px solid rgba(76,201,255,.35);">PRO</span>
+      </div>
+      <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.35);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="mono" style="font-size: 20px; font-weight: 700;">KPVD <span style="color: #4CC9FF;">▸</span> KHPN</div>
+          <span class="mono" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(47,210,125,.14); color: #2FD27D; border: 1px solid rgba(47,210,125,.35);">WIDE OPEN</span>
+        </div>
+        <div style="display: flex; gap: 18px; font-size: 13px; color: #A7B2C3;">
+          <span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 15px;">110</span> nm</span>
+          <span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 15px;">42</span> min</span>
+          <span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 15px;">219</span> kt GS</span>
+          <span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 15px;">$240</span> fuel</span>
+        </div>
+        <div style="font-size: 12px; color: #6B7A90;">Cards: Panel 800 fill, Line 700 border, 16px radius, soft 40px shadow. No colored side bars.</div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div style="flex: 1; border: 1px solid #2A3A55; background: #0B1220; border-radius: 12px; padding: 13px 14px; font-size: 15px; color: #6B7A90;">KBDR</div>
+        <div style="border: 1px solid #2A3A55; border-radius: 12px; padding: 12px; display: flex; align-items: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E6EAF2" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="#E6EAF2" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ICONS -->
+  <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 20px; padding: 32px 36px; display: flex; align-items: center; gap: 36px;">
+    <div style="display: flex; flex-direction: column; gap: 6px; min-width: 260px;">
+      <div class="lab">Iconography</div>
+      <div style="font-size: 13px; color: #6B7A90; line-height: 1.5;">Stroke icons, 2px, 24px grid, rounded caps. Titanium by default, Ion when active. No filled blobs, no emoji.</div>
+    </div>
+    <div style="display: flex; gap: 28px; align-items: center; color: #C9D1DC;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 21h10M12 21V8M5 8l7-5 7 5M5 8a7 7 0 0 0 14 0"/><path d="M3 12h3M18 12h3"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15M3 21h12M14 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3"/><path d="M6 9h6"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4CC9FF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="#4CC9FF" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17c3-2 6-2 9 0s6 2 9 0M3 12c3-2 6-2 9 0s6 2 9 0M3 7c3-2 6-2 9 0s6 2 9 0"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="80" viewBox="0 0 420 80">
+  <rect width="420" height="80" fill="#F4F6FA"/>
+  <g transform="translate(8 4)">
+    <rect x="2" y="2" width="68" height="68" rx="18" fill="#0B1220"/>
+    <path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="#4CC9FF"/>
+    <path d="M22 54 H50" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+  </g>
+  <text x="96" y="52" font-family="Michroma, 'Arial Black', sans-serif" font-size="30" letter-spacing="2" fill="#0F172A">JETDESK</text>
+  <text x="318" y="52" font-family="Michroma, 'Arial Black', sans-serif" font-size="14" letter-spacing="3" fill="#0E7CFF">.AI</text>
+</svg>

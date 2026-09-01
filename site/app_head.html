@@ -1,0 +1,499 @@
+<title>JetDesk.AI | Trip Cost, Fuel &amp; Runway Planning</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=B612:ital,wght@0,400;0,700&family=B612+Mono:wght@400;700&display=swap">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#F4F6FA; --card:#FFFFFF; --card2:#EEF2F7; --line:#DCE3EC; --line2:#C5CFDB;
+  --ink:#0F172A; --ink2:#475569; --ink3:#5B6779;
+  --acc:#0E7CFF; --acc-soft:#E3F0FF; --acc2:#0B5FCC; --acc2-soft:#E3F0FF;
+  --good:#0E9F5B; --good-soft:#E1F5EA; --warn:#B7791F; --warn-soft:#FFF3D6; --bad:#D93A3F; --bad-soft:#FCE4E5;
+  --btn:#0F172A; --btn-ink:#F4F6FA;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.06);
+  --disp:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;
+  --body:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;
+  --mono:'B612 Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --wordmark:'Michroma','Arial Black',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#070B14; --card:#0B1220; --card2:#121C2E; --line:#1E2A40; --line2:#2A3A55;
+    --ink:#E6EAF2; --ink2:#A7B2C3; --ink3:#8492A6;
+    --acc:#4CC9FF; --acc-soft:#0E2536; --acc2:#7CC4FF; --acc2-soft:#0E2536;
+    --good:#2FD27D; --good-soft:#0F2A1E; --warn:#FFB020; --warn-soft:#2B2110; --bad:#FF5A5F; --bad-soft:#2B1416;
+    --btn:#4CC9FF; --btn-ink:#06131F;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#070B14; --card:#0B1220; --card2:#121C2E; --line:#1E2A40; --line2:#2A3A55;
+  --ink:#E6EAF2; --ink2:#A7B2C3; --ink3:#8492A6;
+  --acc:#4CC9FF; --acc-soft:#0E2536; --acc2:#7CC4FF; --acc2-soft:#0E2536;
+  --good:#2FD27D; --good-soft:#0F2A1E; --warn:#FFB020; --warn-soft:#2B2110; --bad:#FF5A5F; --bad-soft:#2B1416;
+  --btn:#4CC9FF; --btn-ink:#06131F;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+}
+
+/* ============ BASE ============ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--body);font-size:15px;line-height:1.45;
+  min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom));
+}
+input,select,textarea,button{font-family:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.skip-link{position:fixed;left:12px;top:8px;z-index:100;transform:translateY(-160%);background:var(--btn);color:var(--btn-ink);border-radius:8px;padding:10px 14px;font-weight:800;text-decoration:none}
+.skip-link:focus{transform:translateY(0)}
+body.modal-open{overflow:hidden}
+body.is-welcome{padding-bottom:0}
+
+/* ============ HEADER ============ */
+header.app{
+  position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 94%,transparent);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+  display:flex;align-items:center;gap:10px;
+}
+.brand{flex:1;min-width:0;display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
+.brand .mark{width:34px;height:34px;flex:none}
+.brand .wordmark{
+  font-family:var(--wordmark);font-weight:400;font-size:clamp(13px,3.9vw,16px);letter-spacing:.08em;
+  margin:0;line-height:1;text-transform:uppercase;white-space:nowrap;
+}
+.brand .wordmark .thin{color:var(--ink)}
+.brand .wordmark .tld{color:var(--acc2);font-size:.62em;letter-spacing:.18em;margin-left:3px}
+.brand .sub{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.06em;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{
+  border:1px solid var(--line2);background:var(--card);border-radius:8px;
+  min-height:44px;padding:0 12px;font-family:var(--mono);font-weight:700;
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);
+  display:inline-flex;align-items:center;gap:6px;flex:none;
+}
+.hbtn svg{width:16px;height:16px}
+#headerSignIn{display:none;color:var(--ink);font-family:var(--disp);font-size:13px;letter-spacing:.01em;text-transform:none}
+.is-welcome #themeBtn,.is-welcome #setBtn{display:none}
+.is-welcome #headerSignIn{display:inline-flex}
+@media (max-width:340px){header.app{padding-left:10px;padding-right:10px;gap:8px}.brand{gap:8px}.brand .mark{width:30px;height:30px}.brand .wordmark{font-size:11.5px}.brand .sub{font-size:8px;letter-spacing:.02em}.is-welcome #headerSignIn{padding-left:9px;padding-right:9px}}
+
+/* ============ LAYOUT ============ */
+#appMain{display:block}
+.panel{max-width:640px;margin:0 auto;padding:14px 14px 8px;display:none}
+.panel#tab-welcome{max-width:1180px;padding:14px 20px 8px}
+.panel.on{display:block}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:none;padding:14px;margin-bottom:12px;
+}
+.card.flat{box-shadow:none}
+h2.sec{
+  font-family:var(--disp);font-weight:800;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);margin:20px 2px 8px;
+}
+h2.sec:first-child{margin-top:2px}
+.rowline{display:flex;align-items:center;gap:8px}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.muted{color:var(--ink2)} .tiny{font-size:12px} .micro{font-size:11px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+hr.dash{border:none;border-top:1px dashed var(--line2);margin:10px 0}
+
+/* ============ CHIPS / PILLS ============ */
+.pill{
+  display:inline-flex;align-items:center;gap:5px;border-radius:999px;
+  font-family:var(--mono);font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  font-size:10.5px;padding:4px 9px;border:1px solid transparent;white-space:nowrap;
+}
+.pill.good{background:var(--good-soft);color:var(--good);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.pill.acc{background:var(--acc-soft);color:var(--acc2);border-color:color-mix(in srgb,var(--acc2) 35%,transparent)}
+.pill.dim{background:var(--card2);color:var(--ink2);border-color:var(--line2)}
+.pill.vfr{background:var(--good-soft);color:var(--good);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+.pill.mvfr{background:var(--acc2-soft);color:var(--acc2);border-color:color-mix(in srgb,var(--acc2) 35%,transparent)}
+.pill.ifr{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.pill.lifr{background:var(--acc-soft);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 35%,transparent)}
+.wxline{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.wxraw{font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;margin:8px 0 0}
+.wxmini{display:inline-flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.wxmini .mono{font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.dot.good{background:var(--good)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
+
+/* ============ BUTTONS ============ */
+.btn{
+  border:1px solid var(--line2);background:var(--card);border-radius:12px;
+  min-height:44px;padding:9px 16px;font-family:var(--disp);font-weight:800;
+  letter-spacing:.01em;font-size:14px;color:var(--ink);
+}
+.btn.primary{background:var(--btn);border-color:var(--btn);color:var(--btn-ink)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:44px;padding:7px 12px;font-size:12.5px}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+a.lbtn{
+  display:inline-flex;align-items:center;gap:5px;text-decoration:none;
+  border:1px solid var(--line2);background:var(--card2);border-radius:10px;
+  min-height:44px;padding:7px 11px;font-family:var(--mono);font-weight:700;
+  letter-spacing:.03em;text-transform:uppercase;font-size:11px;color:var(--acc2);
+}
+a.lbtn svg{width:13px;height:13px}
+
+/* ============ FORMS ============ */
+label.f{display:block;margin-bottom:10px}
+label.f .lab, .lab{
+  display:block;font-family:var(--disp);font-weight:800;font-size:10.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;
+}
+input.t,select.t,textarea.t{
+  width:100%;border:1px solid var(--line2);background:var(--card);
+  border-radius:9px;min-height:44px;padding:8px 12px;font-size:16px;
+}
+textarea.t{min-height:70px;line-height:1.4}
+input.t.mono,select.t.mono{font-family:var(--mono)}
+input.t::placeholder,textarea.t::placeholder{color:var(--ink3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* ============ TABS ============ */
+nav.tabs{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:var(--card);border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+}
+nav.tabs button{
+  flex:1;max-width:170px;background:none;border:none;border-radius:10px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:7px 4px 6px;color:var(--ink3);
+  font-family:var(--disp);font-weight:800;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--acc2);background:var(--acc-soft)}
+
+/* ============ TRIP ============ */
+.tripchips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:none}
+.tripchips::-webkit-scrollbar{display:none}
+.tchip{
+  flex:none;border:1px solid var(--line2);background:var(--card);border-radius:999px;
+  min-height:44px;padding:6px 14px;font-family:var(--disp);font-weight:700;
+  font-size:13px;letter-spacing:.01em;color:var(--ink2);
+}
+.tchip.on{background:var(--btn);border-color:var(--btn);color:var(--btn-ink)}
+.leg{position:relative}
+.leg.v-good{border-color:color-mix(in srgb,var(--good) 40%,var(--line))}
+.leg.v-warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.leg.v-bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
+.legroute{font-family:var(--mono);font-weight:700;font-size:19px;letter-spacing:.02em}
+.legroute .arr{color:var(--acc);font-weight:400}
+.legstats{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px}
+.stat .n{font-family:var(--mono);font-weight:700;font-size:15px}
+.stat .u{font-size:11px;color:var(--ink2);margin-left:2px}
+.arrbox{
+  margin-top:10px;border:1px dashed var(--line2);border-radius:9px;
+  background:var(--card2);padding:8px 10px;
+}
+.bigtotal .n{font-size:20px}
+.iconbtn{
+  border:1px solid var(--line2);background:var(--card);border-radius:8px;
+  width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--ink2);flex:none;
+}
+.iconbtn svg{width:15px;height:15px}
+
+/* ============ AIRPORTS ============ */
+.searchwrap{position:relative}
+.results{margin-top:8px}
+.result{
+  width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;margin-bottom:7px;display:flex;gap:10px;align-items:center;
+}
+.result .code{font-family:var(--mono);font-weight:700;font-size:16px;min-width:52px}
+.result .nm{flex:1;min-width:0}
+.result .nm .n1{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result .nm .n2{display:block;font-size:11.5px;color:var(--ink2)}
+.result .rw{font-family:var(--mono);font-size:11.5px;color:var(--ink2);text-align:right}
+.apthead .code{font-family:var(--mono);font-weight:700;font-size:26px;line-height:1}
+.apthead .aname{font-size:13.5px;margin-top:2px}
+.rwrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.rwrow:last-child{border-bottom:none}
+.rwrow .rid{font-family:var(--mono);font-weight:700;font-size:15px;min-width:56px}
+.rwrow .dims{font-family:var(--mono);font-size:13.5px;flex:1}
+.rwrow .dims .x{color:var(--ink3)}
+canvas.rwmap{width:100%;height:190px;border:1px solid var(--line);border-radius:10px;background:var(--card2)}
+.fuelrow{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.rfrow{padding:9px 0;border-bottom:1px dashed var(--line)}
+.rfrow:last-of-type{border-bottom:none}
+.fuelrow:last-child{border-bottom:none}
+.fuelrow .p{font-family:var(--mono);font-weight:700;font-size:16px}
+.fuelrow .fbo{flex:1;font-size:13px}
+.fuelrow .d{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.alt{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.alt:last-child{border-bottom:none}
+.alt .code{font-family:var(--mono);font-weight:700;min-width:50px}
+.alt .info{flex:1;min-width:0;font-size:12.5px;color:var(--ink2)}
+.alt .dist{font-family:var(--mono);font-size:12.5px;text-align:right;color:var(--ink2)}
+
+/* ============ FUEL STOP ============ */
+.verdict{
+  border-radius:12px;padding:16px 14px;text-align:center;border:1px solid var(--line);
+}
+.verdict.save{background:var(--good-soft);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
+.verdict.skip{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.verdict .vword{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.16em;text-transform:uppercase}
+.verdict.save .vword{color:var(--good)} .verdict.skip .vword{color:var(--bad)}
+.verdict .vnum{font-family:var(--mono);font-weight:700;font-size:38px;line-height:1.15}
+.verdict.save .vnum{color:var(--good)} .verdict.skip .vnum{color:var(--bad)}
+.verdict .vsub{font-size:12px;color:var(--ink2);margin-top:2px}
+.bk{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.bk:last-child{border-bottom:none}
+.bk .v{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.bk.plus .v{color:var(--good)} .bk.minus .v{color:var(--bad)}
+
+/* ============ SHEET (settings) ============ */
+.sheetwrap{position:fixed;inset:0;z-index:60;display:none}
+.sheetwrap.on{display:block}
+.scrim{position:absolute;inset:0;background:rgba(10,13,17,.55)}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;
+  background:var(--bg);border-top:1px solid var(--line2);border-radius:18px 18px 0 0;
+  padding:16px 16px calc(20px + env(safe-area-inset-bottom));
+}
+.sheet .grab{width:44px;height:4px;border-radius:4px;background:var(--line2);margin:0 auto 12px}
+.notice{
+  border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
+  background:var(--warn-soft);color:var(--ink);border-radius:10px;
+  padding:10px 12px;font-size:12.5px;
+}
+.notice b{color:var(--warn)}
+footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;color:var(--ink3);text-align:center}
+
+/* ============ SAAS: landing, plans, gates, toast ============ */
+.eyebrow{font-family:var(--wordmark);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc2);margin-bottom:10px}
+.herotitle{font-family:var(--disp);font-weight:800;font-size:clamp(34px,9vw,54px);line-height:1.02;letter-spacing:-.03em;margin:0 0 12px;text-wrap:balance}
+.herotitle .ion{color:var(--acc)}
+.landing{max-width:1100px;margin:0 auto}
+.hero{padding:34px 24px 28px;position:relative;overflow:hidden;isolation:isolate;background:#070B14;border:1px solid #1E2A40;border-radius:24px}
+.hero-media{position:absolute;inset:0;z-index:0}
+.heroart{width:100%;height:100%;object-fit:cover;object-position:60% center;opacity:.52}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(7,11,20,.98) 0%,rgba(7,11,20,.90) 38%,rgba(7,11,20,.48) 72%,rgba(7,11,20,.28) 100%),linear-gradient(0deg,rgba(7,11,20,.90),transparent 48%)}
+.herowrap{position:relative;z-index:2;display:grid;grid-template-columns:1fr;gap:28px;align-items:center}
+@media (min-width:860px){.herowrap{grid-template-columns:1.15fr .85fr}.hero{padding:58px 48px 42px;min-height:550px}}
+.hero .eyebrow{color:#4CC9FF}
+.hero .herotitle{color:#E6EAF2;max-width:10.5em}
+.hero .herotitle .ion{color:#4CC9FF}
+.hero .herosub,.hero .micro{color:#A7B2C3}
+.hero .linkbtn{color:#7CC4FF}
+.hero .btn.primary{background:#4CC9FF;border-color:#4CC9FF;color:#06131F}
+.hero .btn:not(.primary){color:#E6EAF2;background:rgba(11,18,32,.78);border-color:#2A3A55}
+.hero .phone{--card:#0B1220;--card2:#121C2E;--line:#1E2A40;--line2:#2A3A55;--ink:#E6EAF2;--ink2:#A7B2C3;--ink3:#8492A6;--acc:#4CC9FF;--acc2:#7CC4FF;--acc-soft:#0E2536;--good:#2FD27D;--good-soft:#0F2A1E;--bad:#FF5A5F;color:var(--ink)}
+.hero-proof{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;color:#A7B2C3;font-size:12px;font-weight:700}
+.hero-proof span::before{content:"✓";color:#4CC9FF;margin-right:6px}
+@media (max-width:559px){.panel#tab-welcome{padding:10px 12px 8px}.hero{padding:30px 22px 26px;border-radius:20px}.heroart{object-position:66% center;opacity:.36}.hero::after{background:linear-gradient(180deg,rgba(7,11,20,.84) 0%,rgba(7,11,20,.94) 52%,#070B14 76%)}.hero .btnrow .btn{width:100%}.hero .phone{margin-top:4px}.strip{padding-left:4px;padding-right:4px}}
+.phone{background:var(--card);border:1px solid var(--line2);border-radius:36px;padding:14px;box-shadow:0 30px 70px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--acc) 20%,transparent);max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.phone .pcard{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.phone .pverdict{background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 45%,transparent);border-radius:16px;padding:16px 12px;text-align:center}
+.phone .pverdict .w{font-family:var(--wordmark);font-size:10px;letter-spacing:.18em;color:var(--good)}
+.phone .pverdict .n{font-family:var(--mono);font-weight:700;font-size:42px;line-height:1.1;color:var(--good)}
+.pfield{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.pfield .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:800}
+.pfield .v{font-family:var(--mono);font-weight:700;font-size:14px;margin-top:2px}
+.strip{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:14px 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:18px 0 6px}
+.strip .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:800}
+.strip .s{font-size:12.5px;color:var(--ink2);font-weight:600}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (min-width:700px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat2 .n{font-family:var(--mono);font-weight:700;font-size:30px;line-height:1;color:var(--acc)}
+.stat2 .t{font-weight:800;font-size:13.5px;margin-top:6px}
+.stat2 .d{font-size:12.5px;color:var(--ink2);margin-top:3px;line-height:1.45}
+.caps{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:700px){.caps{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1000px){.caps{grid-template-columns:repeat(3,1fr)}}
+.cap .demo{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:12.5px;margin-bottom:12px}
+.cap .ct{font-weight:800;font-size:16px}
+.cap .cd{font-size:13.5px;color:var(--ink2);line-height:1.5;margin-top:3px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.steps{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:760px){.steps{grid-template-columns:repeat(3,1fr)}}
+.step .num{font-family:var(--mono);font-weight:700;color:var(--acc2);font-size:12px}
+.step .st{font-weight:800;font-size:16px;margin-top:6px}
+.step .sd{font-size:13.5px;color:var(--ink2);line-height:1.5;margin-top:4px}
+.faq{border-top:1px solid var(--line);padding:0}
+.faq:last-child{border-bottom:1px solid var(--line)}
+.faq .q{font-weight:800;font-size:15.5px;cursor:pointer;list-style:none;padding:16px 34px 16px 0;position:relative}
+.faq .q::-webkit-details-marker{display:none}
+.faq .q::after{content:"+";position:absolute;right:4px;top:12px;color:var(--acc);font-family:var(--mono);font-size:22px}
+.faq[open] .q::after{content:"−"}
+.faq .a{font-size:14px;color:var(--ink2);line-height:1.55;padding:0 34px 16px 0}
+.finalcta{border-radius:20px;padding:28px 20px;background:radial-gradient(500px 220px at 15% 0%,color-mix(in srgb,var(--acc) 22%,transparent),transparent 60%),var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+@media (min-width:760px){.finalcta{flex-direction:row;align-items:center;justify-content:space-between;padding:40px}}
+.plans.three{grid-template-columns:1fr}
+@media (min-width:860px){.plans.three{grid-template-columns:repeat(3,1fr)}}
+.herosub{font-size:15px;line-height:1.5;color:var(--ink2);margin:0;max-width:34em}
+.landing-heading{font-family:var(--disp);font-weight:800;font-size:clamp(24px,5.5vw,34px);letter-spacing:-.02em;line-height:1.1;text-wrap:balance;margin:0 2px 10px}
+.linkbtn{background:none;border:none;padding:0;color:var(--acc2);font:inherit;font-size:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;margin-top:12px}
+.featlist{display:grid;gap:10px}
+.feat .ft{font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:.03em}
+.feat .fd{font-size:13px;color:var(--ink2);margin-top:1px}
+.plans{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:560px){.plans{grid-template-columns:1fr 1fr}}
+.plan .price{font-family:var(--mono);font-weight:700;font-size:30px;line-height:1.1;margin:4px 0 2px}
+.plan .price .per{font-size:14px;color:var(--ink2);font-weight:400}
+.plan.pro{border-color:color-mix(in srgb,var(--acc) 45%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 30%,transparent),var(--shadow)}
+.plist{margin:10px 0 14px;padding-left:18px;font-size:13.5px;line-height:1.55}
+.plist li{margin:2px 0}
+.plans.compact{grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.plans.compact .btn{min-height:58px;line-height:1.25;text-transform:none;letter-spacing:.02em;font-size:13px;white-space:normal}
+@media (max-width:359px){.plans.compact{grid-template-columns:1fr}}
+.lockcard{border-color:color-mix(in srgb,var(--acc) 40%,transparent)}
+.upsell{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0 2px}
+.upsell .tiny{flex:1;min-width:160px;color:var(--ink2)}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translate(-50%,12px);
+  background:var(--btn);color:var(--btn-ink);border-radius:10px;padding:10px 14px;font-size:13.5px;
+  box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:80;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.empty{
+  border:1px dashed var(--line2);border-radius:12px;background:transparent;
+  padding:22px 14px;text-align:center;color:var(--ink2);font-size:13.5px;
+}
+</style>
+
+<a class="skip-link" href="#appMain">Skip to content</a>
+<header class="app">
+  <a class="brand" href="/" aria-label="JetDesk.AI home">
+    <svg class="mark" viewBox="0 0 72 72" fill="none" aria-hidden="true"><rect x="2" y="2" width="68" height="68" rx="18" fill="var(--card)" stroke="var(--line2)" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="var(--acc)"/><path d="M22 54 H50" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.55"/><path d="M30 60 H42" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.30"/></svg>
+    <div style="min-width:0">
+      <div class="wordmark">Jet<span class="thin">Desk</span><span class="tld">.AI</span></div>
+      <div class="sub" id="subline">TRIP COST · FUEL · RUNWAYS</div>
+    </div>
+  </a>
+  <button class="hbtn" id="themeBtn" aria-label="Theme">AUTO</button>
+  <button class="hbtn" id="headerSignIn" data-auth="login">Sign in</button>
+  <button class="hbtn" id="setBtn" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+  </button>
+</header>
+
+<main id="appMain">
+<!-- ============ TRIP TAB ============ -->
+<section id="tab-trip" class="panel on" role="tabpanel" aria-labelledby="tb-trip" tabindex="-1">
+  <div class="tripchips" id="tripChips"></div>
+  <div id="tripBody"></div>
+</section>
+
+<!-- ============ AIRPORTS TAB ============ -->
+<section id="tab-apt" class="panel" role="tabpanel" aria-labelledby="tb-apt" tabindex="-1" hidden>
+  <div id="aptSearchView">
+    <div class="searchwrap rowline" style="gap:8px">
+      <input class="t mono" id="aptSearch" type="search" autocomplete="off" autocapitalize="characters"
+             placeholder="Code, name, or city  (KMVY, Westchester…)" aria-label="Search airports" style="flex:1">
+      <button class="iconbtn" id="nearBtn" aria-label="Airports near me" style="width:46px;height:46px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px">
+          <circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+        </svg>
+      </button>
+    </div>
+    <div class="btnrow" id="nearFilters" style="margin-top:8px;display:none">
+      <button class="btn small primary" data-nf="all">All</button>
+      <button class="btn small" data-nf="jet">Jet A</button>
+      <button class="btn small" data-nf="big">Big runway</button>
+    </div>
+    <div id="nearStatus" class="micro muted" style="margin-top:6px"></div>
+    <div class="results" id="aptResults"></div>
+  </div>
+  <div id="aptDetailView" style="display:none"></div>
+</section>
+
+<!-- ============ FUEL STOP TAB ============ -->
+<section id="tab-fuel" class="panel" role="tabpanel" aria-labelledby="tb-fuel" tabindex="-1" hidden>
+  <div id="fuelLock" style="display:none"></div>
+  <div id="fuelForm">
+  <h2 class="sec">Find a stop along the route</h2>
+  <div class="card" id="rfCard">
+    <div class="grid3" style="grid-template-columns:1fr 1fr auto">
+      <label class="f"><span class="lab">From</span>
+        <input class="t mono" id="rfFrom" placeholder="KPVD" autocapitalize="characters" autocomplete="off"></label>
+      <label class="f"><span class="lab">To</span>
+        <input class="t mono" id="rfTo" placeholder="KHPN" autocapitalize="characters" autocomplete="off"></label>
+      <label class="f"><span class="lab">Corridor</span>
+        <select class="t mono" id="rfCorr"><option value="15">15 nm</option><option value="30" selected>30 nm</option><option value="50">50 nm</option></select></label>
+    </div>
+    <div class="btnrow" style="margin-top:8px"><button class="btn primary" id="rfGo">Rank the stops</button></div>
+    <div class="micro muted" id="rfHint" style="margin-top:6px">Every Jet A field within the corridor, scored by net savings against buying at the destination, using your crew's prices and your airplane's burn.</div>
+    <div id="rfOut" style="margin-top:8px"></div>
+  </div>
+  <h2 class="sec">Is the fuel stop worth it?</h2>
+  <div class="card">
+    <div class="grid2">
+      <label class="f"><span class="lab">Buying where you land</span>
+        <input class="t mono" id="fsAptA" placeholder="KHPN" autocapitalize="characters" autocomplete="off"></label>
+      <label class="f"><span class="lab">$/gal there</span>
+        <input class="t mono" id="fsPriceA" type="number" inputmode="decimal" step="0.01" min="0"></label>
+    </div>
+    <div class="grid2">
+      <label class="f"><span class="lab">Cheap stop instead</span>
+        <input class="t mono" id="fsAptB" placeholder="KBDR" autocapitalize="characters" autocomplete="off"></label>
+      <label class="f"><span class="lab">$/gal at the stop</span>
+        <input class="t mono" id="fsPriceB" type="number" inputmode="decimal" step="0.01" min="0"></label>
+    </div>
+    <div class="grid3">
+      <label class="f"><span class="lab">Gallons</span>
+        <input class="t mono" id="fsGal" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label class="f"><span class="lab">Detour min</span>
+        <input class="t mono" id="fsDetour" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label class="f"><span class="lab">Ramp fee $</span>
+        <input class="t mono" id="fsRamp" type="number" inputmode="decimal" step="1" min="0"></label>
+    </div>
+    <div class="micro muted" id="fsHint"></div>
+  </div>
+  </div>
+  <div id="fsOut"></div>
+  <div class="micro muted" style="margin:10px 2px" id="fsAssume"></div>
+  <div id="mkSlot"></div>
+</section>
+
+<!-- ============ ACCOUNT TAB ============ -->
+<section id="tab-account" class="panel" role="tabpanel" aria-labelledby="tb-account" tabindex="-1" hidden></section>
+
+<!-- ============ WELCOME (anonymous) ============ -->
+<section id="tab-welcome" class="panel" aria-label="JetDesk overview" tabindex="-1" hidden></section>
+</main>
+
+<nav class="tabs" id="tabNav" aria-label="App sections" role="tablist">
+  <button id="tb-trip" class="on" role="tab" aria-selected="true" aria-controls="tab-trip" aria-label="Trip">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+    <span>Trip</span>
+  </button>
+  <button id="tb-apt" role="tab" aria-selected="false" aria-controls="tab-apt" aria-label="Airports" tabindex="-1">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 21h10M12 21V8M5 8l7-5 7 5M5 8v0a7 7 0 0 0 14 0v0"/><path d="M3 12h3M18 12h3"/></svg>
+    <span>Airports</span>
+  </button>
+  <button id="tb-fuel" role="tab" aria-selected="false" aria-controls="tab-fuel" aria-label="Fuel stop" tabindex="-1">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15M3 21h12M14 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3"/><path d="M6 9h6"/></svg>
+    <span>Fuel Stop</span>
+  </button>
+  <button id="tb-account" role="tab" aria-selected="false" aria-controls="tab-account" aria-label="Account" tabindex="-1">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <span>Account</span>
+  </button>
+</nav>
+
+<div class="sheetwrap" id="modalWrap" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true">
+  <div class="scrim" id="modalScrim"></div>
+  <div class="sheet" id="modalBody"></div>
+</div>
+
+<div class="sheetwrap" id="sheetWrap" role="dialog" aria-modal="true" aria-label="Settings" aria-hidden="true">
+  <div class="scrim" id="sheetScrim"></div>
+  <div class="sheet" id="sheetBody"></div>
+</div>
+
+<footer class="disc">
+  <a href="https://www.jetdesk.ai" style="color:inherit;text-decoration:none;font-family:var(--disp);font-weight:600;letter-spacing:.08em">WWW.JETDESK.AI</a> · Planning aid only, not for navigation. Runway data: FAA via OurAirports, Aug 2026.
+  Verify fuel prices, weather, NOTAMs and performance through official briefing sources before flight.<br>
+  <a href="/terms/" style="color:inherit">Terms of Service</a> · <a href="/privacy/" style="color:inherit">Privacy Policy</a> · <a href="mailto:hello@jetdesk.ai" style="color:inherit">hello@jetdesk.ai</a>
+</footer>

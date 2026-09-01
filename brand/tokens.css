@@ -1,0 +1,86 @@
+/* JetDesk.AI brand tokens. Copied verbatim from site/app_head.html so any
+   generated page, email or mock uses the exact production values.
+   Light is the bare :root; dark follows prefers-color-scheme and the
+   explicit data-theme attribute, in that order. */
+
+:root {
+  --bg: #F4F6FA;
+  --card: #FFFFFF;
+  --card2: #EEF2F7;
+  --line: #DCE3EC;
+  --line2: #C5CFDB;
+  --ink: #0F172A;
+  --ink2: #475569;
+  --ink3: #6B7A90;
+  --acc: #0E7CFF;
+  --acc-soft: #E3F0FF;
+  --acc2: #0B5FCC;
+  --acc2-soft: #E3F0FF;
+  --good: #0E9F5B;
+  --good-soft: #E1F5EA;
+  --warn: #B7791F;
+  --warn-soft: #FFF3D6;
+  --bad: #D93A3F;
+  --bad-soft: #FCE4E5;
+  --btn: #0F172A;
+  --btn-ink: #F4F6FA;
+
+  --disp: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --body: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'B612 Mono', ui-monospace, Menlo, Consolas, monospace;
+  --wordmark: 'Michroma', 'Arial Black', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #070B14;
+    --card: #0B1220;
+    --card2: #121C2E;
+    --line: #1E2A40;
+    --line2: #2A3A55;
+    --ink: #E6EAF2;
+    --ink2: #A7B2C3;
+    --ink3: #6B7A90;
+    --acc: #4CC9FF;
+    --acc-soft: #0E2536;
+    --acc2: #7CC4FF;
+    --good: #2FD27D;
+    --good-soft: #0F2A1E;
+    --warn: #FFB020;
+    --warn-soft: #2B2110;
+    --bad: #FF5A5F;
+    --bad-soft: #2B1416;
+    --btn: #4CC9FF;
+    --btn-ink: #06131F;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #070B14;
+  --card: #0B1220;
+  --card2: #121C2E;
+  --line: #1E2A40;
+  --line2: #2A3A55;
+  --ink: #E6EAF2;
+  --ink2: #A7B2C3;
+  --ink3: #6B7A90;
+  --acc: #4CC9FF;
+  --acc-soft: #0E2536;
+  --acc2: #7CC4FF;
+  --good: #2FD27D;
+  --good-soft: #0F2A1E;
+  --warn: #FFB020;
+  --warn-soft: #2B2110;
+  --bad: #FF5A5F;
+  --bad-soft: #2B1416;
+  --btn: #4CC9FF;
+  --btn-ink: #06131F;
+}
+
+/* Type roles as used in production */
+.wordmark { font-family: var(--wordmark); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+.eyebrow  { font-family: var(--wordmark); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--acc); }
+.herotitle{ font-family: var(--disp); font-weight: 800; font-size: clamp(34px, 9vw, 54px); line-height: 1.02; letter-spacing: -.03em; text-wrap: balance; }
+.herotitle .ion { color: var(--acc); }
+.mono     { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.verdict  { font-family: var(--wordmark); font-size: 10px; letter-spacing: .18em; color: var(--good); }

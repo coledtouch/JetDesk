@@ -1,0 +1,20 @@
+name = "meridian-flight-desk"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-08-01"
+
+[[kv_namespaces]]
+binding = "PRICES"
+id = "<KV_NAMESPACE_ID>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jetdesk"
+database_id = "<D1_DATABASE_ID>"
+
+[vars]
+BRAND = "JetDesk"
+CANONICAL_HOST = "www.jetdesk.ai"
+EMAIL_FROM = "JetDesk <hello@jetdesk.ai>"
+CF_ACCOUNT_ID = "<CLOUDFLARE_ACCOUNT_ID>"
+REQUIRE_VERIFY = "1"
+

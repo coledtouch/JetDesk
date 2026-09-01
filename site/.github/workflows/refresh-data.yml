@@ -1,0 +1,46 @@
+name: Refresh airport data
+
+on:
+  schedule:
+    - cron: '17 9 * * 4'   # every Thursday 09:17 UTC; NASR cycles publish on Thursdays every 28 days
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check the current NASR cycle
+        id: check
+        run: |
+          python3 refresh_data.py --check | tee check.txt
+          echo "changed=$(grep -c '^changed$' check.txt || true)" >> "$GITHUB_OUTPUT"
+      - name: Rebuild the dataset
+        if: steps.check.outputs.changed == '1' || github.event_name == 'workflow_dispatch'
+        run: python3 refresh_data.py --force
+      - name: Deploy to Cloudflare Pages
+        if: steps.check.outputs.changed == '1' || github.event_name == 'workflow_dispatch'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy dist --project-name meridian-flight-desk --commit-dirty=true
+      - name: Commit the refreshed dataset
+        if: steps.check.outputs.changed == '1' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "jetdesk-bot"
+          git config user.email "hello@jetdesk.ai"
+          git add airports_us.json dataset_cycle.json app_head.html app.js
+          git commit -m "Refresh airport data to NASR cycle $(python3 -c "import json;print(json.load(open('dataset_cycle.json'))['cycle'])")" || echo "nothing to commit"
+          git push

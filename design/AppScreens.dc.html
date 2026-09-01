@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600;700;800&family=B612+Mono:wght@400;700&display=swap">
+  <style>
+    body { margin: 0; background: #070B14; color: #E6EAF2; font-family: Manrope, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    a { color: #4CC9FF; } a:hover { color: #8FDFFF; }
+    .mono { font-family: 'B612 Mono', ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .pill { font-family: 'B612 Mono', ui-monospace, monospace; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+    .good { background: rgba(47,210,125,.14); color: #2FD27D; border-color: rgba(47,210,125,.35); }
+    .warn { background: rgba(255,176,32,.14); color: #FFB020; border-color: rgba(255,176,32,.35); }
+    .bad { background: rgba(255,90,95,.14); color: #FF5A5F; border-color: rgba(255,90,95,.35); }
+    .ion { background: rgba(76,201,255,.14); color: #4CC9FF; border-color: rgba(76,201,255,.35); }
+    .dimp { background: #121C2E; color: #A7B2C3; border-color: #1E2A40; }
+    .phone { width: 390px; height: 800px; background: #070B14; border: 1px solid #2A3A55; border-radius: 36px; padding: 14px 14px 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+    .hdr { display: flex; justify-content: space-between; align-items: center; padding: 6px 6px 8px; border-bottom: 1px solid #10192A; }
+    .card { background: #0B1220; border: 1px solid #1E2A40; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .lab { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #6B7A90; font-weight: 700; }
+    .tabs { margin-top: auto; display: flex; justify-content: space-around; padding: 10px 6px 14px; border-top: 1px solid #10192A; font-size: 10px; letter-spacing: .12em; color: #6B7A90; font-weight: 700; }
+    .muted { color: #A7B2C3; } .dim { color: #6B7A90; }
+  </style>
+</helmet>
+<div style="width: 1320px; height: 900px; background: #070B14; box-sizing: border-box; padding: 40px; display: flex; flex-direction: column; gap: 20px;">
+  <div style="display: flex; align-items: baseline; gap: 16px;"><span style="font-family: Michroma, sans-serif; font-size: 11px; letter-spacing: .2em; color: #4CC9FF;">APP SCREENS · NEW BRAND</span><span class="dim" style="font-size: 13px;">Trip · Airport · Fuel stop</span></div>
+  <div style="display: flex; gap: 40px; align-items: flex-start;">
+
+    <!-- TRIP -->
+    <div class="phone">
+      <div class="hdr"><span style="font-family: Michroma, sans-serif; font-size: 12px; letter-spacing: .08em;">JETDESK</span><span class="pill dimp">AUTO</span></div>
+      <div style="display: flex; gap: 8px;"><span class="pill ion" style="padding: 8px 14px; font-size: 12px;">HPN Drop-off</span><span class="pill dimp" style="padding: 8px 14px; font-size: 12px;">Vineyard Run</span><span class="pill dimp" style="padding: 8px 14px; font-size: 12px;">+ New</span></div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span class="mono" style="font-size: 20px; font-weight: 700;">KPVD <span style="color: #4CC9FF;">▸</span> KHPN</span><span class="pill good">WIDE OPEN</span></div>
+        <div style="display: flex; gap: 14px; font-size: 12px;" class="muted"><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">110</span> nm</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">42</span> min</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">219</span> kt GS</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">33</span> gal</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">$240</span></span></div>
+        <div class="dim" style="font-size: 11px;">winds aloft 300/58 at FL260 (BDL)</div>
+        <div style="background: #121C2E; border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center;"><div><div class="lab">Landing at KHPN · White Plains</div><div class="mono" style="font-size: 12px; margin-top: 3px;">16/34 · 6,549 × 150 ft · LIT</div></div><span class="pill good">VFR</span></div>
+      </div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span class="mono" style="font-size: 20px; font-weight: 700;">KHPN <span style="color: #4CC9FF;">▸</span> KPVD</span><span class="pill good">WIDE OPEN</span></div>
+        <div style="display: flex; gap: 14px; font-size: 12px;" class="muted"><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">110</span> nm</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">35</span> min</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">292</span> kt GS</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">28</span> gal</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">$204</span></span></div>
+        <div style="background: #121C2E; border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center;"><div><div class="lab">Landing at KPVD · Providence</div><div class="mono" style="font-size: 12px; margin-top: 3px;">05/23 · 8,700 × 150 ft · LIT</div></div><span class="pill good">VFR</span></div>
+      </div>
+      <div class="card" style="border-color: rgba(76,201,255,.35);">
+        <div class="lab">Trip total</div>
+        <div style="display: flex; gap: 16px; font-size: 12px;" class="muted"><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 20px;">220</span> nm</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 20px;">1:17</span> block</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 20px;">61</span> gal</span><span><span class="mono" style="color: #4CC9FF; font-weight: 700; font-size: 20px;">$444</span></span></div>
+        <span class="pill ion" style="align-self: flex-start; padding: 8px 12px; font-size: 11px;">OPEN ROUTE IN FOREFLIGHT ↗</span>
+      </div>
+      <div class="tabs"><span style="color: #4CC9FF;">TRIP</span><span>AIRPORTS</span><span>FUEL STOP</span><span>ACCOUNT</span></div>
+    </div>
+
+    <!-- AIRPORT -->
+    <div class="phone">
+      <div class="hdr"><span style="font-family: Michroma, sans-serif; font-size: 12px; letter-spacing: .08em;">JETDESK</span><span class="pill dimp">AUTO</span></div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;"><div><div class="mono" style="font-size: 26px; font-weight: 700;">KMVY</div><div style="font-size: 13px;">Martha's Vineyard Airport</div><div class="dim" style="font-size: 12px;">Vineyard Haven, MA · elev 67 ft · 38 nm from you · brg 143°T</div></div><span class="pill good">WIDE OPEN</span></div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;"><span class="pill ion">FUEL $ · AIRNAV ↗</span><span class="pill ion">METAR / TAF ↗</span><span class="pill ion">CHART ↗</span><span class="pill ion">FOREFLIGHT</span></div>
+      </div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span class="pill good">VFR</span><span class="mono" style="font-weight: 700; font-size: 15px;">07006KT</span><span class="mono" style="font-size: 13px;">10+ SM</span><span class="mono" style="font-size: 13px;">24/14°C</span><span class="mono" style="font-size: 13px;">A3012</span></div>
+        <div class="dim" style="font-size: 11px;">METAR 1753Z · 12 min ago · density altitude 1,290 ft</div>
+        <div class="lab" style="margin-top: 4px;">Runway winds now · <span style="color: #4CC9FF;">best: 06</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> 06 · 6 kt head · 1R cross</span><span class="mono dim">5,504×100</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> 33 · 2 kt head · 5L cross</span><span class="mono dim">3,327×75</span></div>
+      </div>
+      <div class="card">
+        <div class="lab">Runways</div>
+        <svg width="100%" height="120" viewBox="0 0 330 120" fill="none">
+          <g transform="translate(165 60)">
+            <rect x="-104" y="-7" width="208" height="14" fill="#C9D1DC" transform="rotate(-30)"/>
+            <rect x="-62" y="-5" width="124" height="10" fill="#6B7A90" transform="rotate(60)"/>
+            <text x="-124" y="66" fill="#4CC9FF" font-family="B612 Mono, monospace" font-size="11" font-weight="700">06</text>
+            <text x="104" y="-56" fill="#4CC9FF" font-family="B612 Mono, monospace" font-size="11" font-weight="700">24</text>
+            <text x="-44" y="-58" fill="#4CC9FF" font-family="B612 Mono, monospace" font-size="11" font-weight="700">33</text>
+            <text x="28" y="68" fill="#4CC9FF" font-family="B612 Mono, monospace" font-size="11" font-weight="700">15</text>
+          </g>
+        </svg>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> 06/24 · 5,504 × 100 ft · ASP</span><span class="pill dimp">LIT</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;"><span class="mono"><span style="color: #FF5A5F;">●</span> 15/33 · 3,327 × 75 ft · ASP</span><span class="pill dimp">LIT</span></div>
+      </div>
+      <div class="card">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;"><span class="pill good">JET A</span><span class="pill dimp">100LL</span><span class="pill warn">LANDING FEE</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span><span style="color: #FFB020;">●</span> Airframe · minor only</span><span><span style="color: #FFB020;">●</span> Engine · minor only</span></div>
+      </div>
+      <div class="tabs"><span>TRIP</span><span style="color: #4CC9FF;">AIRPORTS</span><span>FUEL STOP</span><span>ACCOUNT</span></div>
+    </div>
+
+    <!-- FUEL -->
+    <div class="phone">
+      <div class="hdr"><span style="font-family: Michroma, sans-serif; font-size: 12px; letter-spacing: .08em;">JETDESK</span><span class="pill dimp">NIGHT</span></div>
+      <div class="lab" style="padding: 4px 4px 0;">Is the fuel stop worth it?</div>
+      <div class="card">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 10px; padding: 10px 12px;"><div class="lab">Buying where you land</div><div class="mono" style="font-size: 16px; font-weight: 700; margin-top: 2px;">KHPN</div></div>
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 10px; padding: 10px 12px;"><div class="lab">$/gal there</div><div class="mono" style="font-size: 16px; font-weight: 700; margin-top: 2px;">9.40</div></div>
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 10px; padding: 10px 12px;"><div class="lab">Cheap stop instead</div><div class="mono" style="font-size: 16px; font-weight: 700; margin-top: 2px;">KBDR</div></div>
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 10px; padding: 10px 12px;"><div class="lab">$/gal at the stop</div><div class="mono" style="font-size: 16px; font-weight: 700; margin-top: 2px;">7.10</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 10px; padding: 10px 12px;"><div class="lab">Gallons</div><div class="mono" style="font-size: 16px; font-weight: 700; margin-top: 2px;">150</div></div>
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 10px; padding: 10px 12px;"><div class="lab">Detour min</div><div class="mono" style="font-size: 16px; font-weight: 700; margin-top: 2px;">10</div></div>
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 10px; padding: 10px 12px;"><div class="lab">Ramp fee</div><div class="mono" style="font-size: 16px; font-weight: 700; margin-top: 2px;">0</div></div>
+        </div>
+        <div class="dim" style="font-size: 11px;">KBDR logged $7.10 today · direct KHPN→KBDR ≈ 26.9 nm</div>
+      </div>
+      <div style="background: rgba(47,210,125,.10); border: 1px solid rgba(47,210,125,.45); border-radius: 16px; padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 2px;">
+        <div style="font-family: Michroma, sans-serif; font-size: 11px; letter-spacing: .18em; color: #2FD27D;">WORTH THE STOP</div>
+        <div class="mono" style="font-size: 46px; font-weight: 700; color: #2FD27D; line-height: 1.1;">+$191</div>
+        <div class="dim" style="font-size: 12px;">net saved buying 150 gal at the stop</div>
+      </div>
+      <div class="card" style="font-size: 12px; gap: 9px;">
+        <div style="display: flex; justify-content: space-between;"><span class="muted">Price gap × 150 gal ($2.30/gal)</span><span class="mono" style="color: #2FD27D; font-weight: 700;">+$345</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="muted">Extra burn: stop cycle 15 gal + detour 7 gal</span><span class="mono" style="color: #FF5A5F; font-weight: 700;">−$154</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="muted">Breaks even at a price gap of</span><span class="mono" style="font-weight: 700;">$1.03/gal</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="muted">Time added (detour + ground)</span><span class="mono" style="font-weight: 700;">35 min</span></div>
+      </div>
+      <div class="card" style="gap: 6px;">
+        <div class="lab">Market reference</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span class="mono" style="font-size: 20px; font-weight: 700;">$3.62<span class="dim" style="font-size: 11px; font-weight: 400;"> /gal Jet A spot</span></span><span class="pill good">▼ 9¢ / 30 d</span></div>
+      </div>
+      <div class="tabs"><span>TRIP</span><span>AIRPORTS</span><span style="color: #4CC9FF;">FUEL STOP</span><span>ACCOUNT</span></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:transparent}
+  #stage{width:512px;height:512px;position:relative;overflow:hidden;background:radial-gradient(120% 120% at 30% 20%, #121C2E 0%, #070B14 62%)}
+  #art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+</style></head>
+<body>
+<div id="stage"><div id="art">
+<svg width="512" height="512" viewBox="0 0 72 72" fill="none">
+  <path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="#4CC9FF"/>
+  <path d="M22 54 H50" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+  <path d="M30 60 H42" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+</svg>
+</div></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const pad = parseFloat(q.get('pad') || '0');
+  if (pad > 0) document.getElementById('art').style.transform = 'scale(' + (1 - pad) + ')';
+</script>
+</body></html>

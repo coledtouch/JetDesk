@@ -1,0 +1,282 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600;700;800&family=B612+Mono:wght@400;700&display=swap">
+  <style>
+    body { margin: 0; background: #070B14; color: #E6EAF2; font-family: Manrope, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    a { color: #4CC9FF; text-decoration: none; } a:hover { color: #8FDFFF; }
+    .mono { font-family: 'B612 Mono', ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .eyebrow { font-family: Michroma, 'Arial Black', sans-serif; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: #4CC9FF; }
+    .h2 { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
+    .pill { font-family: 'B612 Mono', ui-monospace, monospace; font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+    .good { background: rgba(47,210,125,.14); color: #2FD27D; border-color: rgba(47,210,125,.35); }
+    .warn { background: rgba(255,176,32,.14); color: #FFB020; border-color: rgba(255,176,32,.35); }
+    .bad { background: rgba(255,90,95,.14); color: #FF5A5F; border-color: rgba(255,90,95,.35); }
+    .ion { background: rgba(76,201,255,.14); color: #4CC9FF; border-color: rgba(76,201,255,.35); }
+    .card { background: #0B1220; border: 1px solid #1E2A40; border-radius: 20px; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; background: #4CC9FF; color: #06131F; font-weight: 800; font-size: 15px; padding: 16px 26px; border-radius: 12px; }
+    .btn2 { display: inline-flex; align-items: center; gap: 10px; border: 1px solid #2A3A55; color: #E6EAF2; font-weight: 700; font-size: 15px; padding: 15px 22px; border-radius: 12px; }
+    .muted { color: #A7B2C3; }
+    .dim { color: #6B7A90; }
+  </style>
+</helmet>
+<div style="width: 1440px; background: #070B14; box-sizing: border-box; display: flex; flex-direction: column;">
+
+  <!-- NAV -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 72px; border-bottom: 1px solid #10192A;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <svg width="34" height="34" viewBox="0 0 72 72" fill="none"><rect x="2" y="2" width="68" height="68" rx="18" fill="#0B1220" stroke="#1E2A40" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="#4CC9FF"/><path d="M22 54 H50" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.55"/></svg>
+      <span style="font-family: Michroma, 'Arial Black', sans-serif; font-size: 16px; letter-spacing: 0.08em;">JETDESK<span style="color: #4CC9FF; font-size: 10px; letter-spacing: .18em; margin-left: 4px;">.AI</span></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 28px; font-size: 14px; font-weight: 600; color: #C9D1DC;">
+      <span>How it works</span><span>Savings</span><span>Pricing</span><span>FAQ</span>
+      <span style="color: #4CC9FF;">Sign in</span>
+      <span style="background: #4CC9FF; color: #06131F; font-weight: 800; padding: 11px 18px; border-radius: 10px;">Start free</span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="position: relative; overflow: hidden; padding: 88px 72px 72px; background: radial-gradient(900px 520px at 78% 30%, rgba(76,201,255,.14), transparent 62%), radial-gradient(700px 400px at 12% 90%, rgba(14,124,255,.08), transparent 60%), #070B14;">
+    <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 72px 72px; mask-image: radial-gradient(60% 60% at 60% 40%, #000 30%, transparent 100%); -webkit-mask-image: radial-gradient(60% 60% at 60% 40%, #000 30%, transparent 100%); pointer-events: none;"></div>
+    <div style="position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 32px; align-items: center;">
+      <div style="grid-column: span 7; display: flex; flex-direction: column; gap: 24px;">
+        <div class="eyebrow">For pilots who manage the airplane</div>
+        <h1 style="margin: 0; font-size: 66px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance;">Know what the trip costs <span style="color: #4CC9FF;">before you file.</span></h1>
+        <p class="muted" style="margin: 0; font-size: 19px; line-height: 1.55; max-width: 34em;">Live FAA weather, winds aloft, runway verdicts, fuel-stop math and your crew's FBO intel on one screen. So the calls you make on the ramp are made with numbers, not memory.</p>
+        <div style="display: flex; align-items: center; gap: 14px; margin-top: 6px;">
+          <span class="btn">Start free · 14-day Pro trial
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <span class="btn2">See how it saves money</span>
+        </div>
+        <div class="dim" style="font-size: 13px;">No card. Installs from www.jetdesk.ai. Works offline in the airplane.</div>
+        <div style="display: flex; gap: 22px; margin-top: 14px; padding-top: 22px; border-top: 1px solid #10192A;">
+          <div style="display: flex; flex-direction: column; gap: 2px;"><span class="mono" style="font-size: 22px; font-weight: 700;">4,493</span><span class="dim" style="font-size: 12px;">US airports, runways to scale</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px;"><span class="mono" style="font-size: 22px; font-weight: 700;">2 min</span><span class="dim" style="font-size: 12px;">weather refresh, live from the FAA</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px;"><span class="mono" style="font-size: 22px; font-weight: 700;">0 bars</span><span class="dim" style="font-size: 12px;">needed once it is on your phone</span></div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div style="grid-column: span 5; display: flex; justify-content: center;">
+        <div style="width: 330px; background: #0B1220; border: 1px solid #2A3A55; border-radius: 40px; padding: 14px; box-shadow: 0 40px 90px rgba(0,0,0,.6), 0 0 0 1px rgba(76,201,255,.15); display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0;">
+            <span style="font-family: Michroma, sans-serif; font-size: 12px; letter-spacing: .08em;">JETDESK</span>
+            <span class="pill ion">FUEL STOP</span>
+          </div>
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+              <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 10px; padding: 9px 11px;"><div class="dim" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase;">Land at</div><div class="mono" style="font-size: 15px; font-weight: 700;">KHPN · $9.40</div></div>
+              <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 10px; padding: 9px 11px;"><div class="dim" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase;">Stop at</div><div class="mono" style="font-size: 15px; font-weight: 700;">KBDR · $7.10</div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+              <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 10px; padding: 9px 11px;"><div class="dim" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase;">Gallons</div><div class="mono" style="font-size: 15px; font-weight: 700;">150</div></div>
+              <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 10px; padding: 9px 11px;"><div class="dim" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase;">Detour</div><div class="mono" style="font-size: 15px; font-weight: 700;">10 min</div></div>
+              <div style="background: #0B1220; border: 1px solid #1E2A40; border-radius: 10px; padding: 9px 11px;"><div class="dim" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase;">Ramp</div><div class="mono" style="font-size: 15px; font-weight: 700;">$0</div></div>
+            </div>
+          </div>
+          <div style="background: rgba(47,210,125,.10); border: 1px solid rgba(47,210,125,.45); border-radius: 18px; padding: 18px 14px; text-align: center; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-family: Michroma, sans-serif; font-size: 11px; letter-spacing: .18em; color: #2FD27D;">WORTH THE STOP</div>
+            <div class="mono" style="font-size: 44px; font-weight: 700; color: #2FD27D; line-height: 1.1;">+$191</div>
+            <div class="dim" style="font-size: 12px;">net after the extra landing, takeoff and detour</div>
+          </div>
+          <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+            <div style="display: flex; justify-content: space-between;"><span class="muted">Price gap × 150 gal ($2.30)</span><span class="mono" style="color: #2FD27D; font-weight: 700;">+$345</span></div>
+            <div style="display: flex; justify-content: space-between;"><span class="muted">Stop cycle 15 gal + detour 7 gal</span><span class="mono" style="color: #FF5A5F; font-weight: 700;">−$154</span></div>
+            <div style="display: flex; justify-content: space-between;"><span class="muted">Breaks even at a gap of</span><span class="mono" style="font-weight: 700;">$1.03/gal</span></div>
+            <div style="display: flex; justify-content: space-between;"><span class="muted">Time added</span><span class="mono" style="font-weight: 700;">35 min</span></div>
+          </div>
+          <div style="display: flex; justify-content: space-around; padding: 8px 4px 2px; border-top: 1px solid #1E2A40;">
+            <span class="dim" style="font-size: 10px; letter-spacing: .12em;">TRIP</span><span class="dim" style="font-size: 10px; letter-spacing: .12em;">AIRPORTS</span><span style="font-size: 10px; letter-spacing: .12em; color: #4CC9FF; font-weight: 700;">FUEL STOP</span><span class="dim" style="font-size: 10px; letter-spacing: .12em;">ACCOUNT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA STRIP -->
+  <div style="display: flex; align-items: center; gap: 40px; padding: 22px 72px; border-top: 1px solid #10192A; border-bottom: 1px solid #10192A; background: #080D18;">
+    <span class="dim" style="font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700;">Built on official data</span>
+    <span class="muted" style="font-size: 14px; font-weight: 600;">FAA Aviation Weather Center</span>
+    <span class="muted" style="font-size: 14px; font-weight: 600;">FAA NASR airport master file</span>
+    <span class="muted" style="font-size: 14px; font-weight: 600;">FAA winds and temperatures aloft</span>
+    <span class="muted" style="font-size: 14px; font-weight: 600;">U.S. Energy Information Administration</span>
+    <span class="muted" style="font-size: 14px; font-weight: 600;">OilPriceAPI</span>
+  </div>
+
+  <!-- SAVINGS -->
+  <div style="padding: 96px 72px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 40px; align-items: start;">
+    <div style="grid-column: span 5; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 24px;">
+      <div class="eyebrow">Where the money is</div>
+      <div class="h2">The spread between two FBOs is bigger than the spread between two airlines.</div>
+      <p class="muted" style="margin: 0; font-size: 17px; line-height: 1.6;">Jet A at the FBO the owner likes can run two dollars a gallon over the field twenty minutes away. On a 150-gallon load that is $345, before you count what the extra landing costs you. JetDesk counts it. Every stop is scored against its own burn, detour and ramp fee, and the answer is a number with a sign in front of it.</p>
+      <div style="display: flex; gap: 12px;"><span class="btn">Run your own numbers</span></div>
+    </div>
+    <div style="grid-column: span 7; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px;">
+      <div class="card" style="padding: 26px; display: flex; flex-direction: column; gap: 8px;">
+        <div class="mono" style="font-size: 40px; font-weight: 700; color: #4CC9FF; line-height: 1;">$2.30</div>
+        <div style="font-weight: 700; font-size: 15px;">per gallon, same day, 27 nm apart</div>
+        <div class="dim" style="font-size: 13px; line-height: 1.5;">Sample spread between a premium FBO and the field down the coast. Your crew's logged prices feed the math; AirNav is one tap away when they need refreshing.</div>
+      </div>
+      <div class="card" style="padding: 26px; display: flex; flex-direction: column; gap: 8px;">
+        <div class="mono" style="font-size: 40px; font-weight: 700; color: #2FD27D; line-height: 1;">+$191</div>
+        <div style="font-weight: 700; font-size: 15px;">net on one stop, after the stop is charged against you</div>
+        <div class="dim" style="font-size: 13px; line-height: 1.5;">Extra takeoff and landing cycle, detour minutes at cruise burn, ramp fee at the stop. If the result goes red, you tanker on and skip it.</div>
+      </div>
+      <div class="card" style="padding: 26px; display: flex; flex-direction: column; gap: 8px;">
+        <div class="mono" style="font-size: 40px; font-weight: 700; line-height: 1;">42 <span style="font-size: 18px; color: #6B7A90;">vs</span> 35</div>
+        <div style="font-weight: 700; font-size: 15px;">minutes out and back on the same 110 nm leg</div>
+        <div class="dim" style="font-size: 13px; line-height: 1.5;">Forecast winds at your cruise altitude turn a flat leg time into real groundspeed, burn and cost, both directions. The owner's ETA stops being a guess.</div>
+      </div>
+      <div class="card" style="padding: 26px; display: flex; flex-direction: column; gap: 8px;">
+        <div class="mono" style="font-size: 40px; font-weight: 700; line-height: 1;">4 <span style="font-size: 18px; color: #6B7A90;">tabs</span> → 1</div>
+        <div style="font-weight: 700; font-size: 15px;">screen before you file</div>
+        <div class="dim" style="font-size: 13px; line-height: 1.5;">AirNav, the weather site, the notes app and the text thread with the owner, replaced by one page per airport that already knows what you need.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAPABILITIES -->
+  <div style="padding: 24px 72px 96px; display: flex; flex-direction: column; gap: 36px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; max-width: 760px;">
+      <div class="eyebrow">What it does</div>
+      <div class="h2">Built around the questions you actually ask on the ramp.</div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;">
+
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;"><span class="mono" style="font-weight: 700; font-size: 15px;">KMVY</span><span class="pill good">WIDE OPEN</span></div>
+          <svg width="100%" height="110" viewBox="0 0 260 110" fill="none">
+            <g transform="translate(130 55)">
+              <rect x="-96" y="-7" width="192" height="14" fill="#C9D1DC" transform="rotate(-30)"/>
+              <rect x="-58" y="-5" width="116" height="10" fill="#6B7A90" transform="rotate(60)"/>
+              <text x="-112" y="62" fill="#4CC9FF" font-family="B612 Mono, monospace" font-size="11" font-weight="700">06</text>
+              <text x="96" y="-52" fill="#4CC9FF" font-family="B612 Mono, monospace" font-size="11" font-weight="700">24</text>
+            </g>
+          </svg>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono">06/24 · 5,504 × 100</span><span class="pill good">LIT</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono">15/33 · 3,327 × 75</span><span class="pill bad">TIGHT</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Runway verdicts, to scale</div><div class="muted" style="font-size: 14px; line-height: 1.5;">Every runway drawn from FAA geometry and graded wide open, workable or tight. Unlit fields flagged before an 11 p.m. arrival, not during one.</div></div>
+      </div>
+
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;"><span class="mono" style="font-weight: 700; font-size: 15px;">KHPN <span style="color: #4CC9FF;">▸</span> KPVD</span><span class="pill ion">FL260</span></div>
+          <div style="display: flex; gap: 14px; font-size: 12px;" class="muted"><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">110</span> nm</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">35</span> min</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">292</span> kt GS</span><span><span class="mono" style="color: #E6EAF2; font-weight: 700; font-size: 16px;">28</span> gal</span></div>
+          <div class="dim" style="font-size: 11px;">winds aloft 300/58 at FL260 (BDL)</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #0B1220; border-radius: 10px; padding: 8px 10px;"><span class="mono" style="font-size: 11px;">05/23 · 8,700 × 150 · LIT</span><span class="pill good">VFR</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Legs that know the wind</div><div class="muted" style="font-size: 14px; line-height: 1.5;">FAA winds aloft at your cruise altitude give each leg its real groundspeed, block time, burn and cost. Out and back stop looking identical.</div></div>
+      </div>
+
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span class="pill good">VFR</span><span class="mono" style="font-weight: 700; font-size: 14px;">14009KT 10+ SM</span><span class="mono" style="font-size: 12px;" class="muted">25/14 A3012</span></div>
+          <div class="dim" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase;">Runway winds now · best: 16</div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> 16 · 9 kt head · 0 kt cross</span><span class="mono dim">6,081×150</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> 23 · 3 kt head · 9L cross</span><span class="mono dim">8,700×150</span></div>
+          <div class="dim" style="font-size: 11px;">Field 55 ft · density altitude 1,320 ft</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Live weather with a runway pick</div><div class="muted" style="font-size: 14px; line-height: 1.5;">METAR and TAF on every airport and arrival, head and crosswind per runway from the live wind, density altitude, and the best runway right now.</div></div>
+      </div>
+
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4CC9FF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="#4CC9FF" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span class="dim" style="font-size: 11px;">Around your position · Jet A only</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> KLGA · 7,002×150</span><span class="mono dim">18.9 nm · 203°</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> KTEB · 6,997×150</span><span class="mono dim">20.6 nm · 231°</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #FFB020;">●</span> KDXR · 4,421×150</span><span class="mono dim">20.9 nm · 029°</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;"><span class="mono"><span style="color: #2FD27D;">●</span> KFRG · 6,833×150</span><span class="mono dim">24.3 nm · 147°</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Near Me, with no bars</div><div class="muted" style="font-size: 14px; line-height: 1.5;">GPS-sorted fields with distance and bearing, filtered to Jet A or big runways. The database rides on the phone, so it works where the signal does not.</div></div>
+      </div>
+
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: 700; font-size: 14px;">Signature East</span><span class="pill good">CREW CAR</span></div>
+          <div class="dim" style="font-size: 12px;">Crew car 2 h max, ask for Tony</div>
+          <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: 700; font-size: 14px;">Million Air</span><span class="pill warn">+$2/GAL</span></div>
+          <div class="dim" style="font-size: 12px;">Owner's pick, he gets the car service. Tanker where it's cheap.</div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; padding-top: 8px; border-top: 1px dashed #1E2A40;"><span class="mono" style="font-weight: 700;">$7.10</span><span class="muted">Sikorsky self-serve</span><span class="mono dim">Sep 1</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Crew intel that follows the airport</div><div class="muted" style="font-size: 14px; line-height: 1.5;">Prices, FBOs, crew cars, fees and the quirks worth remembering, shared with your co-pilot or the owner and synced to every phone.</div></div>
+      </div>
+
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #121C2E; border: 1px solid #1E2A40; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div class="dim" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase;">Jet A wholesale · Gulf Coast spot</div>
+          <div style="display: flex; justify-content: space-between; align-items: center;"><span class="mono" style="font-size: 26px; font-weight: 700;">$3.62<span class="dim" style="font-size: 12px; font-weight: 400;"> /gal</span></span><span class="pill good">▼ 9¢ / 30 d</span></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed #1E2A40;"><span style="font-size: 12px;"><span class="dim">WTI crude</span> <span class="pill ion" style="margin-left: 6px;">LIVE</span></span><span class="mono" style="font-weight: 700;">$85.90</span></div>
+          <div style="display: flex; justify-content: space-between; align-items: center;"><span class="dim" style="font-size: 12px;">Services · KHPN</span><span style="display: flex; gap: 6px;"><span class="pill good">JET A</span><span class="pill warn">LANDING FEE</span></span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Market floor and field facts</div><div class="muted" style="font-size: 14px; line-height: 1.5;">Official Jet A spot and live crude so you know when the whole market moves, plus FAA-file fuel types, repair services and landing-fee flags per airport.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW -->
+  <div style="padding: 0 72px 96px;">
+    <div class="card" style="padding: 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; background: linear-gradient(180deg, #0B1220, #0A1020);">
+      <div style="grid-column: span 3; display: flex; flex-direction: column; gap: 10px;"><div class="eyebrow">How it works</div><div class="h2" style="font-size: 32px;">Three taps before you call ground.</div></div>
+      <div style="display: flex; flex-direction: column; gap: 10px;"><div class="mono" style="font-size: 13px; color: #4CC9FF; font-weight: 700;">01</div><div style="font-weight: 800; font-size: 18px;">Build the trip</div><div class="muted" style="font-size: 14px; line-height: 1.5;">Add legs by airport code. Distance, winds-corrected time, burn and cost fill in per leg with the arrival runway graded. One tap opens the route in ForeFlight.</div></div>
+      <div style="display: flex; flex-direction: column; gap: 10px;"><div class="mono" style="font-size: 13px; color: #4CC9FF; font-weight: 700;">02</div><div style="font-weight: 800; font-size: 18px;">Check the field</div><div class="muted" style="font-size: 14px; line-height: 1.5;">Live METAR and TAF, crosswind per runway, density altitude, fuel and repair on the FAA file, your crew's prices and FBO notes, and alternates within 25, 40 or 60 nm.</div></div>
+      <div style="display: flex; flex-direction: column; gap: 10px;"><div class="mono" style="font-size: 13px; color: #4CC9FF; font-weight: 700;">03</div><div style="font-weight: 800; font-size: 18px;">Score the fuel stop</div><div class="muted" style="font-size: 14px; line-height: 1.5;">Pick where you land and where the cheap gas is. The calculator charges the stop against you and hands back a signed dollar figure and a breakeven.</div></div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div style="padding: 0 72px 96px; display: flex; flex-direction: column; gap: 32px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; max-width: 700px;"><div class="eyebrow">Pricing</div><div class="h2">Less than one ramp fee a month.</div><p class="muted" style="margin: 0; font-size: 16px; line-height: 1.55;">Every account starts with 14 days of Pro, no card. Pro pays for itself the first time it says skip the stop.</p></div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: stretch;">
+      <div class="card" style="padding: 30px; display: flex; flex-direction: column; gap: 18px;">
+        <div><div class="eyebrow" style="color: #6B7A90;">Free</div><div class="mono" style="font-size: 44px; font-weight: 700; margin-top: 8px;">$0</div></div>
+        <div class="muted" style="font-size: 14px; line-height: 1.7;">Airport lookup and runway verdicts<br>Live METAR and TAF, density altitude<br>Near Me with filters<br>Fuel-stop calculator<br>One saved trip<br>Your own price log</div>
+        <span class="btn2" style="justify-content: center; margin-top: auto;">Start free</span>
+      </div>
+      <div class="card" style="padding: 30px; display: flex; flex-direction: column; gap: 18px; border-color: rgba(76,201,255,.5); box-shadow: 0 0 0 1px rgba(76,201,255,.25), 0 30px 80px rgba(0,0,0,.45);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;"><div><div class="eyebrow">Pro monthly</div><div class="mono" style="font-size: 44px; font-weight: 700; margin-top: 8px;">$9.99<span class="dim" style="font-size: 16px; font-weight: 400;">/mo</span></div></div><span class="pill ion">14-DAY TRIAL</span></div>
+        <div class="muted" style="font-size: 14px; line-height: 1.7;">Everything in Free<br>Unlimited trips<br>Winds-aloft groundspeeds<br>Live crosswind and best runway<br>Market reference<br>FBO and crew-car intel<br>Crew sharing, up to 10 people</div>
+        <span class="btn" style="justify-content: center; margin-top: auto;">Start Pro trial</span>
+      </div>
+      <div class="card" style="padding: 30px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;"><div><div class="eyebrow">Pro annual</div><div class="mono" style="font-size: 44px; font-weight: 700; margin-top: 8px;">$79<span class="dim" style="font-size: 16px; font-weight: 400;">/yr</span></div></div><span class="pill good">SAVE 34%</span></div>
+        <div class="muted" style="font-size: 14px; line-height: 1.7;">Everything in Pro<br>Two months free<br>One invoice for the owner's books<br>Cancel any time from your account</div>
+        <span class="btn2" style="justify-content: center; margin-top: auto;">Go annual</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div style="padding: 0 72px 96px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 40px;">
+    <div style="grid-column: span 4;"><div class="eyebrow">Straight answers</div><div class="h2" style="font-size: 32px; margin-top: 12px;">The three things every pilot asks first.</div></div>
+    <div style="grid-column: span 8; display: flex; flex-direction: column;">
+      <div style="padding: 22px 0; border-top: 1px solid #1E2A40; display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Does it replace ForeFlight?</div><div class="muted" style="font-size: 15px; line-height: 1.55;">No. It is the desk beside it. You still file and fly in ForeFlight; JetDesk is where the cost, runway and FBO homework gets done first, and every trip opens in ForeFlight with one tap.</div></div>
+      <div style="padding: 22px 0; border-top: 1px solid #1E2A40; display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Does it work with no signal?</div><div class="muted" style="font-size: 15px; line-height: 1.55;">Yes. The airport and runway database, your trips, prices, notes and both calculators live on the phone. Weather, winds and market data rejoin the moment you have coverage.</div></div>
+      <div style="padding: 22px 0; border-top: 1px solid #1E2A40; border-bottom: 1px solid #1E2A40; display: flex; flex-direction: column; gap: 6px;"><div style="font-weight: 800; font-size: 17px;">Where do fuel prices come from?</div><div class="muted" style="font-size: 15px; line-height: 1.55;">From you and your crew, in ten seconds per airport, with AirNav one tap away to check. Prices flag themselves stale after two weeks. The market reference (EIA spot and live crude) tells you when the whole board is moving.</div></div>
+    </div>
+  </div>
+
+  <!-- FINAL CTA -->
+  <div style="padding: 0 72px 96px;">
+    <div style="border-radius: 24px; padding: 64px; background: radial-gradient(700px 300px at 20% 0%, rgba(76,201,255,.22), transparent 60%), #0B1220; border: 1px solid #1E2A40; display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 640px;"><div class="h2" style="font-size: 38px;">Your next trip is a number, not a guess.</div><div class="muted" style="font-size: 16px;">Free account, 14 days of Pro, nothing to install but a home-screen icon.</div></div>
+      <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;"><span class="btn" style="font-size: 17px; padding: 18px 30px;">Start free at www.jetdesk.ai</span><span class="dim" style="font-size: 12px;">hello@jetdesk.ai · answered by a human</span></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="padding: 28px 72px 40px; border-top: 1px solid #10192A; display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 10px;"><span style="font-family: Michroma, sans-serif; font-size: 13px; letter-spacing: .08em;">JETDESK<span style="color: #4CC9FF; font-size: 9px; letter-spacing: .18em; margin-left: 3px;">.AI</span></span><span class="dim" style="font-size: 12px;">· Planning aid only, not for navigation. Verify with official sources before flight.</span></div>
+    <div style="display: flex; gap: 22px; font-size: 13px;" class="muted"><span>Terms</span><span>Privacy</span><span>hello@jetdesk.ai</span></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

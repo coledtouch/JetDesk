@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=B612+Mono:wght@700&display=swap">
+  <style>
+    body { margin: 0; background: #F4F7FB; color: #0F172A; font-family: Manrope, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    a { color: #0E7CFF; } a:hover { color: #0B5FCC; }
+    .mono { font-family: 'B612 Mono', ui-monospace, monospace; }
+  </style>
+</helmet>
+<div style="width: 720px; height: 520px; background: linear-gradient(180deg, #FFFFFF, #EAF2FB); box-sizing: border-box; padding: 40px; display: flex; flex-direction: column; gap: 22px; border: 1px dashed #B9C7D9;">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="font-weight: 800; letter-spacing: .1em; font-size: 14px;">ALT B · CONTRAIL <span style="font-weight: 400; color: #64748B; letter-spacing: 0;">light, airy, daytime ramp</span></div>
+    <div style="display: flex; gap: 8px;"><div style="width: 28px; height: 28px; border-radius: 8px; background: #FFFFFF; border: 1px solid #CBD5E1;"></div><div style="width: 28px; height: 28px; border-radius: 8px; background: #0F172A;"></div><div style="width: 28px; height: 28px; border-radius: 8px; background: #0E7CFF;"></div><div style="width: 28px; height: 28px; border-radius: 8px; background: #7DD3FC;"></div></div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: center;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02;">Know what the trip costs before you file.</div>
+      <div style="font-size: 14px; color: #475569; line-height: 1.5;">White surfaces, sky-blue accent, thin hairlines, sun-readable on the ramp. Reads like a modern airline app.</div>
+      <div style="display: flex; gap: 10px;"><div style="background: #0E7CFF; color: #fff; font-weight: 800; padding: 12px 18px; border-radius: 10px; font-size: 13px;">Start free</div><div style="border: 1px solid #CBD5E1; padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 700;">See it work</div></div>
+    </div>
+    <div style="background: #fff; border: 1px solid #DCE5F0; border-radius: 18px; padding: 16px; box-shadow: 0 20px 50px rgba(15,23,42,.08); display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 10px; letter-spacing: .14em; color: #64748B; font-weight: 700;">FUEL STOP</div>
+      <div class="mono" style="font-size: 36px; color: #059669; font-weight: 700;">+$191</div>
+      <div style="height: 8px; border-radius: 4px; background: #E2E8F0;"></div>
+      <div style="height: 8px; border-radius: 4px; background: #E2E8F0; width: 70%;"></div>
+    </div>
+  </div>
+  <div style="font-size: 12px; color: #64748B; line-height: 1.5; border-top: 1px solid #DCE5F0; padding-top: 14px;"><b>Tradeoff:</b> friendliest and most sun-readable, but least distinctive next to every fintech and airline site, and the night cockpit loses its atmosphere.</div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,21 @@
+name = "jetdesk-cron"
+main = "index.js"
+compatibility_date = "2026-08-01"
+
+[triggers]
+crons = ["0 13 * * *"]   # daily 13:00 UTC (09:00 Eastern in summer)
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jetdesk"
+database_id = "<D1_DATABASE_ID>"
+
+[[kv_namespaces]]
+binding = "PRICES"
+id = "<KV_NAMESPACE_ID>"
+
+[vars]
+BRAND = "JetDesk"
+EMAIL_FROM = "JetDesk <hello@jetdesk.ai>"
+CF_ACCOUNT_ID = "<CLOUDFLARE_ACCOUNT_ID>"
+# secrets: EMAIL_API_TOKEN (wrangler secret put EMAIL_API_TOKEN)

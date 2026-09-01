@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600;700;800&family=B612+Mono:wght@400;700&display=swap">
+  <style>
+    body { margin: 0; background: #070B14; color: #E6EAF2; font-family: Manrope, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    a { color: #4CC9FF; text-decoration: none; } a:hover { color: #8FDFFF; }
+    .mono { font-family: 'B612 Mono', ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .eyebrow { font-family: Michroma, 'Arial Black', sans-serif; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #4CC9FF; }
+    .pill { font-family: 'B612 Mono', ui-monospace, monospace; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+    .good { background: rgba(47,210,125,.14); color: #2FD27D; border-color: rgba(47,210,125,.35); }
+    .ion { background: rgba(76,201,255,.14); color: #4CC9FF; border-color: rgba(76,201,255,.35); }
+    .card { background: #0B1220; border: 1px solid #1E2A40; border-radius: 18px; }
+    .muted { color: #A7B2C3; } .dim { color: #6B7A90; }
+  </style>
+</helmet>
+<div style="width: 390px; min-height: 1500px; background: radial-gradient(420px 300px at 90% 8%, rgba(76,201,255,.16), transparent 65%), #070B14; box-sizing: border-box; padding: 18px 20px 32px; display: flex; flex-direction: column; gap: 22px;">
+  <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 9px;">
+      <svg width="28" height="28" viewBox="0 0 72 72" fill="none"><rect x="2" y="2" width="68" height="68" rx="18" fill="#0B1220" stroke="#1E2A40" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="#4CC9FF"/><path d="M22 54 H50" stroke="#4CC9FF" stroke-width="4" stroke-linecap="round" opacity="0.55"/></svg>
+      <span style="font-family: Michroma, sans-serif; font-size: 13px; letter-spacing: .08em;">JETDESK<span style="color: #4CC9FF; font-size: 8px; letter-spacing: .18em; margin-left: 3px;">.AI</span></span>
+    </div>
+    <span style="color: #4CC9FF; font-weight: 700; font-size: 13px;">Sign in</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px; padding-top: 18px;">
+    <div class="eyebrow">For pilots who manage the airplane</div>
+    <h1 style="margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance;">Know what the trip costs <span style="color: #4CC9FF;">before you file.</span></h1>
+    <p class="muted" style="margin: 0; font-size: 16px; line-height: 1.55;">Live FAA weather, winds aloft, runway verdicts, fuel-stop math and your crew's FBO intel on one screen.</p>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+      <span style="display: flex; align-items: center; justify-content: center; gap: 10px; background: #4CC9FF; color: #06131F; font-weight: 800; font-size: 16px; padding: 17px 20px; border-radius: 14px;">Start free · 14-day Pro trial</span>
+      <span style="display: flex; align-items: center; justify-content: center; border: 1px solid #2A3A55; color: #E6EAF2; font-weight: 700; font-size: 15px; padding: 15px 20px; border-radius: 14px;">See how it saves money</span>
+    </div>
+    <div class="dim" style="font-size: 12px; text-align: center;">No card. Works offline in the airplane.</div>
+  </div>
+
+  <div style="background: rgba(47,210,125,.10); border: 1px solid rgba(47,210,125,.45); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 4px; text-align: center;">
+    <div style="font-family: Michroma, sans-serif; font-size: 10px; letter-spacing: .18em; color: #2FD27D;">WORTH THE STOP</div>
+    <div class="mono" style="font-size: 46px; font-weight: 700; color: #2FD27D; line-height: 1.1;">+$191</div>
+    <div class="dim" style="font-size: 12px;">KHPN $9.40 vs KBDR $7.10 · 150 gal · after the extra landing, takeoff and 10-minute detour</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+    <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 4px;"><div class="mono" style="font-size: 26px; font-weight: 700; color: #4CC9FF;">$2.30</div><div class="dim" style="font-size: 12px; line-height: 1.4;">per gallon between two FBOs 27 nm apart</div></div>
+    <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 4px;"><div class="mono" style="font-size: 26px; font-weight: 700;">42 <span class="dim" style="font-size: 13px;">vs</span> 35</div><div class="dim" style="font-size: 12px; line-height: 1.4;">minutes out and back, winds applied</div></div>
+    <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 4px;"><div class="mono" style="font-size: 26px; font-weight: 700;">4,493</div><div class="dim" style="font-size: 12px; line-height: 1.4;">US airports, runways drawn to scale</div></div>
+    <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 4px;"><div class="mono" style="font-size: 26px; font-weight: 700;">0 bars</div><div class="dim" style="font-size: 12px; line-height: 1.4;">needed once it's on your phone</div></div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div class="eyebrow">What it does</div>
+    <div class="card" style="padding: 16px; display: flex; gap: 12px; align-items: flex-start;"><span class="pill good" style="margin-top: 2px;">WIDE OPEN</span><div><div style="font-weight: 800; font-size: 15px;">Runway verdicts, to scale</div><div class="muted" style="font-size: 13px; line-height: 1.45;">Every runway graded and drawn from FAA geometry. Unlit fields flagged before an 11 p.m. arrival.</div></div></div>
+    <div class="card" style="padding: 16px; display: flex; gap: 12px; align-items: flex-start;"><span class="pill ion" style="margin-top: 2px;">FL260</span><div><div style="font-weight: 800; font-size: 15px;">Legs that know the wind</div><div class="muted" style="font-size: 13px; line-height: 1.45;">Real groundspeed, block time, burn and cost per leg from FAA winds aloft.</div></div></div>
+    <div class="card" style="padding: 16px; display: flex; gap: 12px; align-items: flex-start;"><span class="pill good" style="margin-top: 2px;">VFR</span><div><div style="font-weight: 800; font-size: 15px;">Live weather with a runway pick</div><div class="muted" style="font-size: 13px; line-height: 1.45;">METAR and TAF, head and crosswind per runway, density altitude, best runway now.</div></div></div>
+    <div class="card" style="padding: 16px; display: flex; gap: 12px; align-items: flex-start;"><span class="pill good" style="margin-top: 2px;">CREW CAR</span><div><div style="font-weight: 800; font-size: 15px;">Crew intel that follows the airport</div><div class="muted" style="font-size: 13px; line-height: 1.45;">Prices, FBOs, crew cars and notes shared with your co-pilot or the owner.</div></div></div>
+  </div>
+
+  <div class="card" style="padding: 22px; display: flex; flex-direction: column; gap: 12px; border-color: rgba(76,201,255,.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center;"><div class="eyebrow">Pro</div><span class="pill ion">14-DAY TRIAL</span></div>
+    <div class="mono" style="font-size: 36px; font-weight: 700;">$9.99<span class="dim" style="font-size: 14px; font-weight: 400;">/mo</span> <span class="dim" style="font-size: 14px;">or</span> $79<span class="dim" style="font-size: 14px; font-weight: 400;">/yr</span></div>
+    <div class="muted" style="font-size: 13px; line-height: 1.6;">Unlimited trips, winds aloft, live crosswind, market reference, FBO intel, crew sharing. Free tier keeps airports, weather, Near Me and the calculator.</div>
+    <span style="display: flex; align-items: center; justify-content: center; background: #4CC9FF; color: #06131F; font-weight: 800; font-size: 15px; padding: 15px 20px; border-radius: 14px;">Start Pro trial</span>
+  </div>
+
+  <div class="dim" style="font-size: 11px; text-align: center; line-height: 1.5;">www.jetdesk.ai · hello@jetdesk.ai<br>Planning aid only, not for navigation.</div>
+</div>
+</x-dc>
+</body>
+</html>
