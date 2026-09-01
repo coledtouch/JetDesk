@@ -8,14 +8,14 @@ crons = ["0 13 * * *"]   # daily 13:00 UTC (09:00 Eastern in summer)
 [[d1_databases]]
 binding = "DB"
 database_name = "jetdesk"
-database_id = "<D1_DATABASE_ID>"
+database_id = "dc65ccec-4051-4fb9-b468-2146fecf945b"
 
 [[kv_namespaces]]
 binding = "PRICES"
-id = "<KV_NAMESPACE_ID>"
+id = "7eae7aefb55b4a869769af8d628255cd"
 
 [vars]
 BRAND = "JetDesk"
 EMAIL_FROM = "JetDesk <hello@jetdesk.ai>"
-CF_ACCOUNT_ID = "<CLOUDFLARE_ACCOUNT_ID>"
+CF_ACCOUNT_ID = "ba46412ff1f79be9aef72d7f1895fd78"
 # secrets: EMAIL_API_TOKEN (wrangler secret put EMAIL_API_TOKEN)
