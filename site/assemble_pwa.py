@@ -1,6 +1,7 @@
 import hashlib, json, os, re
 import legal
 import content
+import airports
 
 head = open('app_head.html').read()
 app_js = open('app.js').read()
@@ -80,17 +81,39 @@ for asset_path in ('dist/favicon.ico',):
 
 app_v = 'v' + hashlib.md5((css + markup + app_js + data + asset_hash.hexdigest()).encode()).hexdigest()[:8]
 pwa_js = pwa_js.replace('__APP_V__', app_v).replace('__ICON_192__', icon_192)
+# dataset as its own precached file; the app boots once it has loaded (offline: from the service worker cache)
+data_hash = hashlib.md5(data.encode()).hexdigest()[:8]
+os.makedirs('dist/data', exist_ok=True)
+for old in os.listdir('dist/data'):
+  os.remove(os.path.join('dist/data', old))
+data_path = '/data/airports.' + data_hash + '.json'
+open('dist' + data_path, 'w').write(open('airports_us.json').read())
 app_js_safe = app_js.replace('</script', '<\\/script')
+boot_js = ('function __jdBoot(d){window.__AP=d;\n' + app_js_safe + '\n}\n' +
+  "(function(){var u='" + data_path + "';var go=function(d){try{__jdBoot(d)}catch(e){console.error(e)}};" +
+  "fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(go).catch(function(){" +
+  "caches&&caches.match?caches.match(u).then(function(r){return r?r.json():[]}).then(go).catch(function(){go([])}):go([])})})();")
 pwa_js_safe = pwa_js.replace('</script', '<\\/script')
 
 structured_data = {
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "Organization", "@id": "https://www.jetdesk.ai/#org", "name": "JetDesk.AI", "url": "https://www.jetdesk.ai/",
+      "logo": {"@type": "ImageObject", "url": "https://www.jetdesk.ai/icons/icon-512.png", "width": 512, "height": 512},
+      "email": "hello@jetdesk.ai"
+    },
+    {
+      "@type": "WebSite", "@id": "https://www.jetdesk.ai/#site", "name": "JetDesk.AI", "url": "https://www.jetdesk.ai/",
+      "publisher": {"@id": "https://www.jetdesk.ai/#org"}, "inLanguage": "en-US"
+    },
+    {
       "@type": "SoftwareApplication",
       "name": "JetDesk.AI",
       "url": "https://www.jetdesk.ai/",
       "applicationCategory": "TravelApplication",
+      "publisher": {"@id": "https://www.jetdesk.ai/#org"},
+      "image": "https://www.jetdesk.ai/img/og-jetdesk.a3a1bd3d.jpg",
       "operatingSystem": "Web, iOS, Android",
       "description": "Trip cost, fuel-stop math, runway verdicts and live FAA weather for pilots who manage the airplane.",
       "featureList": [
@@ -167,9 +190,8 @@ index = f"""<!doctype html>
 </head>
 <body>
 {markup}
-<script id="apdata" type="application/json">{data}</script>
 <script>
-{app_js_safe}
+{boot_js}
 </script>
 <script>
 {pwa_js_safe}
@@ -182,6 +204,12 @@ open('dist/index.html', 'w').write(index)
 # ---- legal pages (standalone /terms/ and /privacy/) ----
 _pages = dict(legal.build_pages())
 _pages.update(content.build_pages())
+_ap_pages, _ap_sitemap, _ap_count = airports.build(json.loads(open('airports_us.json').read()))
+_pages.update(_ap_pages)
+os.makedirs('dist/notes', exist_ok=True)
+open('dist/notes/feed.xml', 'w').write(content.rss())
+open('dist/sitemap-airports.xml', 'w').write(_ap_sitemap)
+print('airport pages:', _ap_count)
 for _slug, _html in _pages.items():
   os.makedirs('dist/' + _slug, exist_ok=True)
   open('dist/' + _slug + '/index.html', 'w').write(_html)
@@ -210,7 +238,7 @@ manifest = {
 open('dist/manifest.webmanifest', 'w').write(json.dumps(manifest, indent=2))
 
 # ---- service worker ----
-core = ['/', '/index.html', '/manifest.webmanifest', '/favicon.ico']
+core = ['/', '/index.html', '/manifest.webmanifest', '/favicon.ico', data_path]
 core += sorted(ICONS.values())
 core += ['/fonts/' + f for f in sorted(os.listdir('dist/fonts')) if f.endswith('.woff2')]
 if os.path.isdir('dist/img'):
@@ -246,6 +274,21 @@ function networkFirst(req, fallbackURL) {
     }).catch(() => { clearTimeout(timer); if (!done) { done = true; fromCache(); } });
   });
 }
+/* ---- push notifications ---- */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'JetDesk', body: e.data ? e.data.text() : '' }; }
+  const opts = { body: d.body || '', icon: '%s', badge: '%s', tag: d.tag || 'jetdesk', renotify: !!d.tag, data: { url: d.url || '/' } };
+  e.waitUntil(self.registration.showNotification(d.title || 'JetDesk', opts));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || '/', location.origin).href;
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus(); } }
+    return clients.openWindow(url);
+  }));
+});
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -269,7 +312,7 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
-""" % (app_v, json.dumps(core))
+""" % (app_v, json.dumps(core), icon_192, icon_192)
 open('dist/sw.js', 'w').write(sw)
 
 # ---- headers ----
@@ -295,6 +338,15 @@ open('dist/_headers', 'w').write("""/*
 /img/*
   Cache-Control: public, max-age=31536000, immutable
 
+/data/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/airports/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/notes/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
 /sw.js
   Cache-Control: no-cache
 
@@ -307,14 +359,22 @@ Allow: /
 Sitemap: https://www.jetdesk.ai/sitemap.xml
 """)
 
+_lm = airports.sitemap_lastmod()
 open('dist/sitemap.xml', 'w').write("""<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>https://www.jetdesk.ai/sitemap-pages.xml</loc><lastmod>%s</lastmod></sitemap>
+  <sitemap><loc>https://www.jetdesk.ai/sitemap-airports.xml</loc><lastmod>%s</lastmod></sitemap>
+</sitemapindex>
+""" % (_lm, _lm))
+open('dist/sitemap-pages.xml', 'w').write("""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.jetdesk.ai/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.jetdesk.ai/</loc><lastmod>%s</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://www.jetdesk.ai/terms/</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
   <url><loc>https://www.jetdesk.ai/privacy/</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
   <url><loc>https://www.jetdesk.ai/notes/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.jetdesk.ai/notes/fuel-stop-math/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n  <url><loc>https://www.jetdesk.ai/notes/density-altitude-turboprops/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n  <url><loc>https://www.jetdesk.ai/notes/how-jetdesk-computes-trip-cost/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n</urlset>
-""")
+  <url><loc>https://www.jetdesk.ai/notes/fuel-stop-math/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n  <url><loc>https://www.jetdesk.ai/notes/density-altitude-turboprops/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n  <url><loc>https://www.jetdesk.ai/notes/how-jetdesk-computes-trip-cost/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+</urlset>
+""" % _lm)
 
 print('app version:', app_v)
 print('index bytes:', len(index))

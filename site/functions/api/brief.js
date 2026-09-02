@@ -29,7 +29,7 @@ export async function onRequestPost({ request, env }) {
       from: s(l.from, 4).toUpperCase(), to: s(l.to, 4).toUpperCase(),
       fromName: s(l.fromName, 60), toName: s(l.toName, 60),
       nm: f(l.nm), block: f(l.block), burn: f(l.burn), cost: f(l.cost), gs: f(l.gs), wind: s(l.wind, 40),
-      rw: s(l.rw, 40), note: s(l.note, 200),
+      rw: s(l.rw, 40), note: s(l.note, 200), alt: s(l.alt, 4).toUpperCase(), land: f(l.land), res: f(l.res),
     })),
     notes: s(t.notes, 600),
   };

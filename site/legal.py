@@ -42,6 +42,10 @@ p b,li b{color:var(--ink)}
 ul{margin:0 0 12px;padding-left:22px;color:var(--ink2)}
 li{margin-bottom:6px}
 .lead{font-size:16.5px;color:var(--ink2)}
+.crumbs{font-size:12.5px;color:var(--ink3);margin:0 0 10px}.crumbs a{color:var(--ink3);text-decoration:none}.crumbs a:hover{color:var(--acc)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}@media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}.stats .c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.stats .n{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink)}.stats .l{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin-top:2px}
+.cta{display:inline-block;background:var(--acc);color:#06131F;font-weight:800;padding:11px 18px;border-radius:10px;text-decoration:none;margin:6px 0}
+.cols{columns:2;column-gap:24px}@media(min-width:640px){.cols{columns:3}}.cols a{display:block;padding:3px 0;text-decoration:none;color:var(--ink2);break-inside:avoid}.cols a b{font-family:var(--mono);color:var(--ink)}
 .callout{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;padding:14px 16px;margin:16px 0;color:var(--ink2)}
 .callout.safety{border-left-color:#FFB020}
 .callout b{color:var(--ink)}
@@ -62,26 +66,44 @@ footer.legal a{color:var(--ink3)}
 MARK_SVG = '<svg class="mark" viewBox="0 0 72 72" fill="none" aria-hidden="true"><rect x="2" y="2" width="68" height="68" rx="18" fill="var(--card)" stroke="var(--line2)" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="var(--acc)"/><path d="M22 54 H50" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.55"/></svg>'
 
 
-def legal_page(slug, title, description, body_html):
+OG_IMAGE = 'https://www.jetdesk.ai/img/og-jetdesk.a3a1bd3d.jpg'
+
+def breadcrumb_ld(items):
+  """items: list of (name, url)"""
+  import json as _json
+  return _json.dumps({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+    {"@type": "ListItem", "position": i + 1, "name": n, "item": u} for i, (n, u) in enumerate(items)]}, separators=(',', ':')).replace('</', '<\\/')
+
+def legal_page(slug, title, description, body_html, extra_head='', og_type='website', full_title=None):
+  page_title = full_title or (title + ' | JetDesk.AI')
   return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{title} | JetDesk.AI</title>
+<title>{page_title}</title>
 <meta name="description" content="{description}">
-<meta name="robots" content="index,follow">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F6FA">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070B14">
 <link rel="canonical" href="https://www.jetdesk.ai/{slug}/">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="stylesheet" href="/fonts/fonts.css">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{og_type}">
 <meta property="og:site_name" content="JetDesk.AI">
-<meta property="og:title" content="{title} | JetDesk.AI">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="{page_title}">
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="https://www.jetdesk.ai/{slug}/">
+<meta property="og:image" content="{OG_IMAGE}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{page_title}">
+<meta name="twitter:description" content="{description}">
+<meta name="twitter:image" content="{OG_IMAGE}">
+{extra_head}
 <style>{PAGE_CSS}</style>
 </head>
 <body>
@@ -92,7 +114,7 @@ def legal_page(slug, title, description, body_html):
 <main>
 {body_html}
 <footer class="legal">
-  JetDesk.AI · <a href="/notes/">Field notes</a> · <a href="/terms/">Terms of Service</a> · <a href="/privacy/">Privacy Policy</a> · <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a><br>
+  JetDesk.AI · <a href="/airports/">Airport directory</a> · <a href="/notes/">Field notes</a> · <a href="/terms/">Terms of Service</a> · <a href="/privacy/">Privacy Policy</a> · <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a><br>
   Planning aid only, not for navigation.
 </footer>
 </main>

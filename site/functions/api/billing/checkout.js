@@ -23,6 +23,11 @@ export async function onRequestPost({ request, env }) {
     'subscription_data[metadata][user_id]': user.id,
     allow_promotion_codes: 'true',
   };
+  /* one month free for a referred pilot's first subscription, or for a referrer with credits waiting; Checkout
+     does not allow a discount together with the promo-code box, so the box goes away in that case */
+  const referredFirst = !!user.referred_by && !user.stripe_sub;
+  const credit = (user.referral_credits || 0) > 0;
+  if (referredFirst || credit) { params['discounts[0][coupon]'] = env.STRIPE_REFERRAL_COUPON || 'REFERRAL1M'; delete params.allow_promotion_codes; }
   if (user.stripe_customer) params.customer = user.stripe_customer;
   else params.customer_email = user.email;
   try {

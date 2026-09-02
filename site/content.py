@@ -1,13 +1,14 @@
 # Field notes: short, useful articles built as static pages at /notes/<slug>/ by assemble_pwa.py.
 # They share the legal page template (brand tokens, self-hosted fonts, no scripts).
-from legal import legal_page
+from legal import legal_page, breadcrumb_ld, OG_IMAGE
+import json
 
 ARTICLES = [
   {
     'slug': 'fuel-stop-math',
     'title': 'What a fuel stop actually saves',
     'description': 'The arithmetic behind the fuel stop decision: price gap times gallons, minus the cost of the extra cycle and detour, and the break-even gap that makes it worth it.',
-    'date': 'September 2026',
+    'date': 'September 2026', 'iso': '2026-09-01',
     'body': """
 <p class="lead">Every pilot who manages an airplane has done this math on a napkin: the FBO at the destination wants $9.40 for Jet A, the field twenty miles back wants $7.10, and the tanks need 150 gallons. Is the stop worth it? Here is the math JetDesk runs, and the two places where napkins usually go wrong.</p>
 
@@ -34,7 +35,7 @@ ARTICLES = [
     'slug': 'density-altitude-turboprops',
     'title': 'Density altitude for turboprop pilots',
     'description': 'What hot days and high fields do to takeoff and landing distance, the rules of thumb JetDesk uses on airport pages, and why a 50 percent margin is the number to plan around.',
-    'date': 'September 2026',
+    'date': 'September 2026', 'iso': '2026-09-01',
     'body': """
 <p class="lead">Turboprops are forgiving airplanes right up until a summer afternoon at a 5,000 ft field, when the book number you remember from sea level turns out to be a thousand feet short. JetDesk puts a runway estimate on every airport page so the surprise happens on the screen, not on the roll.</p>
 
@@ -63,7 +64,7 @@ ARTICLES = [
     'slug': 'how-jetdesk-computes-trip-cost',
     'title': 'How JetDesk computes trip cost',
     'description': 'The inputs behind the per-leg cost on the Trip tab: distance, winds aloft, block overhead, taxi fuel, cruise burn and a planning price, plus what is deliberately left out.',
-    'date': 'September 2026',
+    'date': 'September 2026', 'iso': '2026-09-01',
     'body': """
 <p class="lead">The Trip tab turns a list of airport codes into a number with a dollar sign. Here is exactly how, so you can tune the inputs to your airplane and trust the result.</p>
 
@@ -102,10 +103,28 @@ def index_body():
   items = ''.join('<div class="callout" style="border-left-color:var(--acc)"><h2 style="margin:0 0 4px"><a href="/notes/%s/" style="text-decoration:none">%s</a></h2><p style="margin:0">%s</p><div class="effdate" style="margin:6px 0 0">%s</div></div>' % (a['slug'], a['title'], a['description'], a['date'].upper()) for a in ARTICLES)
   return '<h1>Field notes</h1><div class="effdate">FROM THE JETDESK DESK</div><p class="lead">Short, useful notes on the arithmetic behind managing an airplane: fuel stops, runway margins, trip cost. Written for pilots who have stood on the ramp.</p>' + items
 
+def article_ld(a):
+  url = 'https://www.jetdesk.ai/notes/%s/' % a['slug']
+  d = {"@context": "https://schema.org", "@type": "Article", "headline": a['title'], "description": a['description'],
+       "datePublished": a['iso'], "dateModified": a['iso'], "mainEntityOfPage": url, "image": OG_IMAGE,
+       "author": {"@type": "Organization", "name": "JetDesk.AI", "url": "https://www.jetdesk.ai/"},
+       "publisher": {"@type": "Organization", "name": "JetDesk.AI", "url": "https://www.jetdesk.ai/", "logo": {"@type": "ImageObject", "url": "https://www.jetdesk.ai/icons/icon-512.png"}}}
+  return json.dumps(d, separators=(',', ':')).replace('</', '<\\/')
+
 def build_pages():
   out = {}
   for a in ARTICLES:
-    body = '<h1>%s</h1><div class="effdate">FIELD NOTES · %s</div>%s<p style="margin-top:26px"><a href="/notes/">All field notes</a> · <a href="/">Open JetDesk</a></p>' % (a['title'], a['date'].upper(), a['body'])
-    out['notes/' + a['slug']] = legal_page('notes/' + a['slug'], a['title'], a['description'], body)
-  out['notes'] = legal_page('notes', 'Field notes', 'Short, useful notes on fuel stops, runway margins and trip cost from JetDesk.AI.', index_body())
+    body = '<nav class="crumbs" aria-label="Breadcrumb"><a href="/">JetDesk</a> &rsaquo; <a href="/notes/">Field notes</a></nav><h1>%s</h1><div class="effdate">FIELD NOTES · %s</div>%s<p style="margin-top:26px"><a href="/notes/">All field notes</a> · <a href="/airports/">Airport directory</a> · <a href="/">Open JetDesk</a></p>' % (a['title'], a['date'].upper(), a['body'])
+    extra = ('<meta property="article:published_time" content="%sT12:00:00Z"><meta property="article:section" content="Field notes">' % a['iso'] +
+             '<script type="application/ld+json">%s</script><script type="application/ld+json">%s</script>' % (article_ld(a), breadcrumb_ld([('JetDesk.AI', 'https://www.jetdesk.ai/'), ('Field notes', 'https://www.jetdesk.ai/notes/'), (a['title'], 'https://www.jetdesk.ai/notes/%s/' % a['slug'])])))
+    out['notes/' + a['slug']] = legal_page('notes/' + a['slug'], a['title'], a['description'], body, extra_head=extra, og_type='article')
+  out['notes'] = legal_page('notes', 'Field notes', 'Short, useful notes on fuel stops, runway margins and trip cost from JetDesk.AI.', index_body(),
+    extra_head='<link rel="alternate" type="application/rss+xml" title="JetDesk field notes" href="/notes/feed.xml">' +
+      '<script type="application/ld+json">%s</script>' % breadcrumb_ld([('JetDesk.AI', 'https://www.jetdesk.ai/'), ('Field notes', 'https://www.jetdesk.ai/notes/')]))
   return out
+
+def rss():
+  from xml.sax.saxutils import escape
+  items = ''.join('<item><title>%s</title><link>https://www.jetdesk.ai/notes/%s/</link><guid>https://www.jetdesk.ai/notes/%s/</guid><pubDate>%s</pubDate><description>%s</description></item>' % (
+    escape(a['title']), a['slug'], a['slug'], __import__('email.utils', fromlist=['x']).format_datetime(__import__('datetime').datetime.fromisoformat(a['iso'] + 'T12:00:00+00:00')), escape(a['description'])) for a in ARTICLES)
+  return '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>JetDesk.AI field notes</title><link>https://www.jetdesk.ai/notes/</link><description>Short, useful notes on fuel stops, runway margins and trip cost for pilots who manage the airplane.</description><language>en-us</language>%s</channel></rss>' % items

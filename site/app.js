@@ -1,10 +1,11 @@
 /* JetDesk.AI */
+/* The airport dataset is a separate, precached JSON file; the build wraps this whole file in a boot
+   function that runs once the data has arrived (see assemble_pwa.py). */
 (function () {
 'use strict';
 
 /* ---------- data ---------- */
-var AP = [];
-try { AP = JSON.parse(document.getElementById('apdata').textContent); } catch (e) { AP = []; }
+var AP = window.__AP || [];
 var BY = {};                       // code -> airport
 AP.forEach(function (a) {
   BY[a.c] = a;
@@ -22,7 +23,8 @@ var SKEY = 'mfd1';
 var DEF = {
   settings: { ktas: 260, gph: 40, taxiGal: 5, blockOverheadMin: 12, stopGal: 15,
               groundStopMin: 25, price: 7.25, homeBase: 'KPVD', tail: '', theme: 'auto', crzAlt: 26000,
-              acType: 'Piper Meridian', toSL: 2438, ldgSL: 2110 },
+              acType: 'Piper Meridian', toSL: 2438, ldgSL: 2110, usable: 170, resMin: 45, resGal: 0,
+              emptyWt: 3420, maxTO: 5092, maxLdg: 4850, maxZFW: 4850, paxWt: 190 },
   profiles: [],
   activeProfile: 0,
   trips: [],
@@ -55,17 +57,17 @@ function loadS() {
    Book numbers are published sea-level, ISA, max-weight, 50 ft obstacle figures rounded for planning.
    They are starting points; the POH for the specific serial number wins. */
 var PRESETS = [
-  { name: 'Piper Meridian', ktas: 260, gph: 40, crzAlt: 26000, toSL: 2438, ldgSL: 2110, stopGal: 15 },
-  { name: 'Piper M600', ktas: 274, gph: 41, crzAlt: 28000, toSL: 2635, ldgSL: 2659, stopGal: 15 },
-  { name: 'Pilatus PC-12', ktas: 285, gph: 60, crzAlt: 28000, toSL: 2485, ldgSL: 2170, stopGal: 20 },
-  { name: 'TBM 960', ktas: 320, gph: 57, crzAlt: 30000, toSL: 2535, ldgSL: 2430, stopGal: 20 },
-  { name: 'King Air 350i', ktas: 312, gph: 100, crzAlt: 30000, toSL: 3300, ldgSL: 2692, stopGal: 35 },
-  { name: 'Citation M2', ktas: 400, gph: 130, crzAlt: 41000, toSL: 3210, ldgSL: 2590, stopGal: 45 },
-  { name: 'Citation CJ3+', ktas: 416, gph: 150, crzAlt: 45000, toSL: 3180, ldgSL: 2770, stopGal: 50 },
-  { name: 'Phenom 100EV', ktas: 405, gph: 130, crzAlt: 41000, toSL: 3190, ldgSL: 2430, stopGal: 45 },
-  { name: 'Phenom 300E', ktas: 453, gph: 180, crzAlt: 45000, toSL: 3209, ldgSL: 2212, stopGal: 60 },
+  { name: 'Piper Meridian', ktas: 260, gph: 40, crzAlt: 26000, toSL: 2438, ldgSL: 2110, stopGal: 15, usable: 170, emptyWt: 3420, maxTO: 5092, maxLdg: 4850, maxZFW: 4850 },
+  { name: 'Piper M600', ktas: 274, gph: 41, crzAlt: 28000, toSL: 2635, ldgSL: 2659, stopGal: 15, usable: 260, emptyWt: 3750, maxTO: 6000, maxLdg: 5800, maxZFW: 5000 },
+  { name: 'Pilatus PC-12', ktas: 285, gph: 60, crzAlt: 28000, toSL: 2485, ldgSL: 2170, stopGal: 20, usable: 402, emptyWt: 6800, maxTO: 10450, maxLdg: 9921, maxZFW: 9039 },
+  { name: 'TBM 960', ktas: 320, gph: 57, crzAlt: 30000, toSL: 2535, ldgSL: 2430, stopGal: 20, usable: 291, emptyWt: 4969, maxTO: 7394, maxLdg: 7024, maxZFW: 6032 },
+  { name: 'King Air 350i', ktas: 312, gph: 100, crzAlt: 30000, toSL: 3300, ldgSL: 2692, stopGal: 35, usable: 539, emptyWt: 9540, maxTO: 15000, maxLdg: 15000, maxZFW: 12500 },
+  { name: 'Citation M2', ktas: 400, gph: 130, crzAlt: 41000, toSL: 3210, ldgSL: 2590, stopGal: 45, usable: 496, emptyWt: 6990, maxTO: 10700, maxLdg: 9900, maxZFW: 8400 },
+  { name: 'Citation CJ3+', ktas: 416, gph: 150, crzAlt: 45000, toSL: 3180, ldgSL: 2770, stopGal: 50, usable: 711, emptyWt: 8540, maxTO: 13870, maxLdg: 12750, maxZFW: 10510 },
+  { name: 'Phenom 100EV', ktas: 405, gph: 130, crzAlt: 41000, toSL: 3190, ldgSL: 2430, stopGal: 45, usable: 424, emptyWt: 7300, maxTO: 10703, maxLdg: 9766, maxZFW: 8300 },
+  { name: 'Phenom 300E', ktas: 453, gph: 180, crzAlt: 45000, toSL: 3209, ldgSL: 2212, stopGal: 60, usable: 795, emptyWt: 11583, maxTO: 18552, maxLdg: 17229, maxZFW: 14220 },
 ];
-var PROFILE_KEYS = ['acType', 'tail', 'ktas', 'gph', 'crzAlt', 'taxiGal', 'blockOverheadMin', 'stopGal', 'groundStopMin', 'toSL', 'ldgSL'];
+var PROFILE_KEYS = ['acType', 'tail', 'ktas', 'gph', 'crzAlt', 'taxiGal', 'blockOverheadMin', 'stopGal', 'groundStopMin', 'toSL', 'ldgSL', 'usable', 'resMin', 'resGal', 'emptyWt', 'maxTO', 'maxLdg', 'maxZFW', 'paxWt'];
 function profileFromSettings() {
   var o = {}; PROFILE_KEYS.forEach(function (k) { o[k] = S.settings[k]; }); return o;
 }
@@ -91,6 +93,8 @@ function applyPreset(name) {
   if (!p) return;
   S.settings.acType = p.name; S.settings.ktas = p.ktas; S.settings.gph = p.gph; S.settings.crzAlt = p.crzAlt;
   S.settings.toSL = p.toSL; S.settings.ldgSL = p.ldgSL; S.settings.stopGal = p.stopGal;
+  if (p.usable) S.settings.usable = p.usable;
+  ['emptyWt', 'maxTO', 'maxLdg', 'maxZFW'].forEach(function (k) { if (p[k]) S.settings[k] = p[k]; });
   saveActiveProfile(); save();
 }
 function profileLabel(p) { return (p.tail ? p.tail + ' · ' : '') + (p.acType || 'Airplane'); }
@@ -197,6 +201,84 @@ function legCalc(fromA, toA) {
   var burn = block / 60 * num(st.gph, 40) + num(st.taxiGal, 5);
   return { d: d, block: block, burn: burn, cost: burn * num(st.price, 0), wind: wind };
 }
+/* ---------- dispatch fuel: reserve, alternate, landing fuel ----------
+   Each leg departs with `dep` gallons (blank = full usable) and must land with alternate burn plus reserve still aboard. */
+function reserveGal() {
+  var st = S.settings;
+  if (num(st.resGal) > 0) return num(st.resGal);
+  return num(st.resMin, 45) / 60 * num(st.gph, 40);
+}
+/* ---------- weight and balance lite (weights only, no arm/CG) ---------- */
+var LB_PER_GAL = 6.7; /* Jet A */
+function tripWeights(t) {
+  var st = S.settings;
+  var empty = num(st.emptyWt, 0), mto = num(st.maxTO, 0), mldg = num(st.maxLdg, 0), mzfw = num(st.maxZFW, 0);
+  if (!empty || !mto) return null;
+  var pax = Math.max(0, parseInt(t && t.pax, 10) || 0), bags = Math.max(0, num(t && t.bags, 0));
+  var payload = pax * num(st.paxWt, 190) + bags;
+  var zfw = empty + payload;
+  var maxFuelWt = Math.max(0, mto - zfw);
+  var maxFuelGal = maxFuelWt / LB_PER_GAL;
+  var usable = num(st.usable, 170);
+  return { pax: pax, bags: bags, payload: payload, zfw: zfw, mzfw: mzfw, mto: mto, mldg: mldg, maxFuelGal: maxFuelGal, capGal: Math.min(usable, maxFuelGal), usable: usable, zfwOver: mzfw > 0 && zfw > mzfw, fuelLimited: maxFuelGal < usable };
+}
+function altBurn(B, alt) {
+  var C = alt ? lookup(alt) : null;
+  if (!B || !C || C.c === B.c) return null;
+  var c = legCalc(B, C);
+  return { apt: C, burn: c.burn, d: c.d, block: c.block };
+}
+function legPlan(leg, A, B, t) {
+  var st = S.settings, usable = Math.max(1, num(st.usable, 170));
+  var wt = tripWeights(t || trip());
+  var cap = wt ? Math.max(1, Math.min(usable, wt.capGal)) : usable;
+  var c = legCalc(A, B);
+  var dep = num(leg.dep, 0) > 0 ? Math.min(num(leg.dep), usable) : cap;
+  var ab = altBurn(B, leg.alt);
+  var res = reserveGal();
+  var need = res + (ab ? ab.burn : 0);
+  var land = dep - c.burn;
+  var margin = land - need;
+  var status = margin < 0 ? 'bad' : (margin < usable * 0.1 ? 'warn' : 'good');
+  var tow = wt ? wt.zfw + dep * LB_PER_GAL : 0, ldw = wt ? wt.zfw + Math.max(0, land) * LB_PER_GAL : 0;
+  var overTO = wt && tow > wt.mto + 0.5, overLdg = wt && wt.mldg > 0 && ldw > wt.mldg + 0.5;
+  return { calc: c, dep: dep, usable: usable, cap: cap, alt: ab, res: res, need: need, land: land, margin: margin, status: status, full: !(num(leg.dep, 0) > 0),
+    wt: wt, tow: tow, ldw: ldw, overTO: overTO, overLdg: overLdg };
+}
+function actSpend(act) { return act && num(act.bought) > 0 && num(act.ppg) > 0 ? num(act.bought) * num(act.ppg) : 0; }
+function flownLegs() {
+  var out = [];
+  S.trips.forEach(function (t) {
+    t.legs.forEach(function (l, i) {
+      if (l.act && (num(l.act.blk) > 0 || num(l.act.used) > 0 || num(l.act.bought) > 0)) out.push({ trip: t, leg: l, i: i });
+    });
+  });
+  out.sort(function (a, b) { return (b.leg.act.date || '') < (a.leg.act.date || '') ? -1 : 1; });
+  return out;
+}
+/* What the log says about the airplane versus the numbers in Settings, from legs that stored their plan at logging time. */
+function learned() {
+  var burnR = [], blkD = [];
+  flownLegs().forEach(function (f) {
+    var a = f.leg.act, e = a.est;
+    if (!e) return;
+    if (num(a.used) > 0 && num(e.burn) > 0) burnR.push(num(a.used) / num(e.burn));
+    if (num(a.blk) > 0 && num(e.blk) > 0) blkD.push(num(a.blk) - num(e.blk));
+  });
+  var mean = function (x) { return x.reduce(function (p, q) { return p + q; }, 0) / x.length; };
+  var out = { n: Math.max(burnR.length, blkD.length) };
+  if (burnR.length >= 3) { out.burnPct = (mean(burnR) - 1) * 100; out.gph = Math.round(num(S.settings.gph) * mean(burnR)); }
+  if (blkD.length >= 3) { out.blkMin = mean(blkD); out.overhead = Math.max(0, Math.round(num(S.settings.blockOverheadMin, 12) + mean(blkD))); }
+  return out;
+}
+function parseBlk(v) {
+  v = String(v || '').trim(); if (!v) return 0;
+  var m = v.match(/^(\d+)[:h]\s*(\d{1,2})?/);
+  if (m) return parseInt(m[1], 10) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
+  var n = parseFloat(v); if (!isFinite(n)) return 0;
+  return n < 15 && v.indexOf('.') >= 0 ? Math.round(n * 60) : Math.round(n);
+}
+function fmtBlk(min) { min = Math.round(min); return Math.floor(min / 60) + ':' + ('0' + (min % 60)).slice(-2); }
 
 /* ---------- location / near me ---------- */
 var GEO = { mode: false, filter: 'all', busy: false };
@@ -346,7 +428,15 @@ function mergeShared(remoteFull) {
   if (Array.isArray(remoteFull.trips)) {
     var hasPendingTrips = S.q.some(function (o) { return o.op === 'trips_set'; });
     if (remoteFull.trips.length && !hasPendingTrips) {
-      S.trips = remoteFull.trips;
+      /* keep local trip objects alive (open editors hold references); refresh their contents from the cloud copy */
+      var byId = {};
+      S.trips.forEach(function (t) { byId[t.id] = t; });
+      S.trips = remoteFull.trips.map(function (rt) {
+        var lt = byId[rt.id];
+        if (!lt) return rt;
+        Object.keys(rt).forEach(function (k) { lt[k] = rt[k]; });
+        return lt;
+      });
       if (!S.trips.some(function (t) { return t.id === S.activeTrip; })) S.activeTrip = S.trips.length ? S.trips[0].id : null;
     } else if (!remoteFull.trips.length && S.trips.length && !hasPendingTrips) {
       queueTrips();
@@ -447,7 +537,8 @@ var MK = { data: null, at: 0, ttl: 15 * 60 * 1000 };
 function marketFetch() {
   if (!wxAvailable()) return Promise.resolve(null);
   if (MK.data && Date.now() - MK.at < MK.ttl) return Promise.resolve(MK.data);
-  return fetch('/api/market')
+  if (!AUTH.tok) return Promise.resolve(null);
+  return fetch('/api/market', { headers: { authorization: 'Bearer ' + AUTH.tok } })
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (d) { MK.data = d; MK.at = Date.now(); return d; })
     .catch(function () { return null; });
@@ -523,7 +614,8 @@ function windsFetch(region) {
   }
   if (WINDS.pending) return Promise.resolve(null);
   WINDS.pending = true;
-  return fetch('/api/winds?region=' + region)
+  if (!AUTH.tok) { WINDS.pending = false; return Promise.resolve(null); }
+  return fetch('/api/winds?region=' + region, { headers: { authorization: 'Bearer ' + AUTH.tok } })
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (d) {
       if (!d || !d.stations) return null;
@@ -863,6 +955,7 @@ function applyTheme() {
   var root = document.documentElement;
   if (t === 'auto') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', t);
+  root.style.colorScheme = t === 'auto' ? 'light dark' : t;
   $('themeBtn').textContent = t === 'auto' ? 'AUTO' : (t === 'light' ? 'DAY' : 'NIGHT');
   $('themeBtn').setAttribute('aria-label', 'Theme: ' + t + '. Change color theme');
   $('themeBtn').title = 'Theme: ' + t;
@@ -957,6 +1050,55 @@ function renderTripChips() {
   $('tripChips').innerHTML = h;
 }
 
+var editingLeg = null; // index of the leg whose plan/actuals editor is open
+function fuelLineHTML(pl, B) {
+  var col = pl.status === 'bad' ? 'var(--bad)' : (pl.status === 'warn' ? 'var(--warn)' : 'var(--good)');
+  var txt = 'Depart ' + fmtNum(pl.dep) + (pl.full ? (pl.cap < pl.usable - 0.5 ? ' (max by weight)' : ' (full)') : '') + ' gal · land <b style="color:' + col + '">' + fmtNum(pl.land) + '</b>' +
+    ' · need ' + fmtNum(pl.need) + ' (' + (pl.alt ? 'alt ' + esc(pl.alt.apt.c) + ' ' + fmtNum(pl.alt.burn) + ' + ' : '') + 'reserve ' + fmtNum(pl.res) + ')';
+  var verdict = pl.status === 'bad'
+    ? '<span class="pill bad">NEEDS A STOP</span>'
+    : (pl.status === 'warn' ? '<span class="pill warn">THIN ' + (pl.margin >= 0 ? '+' : '') + fmtNum(pl.margin) + ' GAL</span>' : '<span class="pill good">+' + fmtNum(pl.margin) + ' GAL MARGIN</span>');
+  var wtl = pl.wt ? '<div class="micro muted" style="margin-top:2px">Takeoff ' + fmtNum(pl.tow) + ' lb' + (pl.overTO ? ' <b style="color:var(--bad)">over max ' + fmtNum(pl.wt.mto) + '</b>' : ' (max ' + fmtNum(pl.wt.mto) + ')') + ' · landing ' + fmtNum(pl.ldw) + ' lb' + (pl.overLdg ? ' <b style="color:var(--bad)">over max ' + fmtNum(pl.wt.mldg) + '</b>' : pl.wt.mldg ? ' (max ' + fmtNum(pl.wt.mldg) + ')' : '') + (pl.full && pl.wt.fuelLimited ? ' · fuel capped at ' + fmtNum(pl.cap) + ' gal by weight' : '') + '</div>' : '';
+  return '<div class="spread" style="margin-top:6px;gap:8px;align-items:center"><div class="micro muted">' + txt + (pl.alt ? '' : ' · no alternate') + '</div>' + verdict + '</div>' + wtl +
+    (pl.status === 'bad' ? '<div class="micro" style="color:var(--bad);margin-top:3px">Short ' + fmtNum(-pl.margin) + ' gal of alternate plus reserve at ' + esc(B.c) + '. Plan a fuel stop or a closer alternate.</div>' : '');
+}
+function actLineHTML(leg, c) {
+  var a = leg.act; if (!a) return '';
+  var parts = [];
+  if (num(a.blk) > 0) parts.push(fmtBlk(a.blk) + ' block' + (num(a.blk) - c.block !== 0 ? ' <span class="muted">(' + (num(a.blk) > c.block ? '+' : '') + Math.round(num(a.blk) - c.block) + ' min vs plan)</span>' : ''));
+  if (num(a.used) > 0) parts.push(fmtNum(a.used) + ' gal used <span class="muted">(' + (num(a.used) > c.burn ? '+' : '') + Math.round((num(a.used) / Math.max(1, c.burn) - 1) * 100) + '% vs plan)</span>');
+  if (num(a.bought) > 0) parts.push(fmtNum(a.bought) + ' gal bought' + (num(a.ppg) > 0 ? ' @ $' + num(a.ppg).toFixed(2) + ' = <b>' + fmtMoney(actSpend(a)) + '</b>' : ''));
+  return '<div class="micro" style="margin-top:6px;padding:6px 8px;background:var(--card2);border-radius:8px"><span class="pill good" style="margin-right:6px">FLOWN' + (a.date ? ' ' + esc(a.date) : '') + '</span>' + parts.join(' · ') + '</div>';
+}
+function legEditorHTML(leg, i, A, B, pl) {
+  var a = leg.act || {};
+  var f = function (id, lab, val, ph, type) {
+    return '<label class="f"><span class="lab">' + lab + '</span><input class="t mono" id="' + id + '" ' + (type === 'text' ? 'type="text" autocapitalize="characters"' : 'type="number" inputmode="decimal" step="any"') + ' placeholder="' + esc(ph || '') + '" value="' + esc(val == null ? '' : String(val)) + '"></label>';
+  };
+  return '<div class="card flat" id="legEd" style="margin-top:8px;padding:10px 12px">' +
+    '<div class="lab">Fuel plan · ' + esc(A.c) + ' &#9656; ' + esc(B.c) + '</div>' +
+    '<div class="grid2">' +
+      '<div>' + f('leAlt', 'Alternate', leg.alt || '', 'KHPN', 'text') + '<div id="leAltSug"></div></div>' +
+      f('leDep', 'Depart fuel gal', num(leg.dep) > 0 ? leg.dep : '', (pl.cap < pl.usable - 0.5 ? 'max ' + fmtNum(pl.cap) + ' by weight' : 'full = ' + fmtNum(pl.usable))) +
+    '</div>' +
+    '<div class="lab" style="margin-top:8px">Actuals after the flight</div>' +
+    '<div class="grid2">' +
+      f('leDate', 'Date', a.date || today(), '', 'text') +
+      f('leBlk', 'Block h:mm', num(a.blk) > 0 ? fmtBlk(a.blk) : '', fmtBlk(pl.calc.block), 'text') +
+    '</div>' +
+    '<div class="grid2">' +
+      f('leUsed', 'Fuel used, gal', num(a.used) > 0 ? a.used : '', 'plan ' + fmtNum(pl.calc.burn)) +
+      f('leBought', 'Bought at ' + esc(B.c) + ' gal', num(a.bought) > 0 ? a.bought : '', '') +
+    '</div>' +
+    f('lePpg', 'Price paid, $/gal', num(a.ppg) > 0 ? num(a.ppg).toFixed(2) : '', '$' + num(S.settings.price).toFixed(2) + ' plan') +
+    '<div class="btnrow" style="margin-top:10px">' +
+      '<button class="btn primary" id="leSave">Save</button>' +
+      '<button class="btn ghost" id="leCancel">Cancel</button>' +
+      (leg.act ? '<button class="btn ghost danger" id="leClear">Clear actuals</button>' : '') +
+    '</div>' +
+    '<div class="micro muted" style="margin-top:6px">Fuel used and block time teach JetDesk your real burn and overhead (see Settings). Fuel bought and price feed the owner report and your price log.</div>' +
+  '</div>';
+}
 function legCardHTML(leg, i) {
   var A = lookup(leg.from), B = lookup(leg.to);
   if (!A || !B) {
@@ -965,14 +1107,18 @@ function legCardHTML(leg, i) {
       '<button class="iconbtn" data-delleg="' + i + '" aria-label="Delete leg">&#10005;</button></div>' +
       '<div class="tiny muted" style="margin-top:6px">Airport not in database. Check the code.</div></div>';
   }
-  var c = legCalc(A, B);
+  var pl = legPlan(leg, A, B), c = pl.calc;
   var br = bestRw(B), tier = br ? rTier(br) : 2, tw = TIER[tier];
-  return '<div class="card leg v-' + tw.cls + '">' +
+  var cardCls = pl.status === 'bad' ? 'bad' : tw.cls;
+  return '<div class="card leg v-' + cardCls + '">' +
     '<div class="spread">' +
-      '<div class="legroute">' + esc(A.c) + ' <span class="arr">&#9656;</span> ' + esc(B.c) + '</div>' +
+      '<div class="legroute">' + esc(A.c) + ' <span class="arr">&#9656;</span> ' + esc(B.c) + (leg.alt && pl.alt ? ' <span class="micro muted" style="font-family:var(--mono);letter-spacing:0">alt ' + esc(pl.alt.apt.c) + '</span>' : '') + '</div>' +
+      '<div style="display:flex;gap:4px">' +
+      (canEdit() ? '<button class="iconbtn" data-editleg="' + i + '" aria-label="Fuel plan and actuals" title="Fuel plan and actuals">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' : '') +
       '<button class="iconbtn" data-delleg="' + i + '" aria-label="Delete leg">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
-      '</button>' +
+      '</button></div>' +
     '</div>' +
     '<div class="legstats">' +
       '<span class="stat"><span class="n">' + fmtNm(c.d) + '</span><span class="u">nm</span></span>' +
@@ -982,6 +1128,9 @@ function legCardHTML(leg, i) {
       '<span class="stat"><span class="n">' + fmtMoney(c.cost) + '</span><span class="u">@ $' + num(S.settings.price).toFixed(2) + '</span></span>' +
     '</div>' +
     (c.wind ? '<div class="micro muted" style="margin-top:3px">winds aloft ' + ('00' + c.wind.dir).slice(-3) + '/' + ('0' + c.wind.spd).slice(-2) + ' at FL' + Math.round(c.wind.alt / 100) + ' (' + esc(c.wind.stn) + ')</div>' : '') +
+    fuelLineHTML(pl, B) +
+    actLineHTML(leg, c) +
+    (editingLeg === i ? legEditorHTML(leg, i, A, B, pl) : '') +
     '<button class="arrbox" style="width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit" data-openapt="' + esc(B.c) + '">' +
       '<div class="spread">' +
         '<div>' +
@@ -994,13 +1143,110 @@ function legCardHTML(leg, i) {
     '</button>' +
   '</div>';
 }
-
+function saveLegEditor(t, i) {
+  var leg = t.legs[i]; if (!leg) return;
+  var A = lookup(leg.from), B = lookup(leg.to); if (!A || !B) return;
+  var g = function (id) { var el = $(id); return el ? el.value : ''; };
+  var alt = lookup(g('leAlt'));
+  if (g('leAlt').trim() && !alt) { showToast('Alternate not in the database. Use the K-code.'); return; }
+  leg.alt = alt ? alt.c : '';
+  var dep = num(g('leDep'), 0); leg.dep = dep > 0 ? Math.round(dep) : 0;
+  var blk = parseBlk(g('leBlk')), used = num(g('leUsed'), 0), bought = num(g('leBought'), 0), ppg = num(g('lePpg'), 0);
+  var date = g('leDate').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) date = today();
+  if (blk > 0 || used > 0 || bought > 0) {
+    var c = legCalc(A, B);
+    var prev = leg.act || {};
+    leg.act = { date: date, blk: blk, used: Math.round(used * 10) / 10, bought: Math.round(bought * 10) / 10, ppg: Math.round(ppg * 100) / 100,
+      est: prev.est || { blk: Math.round(c.block), burn: Math.round(c.burn * 10) / 10, cost: Math.round(c.cost) } };
+    if (bought > 0 && ppg >= 0.5 && ppg <= 30 && (!prev.bought || prev.ppg !== leg.act.ppg)) {
+      /* a receipt is the best price data there is: log it for the crew */
+      var list = S.fuelLog[B.c] || (S.fuelLog[B.c] = []);
+      if (!list.some(function (e) { return e.date === date && Math.abs(num(e.price) - leg.act.ppg) < 0.005; })) {
+        list.push({ id: 'l' + Date.now(), fbo: 'receipt', price: leg.act.ppg, date: date });
+        S.q.push({ op: 'add', code: B.c, price: leg.act.ppg, date: date, fbo: 'receipt' });
+      }
+    }
+  } else if (leg.act) {
+    delete leg.act;
+  }
+  editingLeg = null; save(); queueTrips(); renderTrip();
+}
+function tripActuals(t) {
+  var o = { legs: 0, blk: 0, used: 0, bought: 0, spend: 0, estCost: 0, estBlk: 0, estBurn: 0, burnCost: 0 };
+  t.legs.forEach(function (l) {
+    var a = l.act; if (!a) return;
+    var A = lookup(l.from), B = lookup(l.to); if (!A || !B) return;
+    var e = a.est || legCalc(A, B);
+    o.legs++; o.blk += num(a.blk); o.used += num(a.used); o.bought += num(a.bought); o.spend += actSpend(a);
+    o.estCost += num(e.cost); o.estBlk += num(e.blk != null ? e.blk : e.block); o.estBurn += num(e.burn);
+  });
+  /* what the fuel burned cost at the average price actually paid: the fair comparison to the estimate */
+  o.burnCost = o.bought > 0 && o.spend > 0 ? o.used * (o.spend / o.bought) : 0;
+  return o;
+}
+function tripWeightHTML(t) {
+  var w = tripWeights(t);
+  if (!w) return '<div class="micro muted" style="margin-top:6px">Add your airplane\'s weights in Settings for a weight check on every leg.</div>';
+  var bits = ['payload ' + fmtNum(w.payload) + ' lb', 'zero fuel ' + fmtNum(w.zfw) + (w.zfwOver ? ' <b style="color:var(--bad)">over max ' + fmtNum(w.mzfw) + '</b>' : (w.mzfw ? ' (max ' + fmtNum(w.mzfw) + ')' : '')),
+    'max fuel <b>' + fmtNum(w.capGal) + ' gal</b>' + (w.fuelLimited ? ' by weight (usable ' + fmtNum(w.usable) + ')' : ' (tanks)')];
+  return '<div class="micro muted" style="margin-top:6px">' + bits.join(' · ') + ' · ' + fmtNum(num(S.settings.paxWt, 190)) + ' lb per person. Weights only, no CG; the POH loading chart is the authority.</div>';
+}
+function flightLogHTML() {
+  var fl = flownLegs();
+  var ym = today().slice(0, 7);
+  var m = { legs: 0, blk: 0, used: 0, bought: 0, spend: 0 };
+  fl.forEach(function (f) {
+    var a = f.leg.act; if ((a.date || '').slice(0, 7) !== ym) return;
+    m.legs++; m.blk += num(a.blk); m.used += num(a.used); m.bought += num(a.bought); m.spend += actSpend(a);
+  });
+  var months = {};
+  fl.forEach(function (f) { var k = (f.leg.act.date || '').slice(0, 7); if (k) months[k] = 1; });
+  var mk = Object.keys(months).sort().reverse();
+  var monthLabel = function (k) { var d = new Date(k + '-15T12:00:00'); return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
+  var h = '<h2 class="sec">Flight log</h2><div class="card">';
+  if (!fl.length) {
+    h += '<div class="tiny muted">Nothing logged yet. After a flight, tap the pencil on the leg and enter block time, fuel used and what you bought. JetDesk learns your real burn from it and builds the owner’s monthly report.</div>';
+  } else {
+    h += '<div class="legstats bigtotal">' +
+      '<span class="stat"><span class="n">' + fmtBlk(m.blk) + '</span><span class="u">hrs this month</span></span>' +
+      '<span class="stat"><span class="n">' + m.legs + '</span><span class="u">legs</span></span>' +
+      '<span class="stat"><span class="n">' + fmtNum(m.bought) + '</span><span class="u">gal bought</span></span>' +
+      '<span class="stat"><span class="n">' + fmtMoney(m.spend) + '</span><span class="u">fuel spend</span></span>' +
+    '</div><hr class="dash">';
+    h += fl.slice(0, 8).map(function (f) {
+      var a = f.leg.act;
+      return '<div class="rowline" style="padding:5px 0;border-bottom:1px solid var(--line)"><span class="mono tiny" style="flex:1"><span class="muted">' + esc(a.date || '') + '</span> ' + esc(f.leg.from) + ' &#9656; ' + esc(f.leg.to) + '</span>' +
+        '<span class="mono tiny">' + (num(a.blk) > 0 ? fmtBlk(a.blk) : '') + (num(a.used) > 0 ? ' · ' + fmtNum(a.used) + ' gal' : '') + (actSpend(a) ? ' · ' + fmtMoney(actSpend(a)) : '') + '</span></div>';
+    }).join('');
+    if (fl.length > 8) h += '<div class="micro muted" style="margin-top:4px">' + (fl.length - 8) + ' more in older trips.</div>';
+  }
+  h += '<div class="rowline" style="margin-top:10px;gap:8px">' +
+    '<select class="t" id="rpMonth" style="flex:1;min-height:38px">' + (mk.length ? mk : [ym]).map(function (k) { return '<option value="' + k + '">' + monthLabel(k) + '</option>'; }).join('') + '</select>' +
+    (isProUser() ? '<button class="btn small" id="rpBtn">Owner report</button>' : '') +
+  '</div>' +
+  (isProUser() ? '<div class="micro muted" style="margin-top:6px">A one-page monthly report for the owner: hours, gallons, spend, price paid versus plan. Pro accounts also get it by email on the first of each month.</div>'
+    : '<div style="margin-top:8px">' + upsellHTML('Monthly owner report: hours, gallons, spend and estimate accuracy, emailed on the first of the month.') + '</div>') +
+  '<div id="rpOut" class="tiny" style="margin-top:6px"></div></div>';
+  return h;
+}
+function ownerReport(month) {
+  var out = $('rpOut'); if (out) out.textContent = 'Building the report...';
+  flushQ(function () { api('/api/report', { body: { month: month, tail: S.settings.tail || '', aircraft: S.settings.acType || '', price: num(S.settings.price) } }).then(function (r) {
+    if (!r.ok) { if (out) out.textContent = ''; showToast(r.data.error || 'Could not build the report.'); return; }
+    var url = r.data.url;
+    if (out) out.innerHTML = 'Report link (valid one year): <a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url.replace(/^https?:\/\//, '')) + '</a>';
+    if (navigator.share) { navigator.share({ title: 'JetDesk owner report', url: url }).catch(function () {}); }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { showToast('Link copied.'); }).catch(function () {}); }
+  }); });
+}
 function shareBrief(t) {
   var legs = [];
   t.legs.forEach(function (l) {
     var A = lookup(l.from), B = lookup(l.to); if (!A || !B) return;
-    var c = legCalc(A, B), br = bestRw(B);
+    var pl = legPlan(l, A, B), c = pl.calc, br = bestRw(B);
     legs.push({ from: A.c, to: B.c, fromName: A.n, toName: B.n, nm: c.d, block: c.block, burn: c.burn, cost: c.cost, gs: c.wind ? c.wind.gs : 0,
+      alt: pl.alt ? pl.alt.apt.c : '', land: pl.land, res: pl.res,
       wind: c.wind ? 'winds ' + ('00' + c.wind.dir).slice(-3) + '/' + ('0' + c.wind.spd).slice(-2) + ' at FL' + Math.round(c.wind.alt / 100) : '',
       rw: br ? br.id + ' ' + fmtNum(br.l) + ' x ' + fmtNum(br.w) + ' ft' : '', note: S.notes[B.c] ? String(S.notes[B.c]).slice(0, 200) : '' });
   });
@@ -1015,6 +1261,80 @@ function shareBrief(t) {
     else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { showToast('Link copied.'); }).catch(function () {}); }
   });
 }
+/* ---------- first run, calendar, route import ---------- */
+function sampleTrip() {
+  var home = lookup(S.settings.homeBase) || lookup('KPVD');
+  var best = null, bd = 1e9;
+  AP.forEach(function (a) {
+    if (a === home || !a.sch || !hasJetA(a)) return;
+    var d = hav(home, a);
+    if (d < 70 || d > 220) return;
+    var score = Math.abs(d - 130) - (a.t === 'M' ? 40 : 0);
+    if (score < bd) { bd = score; best = a; }
+  });
+  if (!best) best = lookup('KACK') || AP[0];
+  var id = 't' + Date.now();
+  S.trips.push({ id: id, name: 'Sample: ' + (best.m || best.n).split(',')[0] + ' run', legs: [{ from: home.c, to: best.c }, { from: best.c, to: home.c }], pax: 2, bags: 60 });
+  S.activeTrip = id; S.onboardDone = 1; save(); queueTrips(); renderTrip();
+  showToast('Sample trip built from ' + home.c + '. Tap a pencil to plan fuel, or delete it when you are done.');
+}
+function onboardHTML() {
+  if (S.onboardDone || S.trips.length) return '';
+  var step = function (n, t, d) { return '<div class="rowline" style="gap:10px;align-items:flex-start;padding:5px 0"><span class="pill acc" style="flex:none">' + n + '</span><div><div style="font-weight:600">' + t + '</div><div class="micro muted">' + d + '</div></div></div>'; };
+  return '<div class="card" style="border-color:color-mix(in srgb,var(--acc) 40%,transparent)"><div class="lab">First flight with JetDesk</div>' +
+    step(1, 'Set your airplane', 'Gear icon, top right. Pick a preset, then your tail number, usable fuel and weights from the W&amp;B sheet.') +
+    step(2, 'Build a trip', 'Add legs and JetDesk works out block, burn, cost with real winds, and whether each leg makes reserve.') +
+    step(3, 'Log a price', 'On any airport page, log what Jet A cost. Your crew sees it and the fuel stop math starts using it.') +
+    '<div class="btnrow" style="margin-top:10px"><button class="btn primary small" id="obSample">Build me a sample trip</button><button class="btn ghost small" id="obSkip">I know what I am doing</button></div></div>';
+}
+function tripRouteText(t) {
+  var codes = [];
+  t.legs.forEach(function (l, i) { if (i === 0) codes.push(l.from); codes.push(l.to); });
+  return codes.join(' ');
+}
+function tripEstimate(t) {
+  var td = 0, tb = 0, tg = 0;
+  t.legs.forEach(function (l) { var A = lookup(l.from), B = lookup(l.to); if (!A || !B) return; var c = legCalc(A, B); td += c.d; tb += c.block; tg += c.burn; });
+  return { nm: td, block: tb, burn: tg, cost: tg * num(S.settings.price) };
+}
+function calendarLinks(t) {
+  if (!t.date || !t.legs.length) return '';
+  var e = tripEstimate(t), route = tripRouteText(t);
+  var d = t.date.replace(/-/g, ''), d2 = new Date(Date.parse(t.date + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+  var title = (t.name || 'Trip') + ' · ' + route;
+  var details = 'JetDesk plan: ' + fmtNm(e.nm) + ' nm, ' + fmtMin(e.block) + ' block, ' + fmtNum(e.burn) + ' gal, ' + fmtMoney(e.cost) + ' fuel at $' + num(S.settings.price).toFixed(2) + '. ' + (S.settings.tail ? S.settings.tail + '. ' : '') + 'https://www.jetdesk.ai/';
+  var g = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(title) + '&dates=' + d + '/' + d2 + '&details=' + encodeURIComponent(details) + '&location=' + encodeURIComponent(t.legs[0].from);
+  var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JetDesk.AI//Trip//EN', 'BEGIN:VEVENT', 'UID:' + t.id + '@jetdesk.ai', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z',
+    'DTSTART;VALUE=DATE:' + d, 'DTEND;VALUE=DATE:' + d2, 'SUMMARY:' + title.replace(/[,;]/g, ' '), 'DESCRIPTION:' + details.replace(/[,;]/g, ' '), 'LOCATION:' + t.legs[0].from, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  return '<div class="btnrow" style="margin-top:8px"><a class="lbtn" href="' + esc(g) + '" target="_blank" rel="noopener">Google Calendar</a>' +
+    '<a class="lbtn" download="' + esc((t.name || 'trip').replace(/[^A-Za-z0-9]+/g, '-')) + '.ics" href="data:text/calendar;charset=utf-8,' + encodeURIComponent(ics) + '">Apple / Outlook (.ics)</a></div>';
+}
+function parseRouteText(text) {
+  var out = [];
+  String(text || '').toUpperCase().split(/[^A-Z0-9]+/).forEach(function (tok) {
+    if (!tok || tok.length < 3 || tok.length > 4) return;
+    if (/^(DCT|VOR|GPS|IFR|VFR|SID|STAR)$/.test(tok)) return;
+    var a = lookup(tok);
+    if (a && (!out.length || out[out.length - 1] !== a.c)) out.push(a.c);
+  });
+  return out;
+}
+function parseRouteFile(text) {
+  /* ForeFlight / Garmin .fpl: <waypoint><identifier>KPVD</identifier><type>AIRPORT</type>; GPX: <name>KPVD</name> */
+  var ids = [];
+  var re = /<(?:identifier|name)>\s*([A-Za-z0-9]{3,4})\s*<\/(?:identifier|name)>/g, m;
+  while ((m = re.exec(text))) ids.push(m[1]);
+  if (!ids.length) return parseRouteText(text);
+  var out = [];
+  ids.forEach(function (id) { var a = lookup(id); if (a && (a.t !== 'S' || /<type>\s*AIRPORT/i.test(text)) && (!out.length || out[out.length - 1] !== a.c)) out.push(a.c); });
+  return out.length >= 2 ? out : parseRouteText(text);
+}
+function applyRoute(t, codes) {
+  if (codes.length < 2) { showToast('Need at least two airports in the route.'); return; }
+  for (var i = 0; i < codes.length - 1; i++) t.legs.push({ from: codes[i], to: codes[i + 1] });
+  addingLeg = null; save(); queueTrips(); renderTrip();
+  showToast((codes.length - 1) + ' leg' + (codes.length === 2 ? '' : 's') + ' added: ' + codes.join(' '));
+}
 function renderTrip() {
   if (!loggedIn()) {
     $('tripChips').innerHTML = '';
@@ -1025,15 +1345,23 @@ function renderTrip() {
   var t = trip();
   var body = verifyNoticeHTML();
   if (!t) {
-    body += '<div class="empty">No trips yet. Tap <b>+ New</b> to start one.</div>';
+    body += onboardHTML() || '<div class="empty">No trips yet. Tap <b>+ New</b> to start one.</div>';
     $('tripBody').innerHTML = body;
+    var ob = $('obSample'); if (ob) ob.addEventListener('click', sampleTrip);
+    var os = $('obSkip'); if (os) os.addEventListener('click', function () { S.onboardDone = 1; save(); renderTrip(); });
     return;
   }
   body += '<div class="card flat" style="padding:10px 12px">' +
     '<div class="rowline">' +
       '<input class="t" style="border:none;background:transparent;padding:4px 2px;min-height:36px;font-family:var(--disp);font-weight:600;font-size:19px;letter-spacing:.03em" id="tripName" value="' + esc(t.name) + '" aria-label="Trip name">' +
       '<button class="btn small danger" id="delTrip">Delete</button>' +
-    '</div></div>';
+    '</div>' +
+    '<div class="grid3" style="grid-template-columns:1.3fr 1fr 1fr;margin-top:8px">' +
+      '<label class="f" style="margin:0"><span class="lab">Date</span><input class="t mono" id="tripDate" type="date" value="' + esc(t.date || '') + '"' + (canEdit() ? '' : ' disabled') + '></label>' +
+      '<label class="f" style="margin:0"><span class="lab">Pax</span><input class="t mono" id="tripPax" type="number" inputmode="numeric" min="0" max="19" value="' + esc(String(t.pax || 0)) + '"' + (canEdit() ? '' : ' disabled') + '></label>' +
+      '<label class="f" style="margin:0"><span class="lab">Bags lb</span><input class="t mono" id="tripBags" type="number" inputmode="numeric" min="0" step="10" value="' + esc(String(t.bags || 0)) + '"' + (canEdit() ? '' : ' disabled') + '></label>' +
+    '</div>' + tripWeightHTML(t) + calendarLinks(t) +
+    '</div>';
 
   if (!t.legs.length) {
     body += '<div class="empty">No legs yet. Add the first one.</div>';
@@ -1059,7 +1387,10 @@ function renderTrip() {
     body += '<div class="btnrow" style="margin:2px 0 6px">' +
       '<button class="btn" id="addLegBtn">+ Add leg</button>' +
       (t.legs.length ? '<button class="btn ghost" id="addRetBtn">&#8646; Add return</button>' : '') +
-    '</div>';
+      '<button class="btn ghost" id="impBtn">Paste route</button>' +
+      '<label class="btn ghost" style="cursor:pointer">Import .fpl<input type="file" id="impFile" accept=".fpl,.gpx,.xml,.txt,.rte" style="display:none"></label>' +
+    '</div>' +
+    '<div id="impBox" style="display:none;margin:0 0 8px"><div class="grid3" style="grid-template-columns:1fr auto"><input class="t mono" id="impText" placeholder="KPVD KACK KHPN KPVD or a ForeFlight route string" autocapitalize="characters"><button class="btn small" id="impGo">Add legs</button></div><div class="micro muted" style="margin-top:4px">Airports in order; fixes, airways and DCT are ignored. Legs are appended to this trip.</div></div>';
   }
 
   /* totals */
@@ -1077,6 +1408,14 @@ function renderTrip() {
     });
     if (ok) {
       var route = codes.join(' ');
+      var worst = 'good', shortLegs = [];
+      t.legs.forEach(function (l, i) {
+        var A = lookup(l.from), B = lookup(l.to); if (!A || !B) return;
+        var pl = legPlan(l, A, B);
+        if (pl.status === 'bad') { worst = 'bad'; shortLegs.push(A.c + '-' + B.c); }
+        else if (pl.status === 'warn' && worst !== 'bad') worst = 'warn';
+      });
+      var act = tripActuals(t);
       body += '<h2 class="sec">Trip total</h2><div class="card">' +
         '<div class="legstats bigtotal">' +
           '<span class="stat"><span class="n">' + fmtNm(td) + '</span><span class="u">nm</span></span>' +
@@ -1084,6 +1423,15 @@ function renderTrip() {
           '<span class="stat"><span class="n">' + fmtNum(tg) + '</span><span class="u">gal est</span></span>' +
           '<span class="stat"><span class="n">' + fmtMoney(tg * num(S.settings.price)) + '</span><span class="u">fuel est</span></span>' +
         '</div>' +
+        '<div class="spread" style="margin-top:8px;gap:8px;align-items:center"><div class="micro muted">Reserve ' + fmtNum(reserveGal()) + ' gal (' + (num(S.settings.resGal) > 0 ? 'fixed' : num(S.settings.resMin, 45) + ' min') + ') · usable ' + fmtNum(num(S.settings.usable, 170)) + ' gal · tap a leg\'s pencil for alternate and departure fuel</div>' +
+          (worst === 'bad' ? '<span class="pill bad">STOP NEEDED: ' + esc(shortLegs.join(', ')) + '</span>' : worst === 'warn' ? '<span class="pill warn">THIN MARGINS</span>' : '<span class="pill good">ALL LEGS MAKE RESERVE</span>') + '</div>' +
+        (act.legs ? '<hr class="dash"><div class="lab">Flown so far · ' + act.legs + ' of ' + t.legs.length + ' legs</div>' +
+          '<div class="legstats">' +
+            '<span class="stat"><span class="n">' + fmtBlk(act.blk) + '</span><span class="u">actual vs ' + fmtBlk(act.estBlk) + ' plan</span></span>' +
+            '<span class="stat"><span class="n">' + fmtNum(act.used) + '</span><span class="u">gal used vs ' + fmtNum(act.estBurn) + '</span></span>' +
+            '<span class="stat"><span class="n">' + fmtMoney(act.burnCost || act.spend) + '</span><span class="u">' + (act.burnCost ? 'burn cost' : 'bought') + ' vs ' + fmtMoney(act.estCost) + ' est</span></span>' +
+            (act.spend ? '<span class="stat"><span class="n">' + fmtMoney(act.spend) + '</span><span class="u">' + fmtNum(act.bought) + ' gal bought</span></span>' : '') +
+          '</div>' : '') +
         '<hr class="dash">' +
         '<div class="rowline">' +
           '<span class="lab" style="margin:0;flex:1">Plan $/gal</span>' +
@@ -1101,11 +1449,21 @@ function renderTrip() {
       '</div>';
     }
   }
+  body += flightLogHTML();
   $('tripBody').innerHTML = body;
 
   /* wire */
   var tn = $('tripName');
   if (tn) tn.addEventListener('change', function () { t.name = tn.value.trim() || 'Trip'; save(); queueTrips(); renderTripChips(); });
+  var td = $('tripDate');
+  if (td) td.addEventListener('change', function () { t.date = /^\d{4}-\d{2}-\d{2}$/.test(td.value) ? td.value : ''; if (!t.date) delete t.date; save(); queueTrips(); renderTrip(); });
+  ['tripPax', 'tripBags'].forEach(function (id) {
+    var el = $(id); if (!el) return;
+    el.addEventListener('change', function () {
+      t.pax = Math.max(0, Math.min(19, parseInt($('tripPax').value, 10) || 0)); t.bags = Math.max(0, Math.round(num($('tripBags').value, 0)));
+      save(); queueTrips(); renderTrip();
+    });
+  });
   var dt = $('delTrip');
   if (dt) dt.addEventListener('click', function () {
     if (dt.dataset.armed) {
@@ -1125,6 +1483,19 @@ function renderTrip() {
     addingLeg = { from: pre, to: '' };
     renderTrip();
     var el = $('alTo'); if (el) el.focus();
+  });
+  var ib = $('impBtn');
+  if (ib) ib.addEventListener('click', function () { var box = $('impBox'); box.style.display = box.style.display === 'none' ? 'block' : 'none'; if (box.style.display === 'block') $('impText').focus(); });
+  var ig = $('impGo');
+  if (ig) ig.addEventListener('click', function () { applyRoute(t, parseRouteText($('impText').value)); });
+  var it = $('impText');
+  if (it) it.addEventListener('keydown', function (e) { if (e.key === 'Enter') applyRoute(t, parseRouteText(it.value)); });
+  var ifl = $('impFile');
+  if (ifl) ifl.addEventListener('change', function () {
+    var f = ifl.files && ifl.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () { applyRoute(t, parseRouteFile(String(rd.result || ''))); };
+    rd.readAsText(f);
   });
   var rb = $('addRetBtn');
   if (rb) rb.addEventListener('click', function () {
@@ -1149,12 +1520,28 @@ function renderTrip() {
   if (bb) bb.addEventListener('click', function () { shareBrief(t); });
   $('tripBody').querySelectorAll('[data-delleg]').forEach(function (b) {
     b.addEventListener('click', function () {
-      t.legs.splice(parseInt(b.dataset.delleg, 10), 1); save(); queueTrips(); renderTrip();
+      t.legs.splice(parseInt(b.dataset.delleg, 10), 1); editingLeg = null; save(); queueTrips(); renderTrip();
     });
   });
   $('tripBody').querySelectorAll('[data-openapt]').forEach(function (b) {
     b.addEventListener('click', function () { openApt(b.dataset.openapt); showTab('apt'); });
   });
+  $('tripBody').querySelectorAll('[data-editleg]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var i = parseInt(b.dataset.editleg, 10);
+      editingLeg = editingLeg === i ? null : i; renderTrip();
+      var el = $('leAlt'); if (el) el.focus();
+    });
+  });
+  if (editingLeg != null && $('leSave')) {
+    wireSuggest($('leAlt'), $('leAltSug'), function () {});
+    $('leSave').addEventListener('click', function () { saveLegEditor(t, editingLeg); });
+    $('leCancel').addEventListener('click', function () { editingLeg = null; renderTrip(); });
+    var lc = $('leClear');
+    if (lc) lc.addEventListener('click', function () { delete t.legs[editingLeg].act; editingLeg = null; save(); queueTrips(); renderTrip(); });
+  }
+  var rp = $('rpBtn');
+  if (rp) rp.addEventListener('click', function () { ownerReport($('rpMonth').value); });
   loadTripWx();
   loadTripWinds();
 }
@@ -1167,9 +1554,9 @@ $('tripChips').addEventListener('click', function (e) {
     }
     var id = 't' + Date.now();
     S.trips.push({ id: id, name: 'New Trip', legs: [] });
-    S.activeTrip = id; addingLeg = null; save(); queueTrips(); renderTrip();
+    S.activeTrip = id; addingLeg = null; editingLeg = null; save(); queueTrips(); renderTrip();
   } else if (b.dataset.trip) {
-    S.activeTrip = b.dataset.trip; addingLeg = null; save(); renderTrip();
+    S.activeTrip = b.dataset.trip; addingLeg = null; editingLeg = null; save(); renderTrip();
   }
 });
 
@@ -1196,6 +1583,10 @@ function search(q, cap) {
 function wireSuggest(input, sugBox, onPick) {
   if (!input) return;
   var render = function () {
+    var q = input.value.trim().toUpperCase();
+    var hit = lookup(q);
+    /* a complete code needs no suggestions; keep the form where the thumb expects it */
+    if (hit && (hit.c === q || hit.f === q || hit.c === 'K' + q) && q.length >= 3) { sugBox.innerHTML = ''; onPick(hit.c); return; }
     var rs = search(input.value, 5);
     sugBox.innerHTML = rs.map(function (a) {
       return '<button class="result" data-pick="' + esc(a.c) + '" style="margin-top:6px;margin-bottom:0">' +
@@ -1349,7 +1740,7 @@ function openApt(code, noFetch) {
   }
   h += '</div>';
 
-  h += '<h2 class="sec">Jet A price log</h2><div class="card" id="fuelCard">';
+  h += '<h2 class="sec">Jet A price log</h2><div class="card" id="fuelCard"><div id="commSlot"></div>';
   if (loggedIn()) {
     h += '<div style="margin-bottom:8px"><span class="pill good">Synced</span> <span class="tiny muted">Shared with your crew, saved to your account.</span></div>';
   } else {
@@ -1403,6 +1794,10 @@ function openApt(code, noFetch) {
   renderAlts(a);
   loadAptWx(a);
   loadNotams(a);
+  if (loggedIn()) {
+    var cs = $('commSlot'); if (cs) cs.innerHTML = communityHTML(a.c);
+    communityFetch([a.c]).then(function () { var el = $('commSlot'); if (el && curDetail === a) el.innerHTML = communityHTML(a.c); });
+  }
   if (!noFetch) {
     pricesFetch().then(function (ok) {
       if (ok && curDetail && curDetail.c === a.c) openApt(a.c, true);
@@ -1604,6 +1999,27 @@ function drawRwMap(a) {
 }
 
 /* ================= FUEL STOP TAB ================= */
+/* ---------- community prices (anonymized, give-to-get) ---------- */
+var COMM = { prices: {}, at: {}, sharing: null, ttl: 30 * 60 * 1000 };
+function communityFetch(codes) {
+  if (!loggedIn()) return Promise.resolve({});
+  var now = Date.now();
+  var need = codes.filter(function (c) { return !COMM.at[c] || now - COMM.at[c] > COMM.ttl; });
+  if (!need.length) return Promise.resolve(COMM.prices);
+  return api('/api/community?codes=' + need.join(',')).then(function (r) {
+    if (!r.ok) return COMM.prices;
+    COMM.sharing = !!r.data.sharing;
+    need.forEach(function (c) { COMM.at[c] = now; if (r.data.prices[c]) COMM.prices[c] = r.data.prices[c]; else delete COMM.prices[c]; });
+    return COMM.prices;
+  });
+}
+function communityHTML(code) {
+  var c = COMM.prices[code];
+  if (COMM.sharing === false) return '<div class="micro muted" style="margin-top:8px">Community prices: off. Turn on sharing in Account to see what other operations paid here.</div>';
+  if (!c) return COMM.sharing ? '<div class="micro muted" style="margin-top:8px">No community reports at ' + esc(code) + ' in the last 60 days yet.</div>' : '';
+  return '<div style="margin-top:8px;padding:8px 10px;background:var(--card2);border-radius:8px" class="tiny"><span class="pill acc" style="margin-right:6px">COMMUNITY</span>median <b class="mono">$' + c.median.toFixed(2) + '</b>' +
+    (c.ops > 1 && c.high - c.low > 0.005 ? ' · $' + c.low.toFixed(2) + ' to $' + c.high.toFixed(2) : '') + ' · ' + c.ops + ' operations · latest ' + esc(c.latest) + '</div>';
+}
 function latestPrice(code) {
   var a = lookup(code); if (!a) return null;
   var log = S.fuelLog[a.c];
@@ -1725,6 +2141,7 @@ function crossTrack(A, B, C) {
 function routeStops(A, B, corridor) {
   var st = S.settings, gal = num(S.fs.gal, 0) || 100;
   var pDestRec = latestPrice(B.c);
+  if (!pDestRec && COMM.prices[B.c]) pDestRec = { price: COMM.prices[B.c].median, community: true };
   var pDest = pDestRec ? num(pDestRec.price) : (S.fs.aptA && lookup(S.fs.aptA) === B && num(S.fs.priceA) ? num(S.fs.priceA) : num(st.price));
   var direct = hav(A, B);
   var out = [];
@@ -1735,10 +2152,11 @@ function routeStops(A, B, corridor) {
     var detourNm = hav(A, C) + hav(C, B) - direct;
     var detourMin = detourNm / Math.max(60, num(st.ktas)) * 60;
     var rec = latestPrice(C.c);
-    var price = rec ? num(rec.price) : null;
+    var price = rec ? num(rec.price) : null, src = rec ? 'crew' : null;
+    if (price == null && COMM.prices[C.c]) { price = COMM.prices[C.c].median; src = 'community'; rec = { date: COMM.prices[C.c].latest }; }
     var extraBurn = num(st.stopGal, 15) + detourMin / 60 * num(st.gph, 40);
     var net = price != null ? gal * (pDest - price) - extraBurn * price : null;
-    out.push({ a: C, xt: ct.xt, detourNm: detourNm, detourMin: detourMin, price: price, date: rec ? rec.date : null, net: net, extraBurn: extraBurn });
+    out.push({ a: C, xt: ct.xt, detourNm: detourNm, detourMin: detourMin, price: price, src: src, date: rec ? rec.date : null, net: net, extraBurn: extraBurn });
   });
   out.sort(function (x, y) {
     if (x.net != null && y.net != null) return y.net - x.net;
@@ -1756,6 +2174,13 @@ function renderRouteStops() {
   var corr = num($('rfCorr').value, 30);
   var r = routeStops(A, B, corr);
   S.rf = { from: A.c, to: B.c, corr: corr }; save();
+  if (!renderRouteStops.refetching) {
+    var want = r.list.map(function (x) { return x.a.c; }).concat([B.c]).filter(function (c) { return !COMM.at[c] || Date.now() - COMM.at[c] > COMM.ttl; });
+    if (want.length) {
+      renderRouteStops.refetching = true;
+      communityFetch(want).then(function () { renderRouteStops(); }).finally(function () { renderRouteStops.refetching = false; });
+    }
+  }
   if (!r.list.length) { out.innerHTML = '<div class="tiny muted">No Jet A field with a 4,000 ft runway within ' + corr + ' nm of ' + esc(A.c) + ' to ' + esc(B.c) + '. Widen the corridor.</div>'; return; }
   var h = '<div class="micro muted" style="margin-bottom:6px">' + esc(A.c) + ' &#8594; ' + esc(B.c) + ' direct ' + fmtNm(r.direct) + ' nm · ' + fmtNum(r.gal) + ' gal · destination ' +
     (r.pDestKnown ? 'logged at $' + r.pDest.toFixed(2) : 'assumed $' + r.pDest.toFixed(2) + ' (planning price; log the real one on its airport page)') + '</div>';
@@ -1765,7 +2190,7 @@ function renderRouteStops() {
     return '<div class="rfrow">' +
       '<div class="spread"><div style="min-width:0"><b class="mono">' + esc(x.a.c) + '</b> <span class="tiny muted">' + esc(x.a.n.replace(/ Airport$/, '')) + ', ' + esc(x.a.st) + '</span></div>' + netTxt + '</div>' +
       '<div class="micro muted mono" style="margin-top:2px">' + fmtNm(x.xt) + ' nm off route · +' + fmtMin(x.detourMin + num(S.settings.groundStopMin, 25)) + ' with the stop' +
-        (x.price != null ? ' · $' + x.price.toFixed(2) + ' ' + esc(x.date || '') : '') + (x.a.fee ? ' · landing fee' : '') + '</div>' +
+        (x.price != null ? ' · $' + x.price.toFixed(2) + ' ' + esc(x.date || '') + (x.src === 'community' ? ' (community median)' : '') : '') + (x.a.fee ? ' · landing fee' : '') + '</div>' +
       '<div class="btnrow" style="margin-top:6px">' +
         '<button class="btn small" data-rfuse="' + esc(x.a.c) + '" data-rfmin="' + Math.round(x.detourMin) + '">Use in calculator</button>' +
         '<button class="btn small ghost" data-openapt="' + esc(x.a.c) + '">Open airport</button>' +
@@ -1824,6 +2249,16 @@ function openSheet() {
     '<div class="grid2">' + f('stToSL', 'Takeoff over 50 ft, ft', st.toSL, 10) + f('stLdgSL', 'Landing over 50 ft, ft', st.ldgSL, 10) + '</div>' +
     '<div class="micro muted" style="margin:-4px 2px 8px">Used for the runway estimates on airport pages. Rules of thumb scale them for density altitude and wind; the POH is the authority.</div>' +
     (S.profiles.length > 1 ? '<div class="btnrow" style="margin-bottom:6px"><button class="btn small danger" id="stRemove">Remove this airplane</button></div>' : '') +
+    '<h2 class="sec">Weights (from your W&amp;B sheet)</h2>' +
+    '<div class="grid2">' + f('stEmpty', 'Basic empty weight, lb', st.emptyWt, 10) + f('stMTO', 'Max takeoff, lb', st.maxTO, 10) + '</div>' +
+    '<div class="grid2">' + f('stMLDG', 'Max landing, lb', st.maxLdg, 10) + f('stMZFW', 'Max zero fuel, lb', st.maxZFW, 10) + '</div>' +
+    f('stPaxWt', 'Weight per person, lb', st.paxWt) +
+    '<div class="micro muted" style="margin:-4px 2px 8px">Presets load typical figures. Every trip gets payload, zero fuel weight, max fuel by weight and takeoff and landing weight per leg. Weights only, no CG.</div>' +
+    '<h2 class="sec">Fuel planning</h2>' +
+    '<div class="grid2">' + f('stUsable', 'Usable fuel, gal', st.usable) + f('stResMin', 'Reserve, minutes', st.resMin) + '</div>' +
+    f('stResGal', 'Reserve, gal (0 = use minutes)', st.resGal) +
+    '<div class="micro muted" style="margin:-4px 2px 8px">Every leg must land with the alternate burn plus this reserve still aboard. Set an alternate and departure fuel per leg on the Trip tab.</div>' +
+    learnedHTML() +
     '<h2 class="sec">Fuel stop model</h2>' +
     '<div class="grid2">' + f('stStopGal', 'Extra gal / stop cycle', st.stopGal) + f('stGround', 'Ground stop min', st.groundStopMin) + '</div>' +
     f('stPrice', 'Planning $/gal', num(st.price).toFixed(2), '0.05') +
@@ -1865,6 +2300,13 @@ function openSheet() {
     var p = S.profiles[0]; PROFILE_KEYS.forEach(function (k) { if (p[k] !== undefined) S.settings[k] = p[k]; });
     save(); openSheet(); renderAll();
   });
+  var la = $('stLearnApply');
+  if (la) la.addEventListener('click', function () {
+    var L = learned(); readSheetInto(S.settings);
+    if (L.gph) S.settings.gph = L.gph;
+    if (L.overhead != null) S.settings.blockOverheadMin = L.overhead;
+    saveActiveProfile(); save(); openSheet(); showToast('Applied. Your estimates now use what the log says.');
+  });
   $('bkOut').addEventListener('click', function () { $('bkArea').value = JSON.stringify(S); });
   $('bkCopy').addEventListener('click', function () {
     if (!$('bkArea').value) $('bkArea').value = JSON.stringify(S);
@@ -1888,6 +2330,18 @@ function openSheet() {
     } catch (e) { b.textContent = 'Not a valid backup'; }
   });
 }
+function learnedHTML() {
+  var L = learned();
+  if (!L.gph && L.overhead == null) {
+    return '<div class="micro muted" style="margin:0 2px 8px">Log block time and fuel used on three flown legs and JetDesk will compare your book numbers to reality here' + (L.n ? ' (' + L.n + ' so far)' : '') + '.</div>';
+  }
+  var bits = [];
+  if (L.gph) bits.push('burn ran <b>' + (L.burnPct >= 0 ? '+' : '') + Math.round(L.burnPct) + '%</b> vs plan, suggesting <b>' + L.gph + ' gph</b> (now ' + esc(String(S.settings.gph)) + ')');
+  if (L.overhead != null) bits.push('block ran <b>' + (L.blkMin >= 0 ? '+' : '') + Math.round(L.blkMin) + ' min</b> per leg, suggesting <b>' + L.overhead + ' min overhead</b> (now ' + esc(String(S.settings.blockOverheadMin)) + ')');
+  var same = (!L.gph || L.gph === num(S.settings.gph)) && (L.overhead == null || L.overhead === num(S.settings.blockOverheadMin));
+  return '<div class="notice" style="margin:0 0 10px"><b>From your log</b> (' + L.n + ' legs): ' + bits.join('; ') + '.' +
+    (same ? ' Your settings already match.' : '<div class="btnrow" style="margin-top:8px"><button class="btn small primary" id="stLearnApply">Apply to this airplane</button></div>') + '</div>';
+}
 function readSheetInto(st) {
   var g = function (id) { var el = $(id); return el ? el.value : null; };
   if (!$('stTail')) return false;
@@ -1903,6 +2357,14 @@ function readSheetInto(st) {
   st.price = Math.max(0, num(g('stPrice'), st.price));
   st.toSL = Math.max(500, num(g('stToSL'), st.toSL));
   st.ldgSL = Math.max(500, num(g('stLdgSL'), st.ldgSL));
+  st.usable = Math.max(10, num(g('stUsable'), st.usable));
+  st.resMin = Math.max(0, num(g('stResMin'), st.resMin));
+  st.resGal = Math.max(0, num(g('stResGal'), st.resGal));
+  st.emptyWt = Math.max(0, num(g('stEmpty'), st.emptyWt));
+  st.maxTO = Math.max(0, num(g('stMTO'), st.maxTO));
+  st.maxLdg = Math.max(0, num(g('stMLDG'), st.maxLdg));
+  st.maxZFW = Math.max(0, num(g('stMZFW'), st.maxZFW));
+  st.paxWt = Math.max(50, num(g('stPaxWt'), st.paxWt));
   return true;
 }
 function closeSheet() {
@@ -2079,7 +2541,7 @@ function renderWelcome() {
     '</div></section>' +
 
     '<div class="micro muted" style="text-align:center;margin:22px 0 8px">www.jetdesk.ai · ' +
-      '<a href="/notes/" style="color:inherit">Field notes</a> · <a href="/terms/" style="color:inherit">Terms</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · Planning aid only, not for navigation.</div>' +
+      '<a href="/airports/" style="color:inherit">Airports</a> · <a href="/notes/" style="color:inherit">Field notes</a> · <a href="/terms/" style="color:inherit">Terms</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · Planning aid only, not for navigation.</div>' +
     '</div>';
   $('tab-welcome').innerHTML = h;
   $('browseBtn').addEventListener('click', function () { S.browse = true; save(); showTab('apt'); });
@@ -2134,7 +2596,7 @@ function openAuth(mode) {
   var go = function () {
     var email = $('auEmail').value.trim(), pass = $('auPass').value;
     var body = { email: email, password: pass };
-    if (reg) body.name = $('auName').value.trim();
+    if (reg) { body.name = $('auName').value.trim(); try { var rf = localStorage.getItem('jd_ref'); if (rf) body.ref = rf; } catch (e) {} }
     $('auErr').textContent = '';
     $('auGo').disabled = true; $('auGo').textContent = reg ? 'Creating...' : 'Signing in...';
     api('/api/auth/' + (reg ? 'register' : 'login'), { body: body }).then(function (r) {
@@ -2256,6 +2718,83 @@ function fmtDate(ms) {
   var d = new Date(ms);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+/* ---------- push notifications ---------- */
+var PUSH = { sub: null, checked: false };
+function pushSupported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+function b64ToU8(b64) {
+  var pad = '='.repeat((4 - b64.length % 4) % 4);
+  var raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  var out = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function pushState() {
+  if (!pushSupported()) return Promise.resolve(null);
+  return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); })
+    .then(function (sub) { PUSH.sub = sub; PUSH.checked = true; return sub; }).catch(function () { return null; });
+}
+function pushCardHTML() {
+  var me = AUTH.me, u = me.user, prefs = u.push_prefs || {};
+  if (!me.push_ready) return '<div class="tiny muted">Notifications are not set up on the server yet.</div>';
+  if (!pushSupported()) return '<div class="tiny muted">This browser cannot receive push notifications. On iPhone, add JetDesk to the Home Screen first (Share, then Add to Home Screen), then open it from there and come back here.</div>';
+  var on = !!PUSH.sub;
+  var denied = Notification.permission === 'denied';
+  var chk = function (k, lab, hint) {
+    return '<label class="rowline" style="gap:10px;padding:6px 0"><input type="checkbox" data-pref="' + k + '"' + (prefs[k] === false ? '' : ' checked') + (on ? '' : ' disabled') + '><span style="flex:1"><div>' + lab + '</div><div class="micro muted">' + hint + '</div></span></label>';
+  };
+  return '<div class="spread" style="gap:10px"><div><div style="font-weight:600">Push notifications on this device</div><div class="micro muted">' +
+      (denied ? 'Blocked in the browser. Allow notifications for jetdesk.ai in the site settings, then try again.' : on ? 'On. Alerts arrive even when the app is closed.' : 'Off. Turn on to hear about crew price logs and weather on your trips.') + '</div></div>' +
+      (denied ? '' : '<button class="btn small' + (on ? '' : ' primary') + '" id="pushTog">' + (on ? 'Turn off' : 'Turn on') + '</button>') + '</div>' +
+    '<div style="margin-top:8px">' +
+      chk('prices', 'Crew price logs', 'A crew member logs Jet A at an airport on one of your trips.') +
+      chk('wx', 'Weather on tomorrow\'s trip', 'The evening before a dated trip, if a TAF at a destination or alternate is below 1,000 ft or 3 miles.') +
+    '</div>' +
+    (on ? '<div class="btnrow" style="margin-top:6px"><button class="btn small ghost" id="pushTest">Send a test</button></div>' : '');
+}
+function wirePushCard() {
+  var card = $('pushCard'); if (!card) return;
+  if (!PUSH.checked && pushSupported()) { pushState().then(function () { if ($('pushCard')) { $('pushCard').innerHTML = pushCardHTML(); wirePushCard(); } }); return; }
+  var tog = $('pushTog');
+  if (tog) tog.addEventListener('click', function () {
+    tog.disabled = true;
+    if (PUSH.sub) {
+      var ep = PUSH.sub.endpoint;
+      PUSH.sub.unsubscribe().catch(function () {}).then(function () {
+        PUSH.sub = null;
+        return api('/api/push/subscribe', { method: 'DELETE', body: { endpoint: ep } });
+      }).then(function () { $('pushCard').innerHTML = pushCardHTML(); wirePushCard(); });
+      return;
+    }
+    api('/api/push/key').then(function (r) {
+      if (!r.ok || !r.data.key) { showToast('Push is not configured.'); tog.disabled = false; return; }
+      return navigator.serviceWorker.ready.then(function (reg) {
+        return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(r.data.key) });
+      }).then(function (sub) {
+        PUSH.sub = sub;
+        return api('/api/push/subscribe', { body: { subscription: sub.toJSON(), prefs: AUTH.me.user.push_prefs || {} } });
+      }).then(function (r2) {
+        if (!r2 || !r2.ok) showToast((r2 && r2.data.error) || 'Could not save the subscription.');
+        else showToast('Notifications on for this device.');
+        $('pushCard').innerHTML = pushCardHTML(); wirePushCard();
+      });
+    }).catch(function (e) {
+      showToast(Notification.permission === 'denied' ? 'Notifications are blocked in the browser settings.' : 'Could not turn on notifications here.');
+      $('pushCard').innerHTML = pushCardHTML(); wirePushCard();
+    });
+  });
+  card.querySelectorAll('[data-pref]').forEach(function (c) {
+    c.addEventListener('change', function () {
+      var prefs = Object.assign({}, AUTH.me.user.push_prefs || {});
+      card.querySelectorAll('[data-pref]').forEach(function (x) { prefs[x.dataset.pref] = x.checked; });
+      AUTH.me.user.push_prefs = prefs;
+      api('/api/push/subscribe', { body: { prefs: prefs } });
+    });
+  });
+  var t = $('pushTest');
+  if (t) t.addEventListener('click', function () {
+    api('/api/push/subscribe', { body: { test: true } }).then(function (r) { showToast(r.ok ? 'Sent to ' + r.data.sent + ' of ' + r.data.devices + ' device(s).' : (r.data.error || 'Could not send.')); });
+  });
+}
 function renderAccount() {
   var v = $('tab-account');
   if (!loggedIn()) {
@@ -2314,12 +2853,23 @@ function renderAccount() {
   }).join('');
   if (op.is_owner) {
     h += me.pro
-      ? '<hr class="dash"><div class="grid3" style="grid-template-columns:1fr auto auto"><input class="t" id="invEmail" type="email" inputmode="email" autocapitalize="none" placeholder="copilot@example.com">' +
+      ? '<hr class="dash"><div class="grid3" style="grid-template-columns:1fr auto auto"><input class="t" id="invEmail" type="email" inputmode="email" autocapitalize="none" autocomplete="off" placeholder="copilot@example.com">' +
         '<select class="t" id="invRole"><option value="member">Crew (edits)</option><option value="viewer">Owner (view only)</option></select><button class="btn" id="invGo">Invite</button></div>' +
         '<div class="micro muted" style="margin-top:6px">Crew can add prices, FBOs and trips. Owner view sees everything and edits nothing. They sign up with that email and the shared operation appears in their app.</div>'
       : '<hr class="dash">' + upsellHTML('Invite your co-pilot or the owner to share prices, FBOs and trips.');
   }
+  h += '<hr class="dash"><div class="spread" style="gap:10px"><div><div style="font-weight:600">Community prices</div><div class="micro muted">Share your crew\'s Jet A prices anonymously with other JetDesk operations and see theirs (median, range, number of operations) on airport pages and in the route finder. No names, tails or notes leave your crew; only airport, price and date.</div></div>' +
+    (op.is_owner ? '<button class="btn small' + (op.share_prices ? ' primary' : '') + '" id="shareTog">' + (op.share_prices ? 'Sharing' : 'Off') + '</button>' : '<span class="pill ' + (op.share_prices ? 'good' : 'dim') + '">' + (op.share_prices ? 'ON' : 'OFF') + '</span>') + '</div>';
   h += '</div>';
+
+  h += '<h2 class="sec">Notifications</h2><div class="card" id="pushCard">' + pushCardHTML() + '</div>';
+
+  var refUrl = 'https://www.jetdesk.ai/?ref=' + encodeURIComponent(u.ref_code || '');
+  h += '<h2 class="sec">Refer a pilot</h2><div class="card">' +
+    '<div class="tiny muted" style="margin-bottom:8px">Send this link to a pilot who manages an airplane. When they subscribe to Pro, their first month is free and so is one month of yours' + (u.plan === 'comp' ? ' (you are on complimentary Pro, so the credit waits for a paid plan)' : '') + '.</div>' +
+    '<div class="grid3" style="grid-template-columns:1fr auto"><input class="t mono" id="refLink" readonly value="' + esc(refUrl) + '" style="font-size:13px"><button class="btn small" id="refCopy">' + (navigator.share ? 'Share' : 'Copy') + '</button></div>' +
+    (u.referral_credits ? '<div class="tiny" style="margin-top:8px"><span class="pill good">' + u.referral_credits + ' month' + (u.referral_credits === 1 ? '' : 's') + ' free waiting</span> Applied automatically at your next checkout.</div>' : '') +
+  '</div>';
 
   h += '<h2 class="sec">Security</h2><div class="card">' +
     '<div class="tiny muted" style="margin-bottom:6px">Change password</div>' +
@@ -2420,6 +2970,21 @@ function renderAccount() {
       });
     });
   });
+  on('refCopy', function () {
+    var url = $('refLink').value;
+    if (navigator.share) { navigator.share({ title: 'JetDesk.AI', text: 'Know what the trip costs before you file. Free to start, first Pro month on me.', url: url }).catch(function () {}); return; }
+    $('refLink').select();
+    var done = function () { showToast('Link copied.'); };
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done).catch(function () { try { document.execCommand('copy'); done(); } catch (e) {} });
+    else { try { document.execCommand('copy'); done(); } catch (e) {} }
+  });
+  on('shareTog', function () {
+    api('/api/ops/settings', { body: { share_prices: !op.share_prices } }).then(function (r) {
+      if (r.ok) { AUTH.me = r.data; renderAccount(); showToast(r.data.op && r.data.op.share_prices ? 'Sharing prices with the community.' : 'Community sharing is off.'); }
+      else showToast(r.data.error || 'Could not change that.');
+    });
+  });
+  wirePushCard();
   v.querySelectorAll('[data-opsw]').forEach(function (b) {
     b.addEventListener('click', function () {
       api('/api/ops/switch', { body: { op_id: b.dataset.opsw } }).then(function (r) {
@@ -2497,5 +3062,19 @@ if (AUTH.tok) {
   });
 } else {
   renderGate();
+}
+if (bq.get('ref') && /^[A-Za-z0-9_-]{4,12}$/.test(bq.get('ref'))) {
+  try { localStorage.setItem('jd_ref', bq.get('ref')); } catch (e) {}
+  if (!bq.get('apt')) history.replaceState(null, '', '/');
+}
+if (bq.get('go') && /^(trip|apt|fuel|account)$/.test(bq.get('go'))) {
+  var goTab = bq.get('go');
+  setTimeout(function () { if (loggedIn() || goTab === 'apt' || goTab === 'fuel') showTab(goTab); }, 0);
+  history.replaceState(null, '', '/');
+}
+if (bq.get('apt') && lookup(bq.get('apt'))) {
+  var deepApt = lookup(bq.get('apt')).c;
+  setTimeout(function () { openApt(deepApt); showTab('apt'); }, 0);
+  history.replaceState(null, '', '/');
 }
 })();

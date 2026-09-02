@@ -145,3 +145,80 @@ export function trialEndedHtml(brand, name) {
     '<p>Not the right time? No problem. Reply to this email if something did not work the way you expected; it lands with a human.</p>' +
     WRAP_CLOSE;
 }
+
+export function reportEmailHtml(brand, r, url) {
+  brand = escHtml(brand);
+  const t = r.totals;
+  const money = (x) => '$' + Math.round(Math.abs(x)).toLocaleString('en-US');
+  const hh = (m) => Math.floor(m / 60) + ':' + (Math.round(m) % 60 < 10 ? '0' : '') + (Math.round(m) % 60);
+  const who = [r.tail, r.aircraft].filter(Boolean).map(escHtml).join(' · ');
+  const cell = (n, l) => '<td style="padding:10px 8px;text-align:center;border:1px solid #DCE3EC;border-radius:10px;background:#F4F6FA"><div style="font-size:22px;font-weight:800;color:#0F172A;font-family:B612 Mono,ui-monospace,Menlo,Consolas,monospace">' + n + '</div><div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5B6779;font-weight:700;margin-top:3px">' + l + '</div></td>';
+  return WRAP_OPEN +
+    '<h2 style="' + H2 + '">' + escHtml(r.label) + ' owner report' + (who ? ' · ' + who : '') + '</h2>' +
+    '<p>' + t.legs + ' leg' + (t.legs === 1 ? '' : 's') + ' logged across ' + r.tripCount + ' trip' + (r.tripCount === 1 ? '' : 's') + '.</p>' +
+    '<table role="presentation" cellpadding="0" cellspacing="6" border="0" width="100%"><tr>' +
+      cell(money(t.spend), 'Fuel bought') + cell(hh(t.blk), 'Block hrs') + cell(Math.round(t.used).toLocaleString('en-US'), 'Gal burned') + cell(t.avgPpg ? '$' + t.avgPpg.toFixed(2) : '–', 'Avg $/gal') +
+    '</tr></table>' +
+    (t.estCost && t.burnCost ? '<p style="' + FINE + '">The fuel burned cost ' + money(t.burnCost) + ' at the prices paid, ' + (t.burnCost <= t.estCost ? 'under' : 'over') + ' the ' + money(t.estCost) + ' planned by ' + money(t.burnCost - t.estCost) + '.</p>' : '') +
+    '<p style="margin:22px 0"><a href="' + escHtml(url) + '" style="' + BTN + '">Open the full report</a></p>' +
+    '<p style="' + FINE + '">The link prints to a clean one-page PDF and stays valid for a year. Figures come from the flight log in ' + brand + '; fees, hangar and crew costs are not included.</p>' +
+    WRAP_CLOSE;
+}
+
+export function inviteEmailHtml(brand, inviter, opName, role, alreadyMember) {
+  brand = escHtml(brand); inviter = escHtml(inviter); opName = escHtml(opName);
+  const what = role === 'viewer'
+    ? 'You have owner view: every trip, cost estimate, fuel price and note the crew keeps, read only.'
+    : 'You can add fuel prices, FBO notes and trips, and everything the crew logs shows up on your phone too.';
+  return WRAP_OPEN +
+    '<h2 style="' + H2 + '">' + inviter + ' added you to ' + opName + '</h2>' +
+    '<p>' + brand + ' is the trip cost, fuel and runway desk for pilots who manage the airplane. ' + what + '</p>' +
+    (alreadyMember
+      ? '<p>You already have a ' + brand + ' account with this address. Open the app and the shared operation is in your Account tab.</p>'
+      : '<p>Create a free account with this email address and the shared operation appears automatically. No credit card, and it installs on your phone.</p>') +
+    '<p style="margin:22px 0"><a href="https://www.jetdesk.ai/" style="' + BTN + '">' + (alreadyMember ? 'Open ' + brand : 'Join on ' + brand) + '</a></p>' +
+    '<p style="' + FINE + '">If you were not expecting this, you can ignore it; nothing is shared until you sign in.</p>' +
+    WRAP_CLOSE;
+}
+
+/* Trial onboarding sequence (day 1, 3, 10). Each one teaches a single habit and links straight to it. */
+const STEP = (n, t, d) => '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0"><tr><td style="vertical-align:top;padding-right:10px"><span style="display:inline-block;min-width:26px;height:26px;line-height:26px;text-align:center;border-radius:13px;background:#E3F0FF;color:#0B5FCC;font-weight:800;font-size:13px">' + n + '</span></td><td><div style="font-weight:700;color:#0F172A">' + t + '</div><div style="' + FINE + '">' + d + '</div></td></tr></table>';
+
+export function onboard1Html(brand, name, home) {
+  brand = escHtml(brand); name = escHtml(name); home = escHtml(home || 'your home base');
+  return WRAP_OPEN +
+    '<h2 style="' + H2 + '">Day one: the fuel stop math' + (name ? ', ' + name : '') + '</h2>' +
+    '<p>The napkin version says a $2.30 gap on 150 gallons saves $345. It does not. The stop burns fuel, the detour burns fuel, and the FBO charges a fee. ' + brand + ' runs the real number in five seconds:</p>' +
+    STEP(1, 'Open the Fuel Stop tab', 'Enter the price where you land, the price at the stop, and the gallons you need.') +
+    STEP(2, 'Read the verdict', 'Net savings after the extra burn, the break-even price gap, and the minutes it costs you.') +
+    STEP(3, 'Rank the stops on a route', 'Type ' + home + ' and a destination; every Jet A field in the corridor is scored by what it really saves.') +
+    '<p style="margin:22px 0"><a href="https://www.jetdesk.ai/?go=fuel" style="' + BTN + '">Run the fuel stop math</a></p>' +
+    '<p style="' + FINE + '">Tomorrow: nothing. Day three: how one logged flight makes every estimate after it sharper.</p>' +
+    WRAP_CLOSE;
+}
+
+export function onboard3Html(brand, name) {
+  brand = escHtml(brand); name = escHtml(name);
+  return WRAP_OPEN +
+    '<h2 style="' + H2 + '">Day three: log one flight</h2>' +
+    '<p>Book numbers are a starting point. Your airplane, your altitudes and your ATC do something else. After a flight, tap the pencil on the leg and enter three things:</p>' +
+    STEP(1, 'Block time', 'Compared to the plan on the spot; three legs in, ' + brand + ' suggests a corrected block overhead.') +
+    STEP(2, 'Fuel used', 'Same idea for burn: it learns your real gallons per hour and offers to update Settings.') +
+    STEP(3, 'Fuel bought and the price', 'The receipt lands in your crew\'s price log automatically and feeds the owner report.') +
+    '<p style="margin:22px 0"><a href="https://www.jetdesk.ai/?go=trip" style="' + BTN + '">Open your trips</a></p>' +
+    '<p style="' + FINE + '">While you are there: set an alternate and departure fuel on a leg. The card tells you whether you land with reserve, before you file.</p>' +
+    WRAP_CLOSE;
+}
+
+export function onboard10Html(brand, name, left) {
+  brand = escHtml(brand); name = escHtml(name);
+  return WRAP_OPEN +
+    '<h2 style="' + H2 + '">Day ten: the owner report</h2>' +
+    '<p>This is the part the owner sees. On the first of each month ' + brand + ' emails a one-page report: hours, gallons, fuel spend, the average price paid against your plan, and where the fuel came from. It prints clean, and it is built from the flights you logged.</p>' +
+    STEP(1, 'Invite the owner with view-only access', 'Account, Crew, pick "Owner (view only)". They see every trip and estimate, and edit nothing.') +
+    STEP(2, 'Share a trip brief before the next flight', 'Trip total, "Share owner brief". A link that prints, so the number is agreed before the fuel is bought.') +
+    STEP(3, 'Build this month\'s report any time', 'Trip tab, Flight log, "Owner report".') +
+    '<p style="margin:22px 0"><a href="https://www.jetdesk.ai/?go=account" style="' + BTN + '">Invite the owner</a></p>' +
+    '<p style="' + FINE + '">' + (left > 0 ? left + ' day' + (left === 1 ? '' : 's') + ' left on your Pro trial. ' : '') + 'Pro is $9.99 a month or $79 a year; one skipped fuel stop pays for the year.</p>' +
+    WRAP_CLOSE;
+}

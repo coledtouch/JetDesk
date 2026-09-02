@@ -80,9 +80,9 @@ export async function createSession(env, userId, ua) {
 }
 
 export async function opsForUser(env, user) {
-  const own = await env.DB.prepare('SELECT id, name, owner_id FROM ops WHERE owner_id = ?').bind(user.id).all();
+  const own = await env.DB.prepare('SELECT id, name, owner_id, share_prices FROM ops WHERE owner_id = ?').bind(user.id).all();
   const mem = await env.DB.prepare(
-    'SELECT o.id, o.name, o.owner_id FROM op_members m JOIN ops o ON o.id = m.op_id WHERE m.email = ?'
+    'SELECT o.id, o.name, o.owner_id, o.share_prices FROM op_members m JOIN ops o ON o.id = m.op_id WHERE m.email = ?'
   ).bind(String(user.email).toLowerCase()).all();
   const seen = {}, out = [];
   [].concat(own.results || [], mem.results || []).forEach((o) => {
@@ -100,7 +100,7 @@ export async function activeOp(env, user) {
   const mine = rows.find((m) => String(m.email).toLowerCase() === String(user.email).toLowerCase());
   const role = op.owner_id === user.id ? 'owner' : ((mine && mine.role) || 'member');
   return { id: op.id, name: op.name, owner_id: op.owner_id, is_owner: op.owner_id === user.id, role,
-           can_edit: role !== 'viewer', members: rows, all: ops.map((o) => ({ id: o.id, name: o.name })) };
+           can_edit: role !== 'viewer', share_prices: !!op.share_prices, members: rows, all: ops.map((o) => ({ id: o.id, name: o.name })) };
 }
 
 export function publicUser(user, env) {
@@ -109,6 +109,8 @@ export function publicUser(user, env) {
     plan: user.plan, plan_until: user.plan_until || null, trial_until: user.trial_until || null,
     sub_interval: user.sub_interval || null, tail: user.tail || '', home_base: user.home_base || '',
     is_admin: isAdmin(user, env), has_billing: !!user.stripe_customer,
+    push_prefs: (() => { try { return JSON.parse(user.push_prefs || '{}'); } catch (e) { return {}; } })(),
+    ref_code: String(user.id).slice(0, 8), referred: !!user.referred_by, referral_credits: user.referral_credits || 0,
   };
 }
 
@@ -122,6 +124,7 @@ export async function meShape(env, user) {
     trial_days_left: trialDaysLeft(user),
     billing_ready: billingReady(env),
     email_ready: emailReady(env),
+    push_ready: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY),
     verify_required: verifyRequired(env),
     prices: { monthly: 9.99, annual: 79 },
   };

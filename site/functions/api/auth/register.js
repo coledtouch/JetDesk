@@ -62,6 +62,15 @@ export async function onRequestPost({ request, env }) {
     await sendEmail(env, email, 'Welcome to ' + brand, welcomeEmailHtml(brand, name, TRIAL_DAYS));
   }
 
+  /* referral: ?ref=<first 8 of a user id> kept by the app until sign-up */
+  try {
+    const ref = String(b.ref || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 12);
+    if (ref) {
+      const r = await env.DB.prepare('SELECT id FROM users WHERE substr(id, 1, ?) = ? AND id != ? LIMIT 1').bind(ref.length, ref, id).first();
+      if (r) { await env.DB.prepare('UPDATE users SET referred_by = ? WHERE id = ?').bind(r.id, id).run(); await bump(env, 'referred_signup'); }
+    }
+  } catch (e) { /* optional */ }
+
   await bump(env, 'signup');
   const token = await createSession(env, id, request.headers.get('user-agent'));
   const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();

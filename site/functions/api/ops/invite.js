@@ -1,5 +1,6 @@
 import { json, err, readJson, normEmail, validEmail, now } from '../../../lib/util.js';
 import { getUser, activeOp, isPro, meShape, needsVerify } from '../../../lib/auth.js';
+import { sendEmail, inviteEmailHtml } from '../../../lib/email.js';
 
 /* POST {email} adds a crew member to the active operation (owner only, Pro).
    POST {email, remove:true} removes one. */
@@ -26,6 +27,11 @@ export async function onRequestPost({ request, env }) {
   } else if (!existing) {
     await env.DB.prepare('INSERT OR IGNORE INTO op_members (op_id, email, role, added) VALUES (?, ?, ?, ?)')
       .bind(op.id, email, role, now()).run();
+    try {
+      const has = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+      const brand = env.BRAND || 'JetDesk';
+      await sendEmail(env, email, (user.name || user.email) + ' added you to ' + op.name + ' on ' + brand, inviteEmailHtml(brand, user.name || user.email, op.name, role, !!has));
+    } catch (e) { /* invite still stands */ }
   }
   return json(await meShape(env, user));
 }

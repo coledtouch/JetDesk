@@ -23,7 +23,10 @@ CREATE TABLE IF NOT EXISTS users (
   notices TEXT,
   pending_email TEXT,
   pending_code TEXT,
-  pending_exp INTEGER
+  pending_exp INTEGER,
+  push_prefs TEXT,
+  referred_by TEXT,
+  referral_credits INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
@@ -37,7 +40,8 @@ CREATE TABLE IF NOT EXISTS ops (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   owner_id TEXT NOT NULL,
-  created INTEGER NOT NULL
+  created INTEGER NOT NULL,
+  share_prices INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS op_members (
   op_id TEXT NOT NULL,
@@ -60,3 +64,22 @@ CREATE TABLE IF NOT EXISTS events (
   n INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, kind)
 );
+CREATE TABLE IF NOT EXISTS push_subs (
+  endpoint TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  ua TEXT,
+  created INTEGER NOT NULL,
+  last_ok INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_push_user ON push_subs(user_id);
+CREATE TABLE IF NOT EXISTS price_reports (
+  id TEXT PRIMARY KEY,
+  code TEXT NOT NULL,
+  price REAL NOT NULL,
+  date TEXT NOT NULL,
+  op_id TEXT NOT NULL,
+  created INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pr_code ON price_reports(code, date);

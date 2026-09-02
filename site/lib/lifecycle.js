@@ -3,7 +3,7 @@
    worker covers people who do not). */
 import { bump, dayKey } from './metrics.js';
 import { emailReady, isPro, trialDaysLeft } from './auth.js';
-import { sendEmail, trialEndingHtml, trialEndedHtml } from './email.js';
+import { sendEmail, trialEndingHtml, trialEndedHtml, onboard1Html, onboard3Html, onboard10Html } from './email.js';
 import { now } from './util.js';
 
 function notices(user) {
@@ -33,7 +33,15 @@ export async function trialNotices(env, user) {
   const brand = env.BRAND || 'JetDesk';
   const left = trialDaysLeft(user);
   let key = null, subject = null, html = null;
-  if (left > 0 && left <= 2 && !sent.trial_ending) {
+  const ageDays = (now() - (user.created || now())) / 86400000;
+  /* onboarding sequence, one per run, in order, only while the trial is running */
+  if (left > 2 && ageDays >= 1 && !sent.onboard1) {
+    key = 'onboard1'; subject = 'Day one: the fuel stop math'; html = onboard1Html(brand, user.name, user.home_base);
+  } else if (left > 2 && ageDays >= 3 && !sent.onboard3) {
+    key = 'onboard3'; subject = 'Day three: log one flight'; html = onboard3Html(brand, user.name);
+  } else if (left > 0 && ageDays >= 10 && !sent.onboard10) {
+    key = 'onboard10'; subject = 'Day ten: the owner report'; html = onboard10Html(brand, user.name, left);
+  } else if (left > 0 && left <= 2 && !sent.trial_ending) {
     key = 'trial_ending'; subject = 'Your ' + brand + ' Pro trial ends in ' + left + ' day' + (left === 1 ? '' : 's');
     html = trialEndingHtml(brand, user.name, left);
   } else if (left === 0 && user.trial_until < now() && !sent.trial_ended && !isPro(user, env)) {

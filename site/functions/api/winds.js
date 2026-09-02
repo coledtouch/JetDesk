@@ -16,8 +16,7 @@ function json(obj, status) {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': status === 200 ? 'public, max-age=1800' : 'no-store',
-      'access-control-allow-origin': '*',
+      'cache-control': status === 200 ? 'private, max-age=1800' : 'no-store',
     },
   });
 }

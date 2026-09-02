@@ -44,7 +44,7 @@ export async function onRequestGet({ params, env }) {
   const b = JSON.parse(raw);
   const when = new Date(b.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const rows = b.legs.map((l) => `<tr>
-    <td><b class="mono">${esc(l.from)} &#8594; ${esc(l.to)}</b><div class="name">${esc(l.fromName)}${l.fromName && l.toName ? ' to ' : ''}${esc(l.toName)}</div>${l.rw ? `<div class="name">Arrival runway: ${esc(l.rw)}</div>` : ''}${l.note ? `<div class="name">${esc(l.note)}</div>` : ''}</td>
+    <td><b class="mono">${esc(l.from)} &#8594; ${esc(l.to)}</b><div class="name">${esc(l.fromName)}${l.fromName && l.toName ? ' to ' : ''}${esc(l.toName)}</div>${l.rw ? `<div class="name">Arrival runway: ${esc(l.rw)}</div>` : ''}${l.res ? `<div class="name">Lands with about ${Math.round(l.land)} gal${l.alt ? ', alternate ' + esc(l.alt) : ''}, reserve ${Math.round(l.res)} gal</div>` : ''}${l.note ? `<div class="name">${esc(l.note)}</div>` : ''}</td>
     <td class="r mono">${nm(l.nm)}</td>
     <td class="r mono">${mins(l.block)}${l.wind ? `<div class="name">${esc(l.wind)}</div>` : ''}</td>
     <td class="r mono">${Math.round(l.burn)}</td>

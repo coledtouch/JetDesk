@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 1, 2026, app version `v7baf7151`, live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 1, 2026, app version `v8a66d6bd`, live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -11,7 +11,7 @@ This package is the deployed production source of truth as of September 1, 2026,
 
 ## What is configured in production
 
-- Cloudflare Pages with D1 (`DB`), KV (`PRICES`), var `REQUIRE_VERIFY=1`, and secrets: `AUTH_PEPPER`, `ADMIN_EMAILS`, `EIA_API_KEY`, `OILPRICE_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_WEBHOOK_SECRET`, `EMAIL_API_TOKEN`. Optional, not yet set: `NOTAM_API_BASE` plus `NOTAM_CLIENT_ID`/`NOTAM_CLIENT_SECRET` (or `NOTAM_API_KEY`) for the NOTAM card
+- Cloudflare Pages with D1 (`DB`), KV (`PRICES`), var `REQUIRE_VERIFY=1`, and secrets: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `AUTH_PEPPER`, `ADMIN_EMAILS`, `EIA_API_KEY`, `OILPRICE_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_WEBHOOK_SECRET`, `EMAIL_API_TOKEN`. Optional, not yet set: `NOTAM_API_BASE` plus `NOTAM_CLIENT_ID`/`NOTAM_CLIENT_SECRET` (or `NOTAM_API_KEY`) for the NOTAM card
 - Scheduled Worker `jetdesk-cron` (`site/workers/cron`, daily 13:00 UTC): trial ending and trial ended emails, prunes expired sessions, rate limit rows and events older than 400 days. Secrets `EMAIL_API_TOKEN` and `CRON_KEY`; manual run at `https://jetdesk-cron.<subdomain>.workers.dev/run?key=<CRON_KEY>`
 - Data refresh: `site/refresh_data.py` downloads the current FAA NASR 28 day cycle and OurAirports and rebuilds `airports_us.json`; `site/.github/workflows/refresh-data.yml` runs it weekly and deploys when the repo is pushed to GitHub with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets (not yet wired, no repo)
 - Stripe live: product "JetDesk Pro", $9.99/mo and $79/yr prices, webhook to /api/billing/webhook, Managed Payments on (product tax code txcd_10103001), full checkout branding (icon, #070B14 / #0E7CFF, statement descriptor JETDESK.AI), support email and privacy/terms URLs set
@@ -36,7 +36,7 @@ Full production smoke test passed: redirects, security headers and CSP, landing 
 2. Outbound email enabled: `EMAIL_API_TOKEN` created (Email Sending: Edit, account scoped) and set; delivery verified to a Google-hosted inbox; the register, code email, verify loop tested on production with a real code.
 3. `site/legal.py` added: thorough Terms of Service and Privacy Policy generated as standalone branded static pages at /terms/ and /privacy/ (light and dark, self-hosted fonts, no scripts), added to the sitemap and linked from the app footer, landing page and the in-app legal modal. Drafted without lawyer review; have counsel look before leaning on them.
 
-### Round 3 (v5476ef2b, v1a00c02c, v7baf7151, current)
+### Round 3 (v5476ef2b, v1a00c02c, v7baf7151)
 
 Three deploys, each smoke tested on production. Schema changes are additive and were applied to the production D1 by hand (`site/migrations.sql` lists them; `schema.sql` is the full current shape).
 
@@ -63,13 +63,46 @@ Operations
 14. `site/refresh_data.py` and the weekly GitHub workflow for NASR cycle refresh; `dataset_cycle.json` records the cycle in use (2026-08-06).
 15. `site/workers/cron` deployed as `jetdesk-cron` with a "JetDesk cron worker" API token (Edit Cloudflare Workers template, account scoped). Manual run verified.
 
+### Round 4 (v15ea1630 through v8a66d6bd, current)
+
+Source of truth moved to GitHub: `coledtouch/JetDesk` (private), repo root = this package layout (`site/`, `.github/workflows/refresh-data.yml` at the root). The weekly data refresh runs there with repository secrets `CLOUDFLARE_API_TOKEN` (Pages:Edit) and `CLOUDFLARE_ACCOUNT_ID`; its first run deployed successfully. Commit source changes there before deploying so the refresh job never overwrites a newer build.
+
+Flight log, fuel planning, owner report
+1. Leg editor (pencil on a leg): alternate, departure fuel, and actuals after the flight (date, block, fuel used, fuel bought, price paid). `legPlan()` computes landing fuel against alternate burn plus reserve (Settings: usable fuel, reserve minutes or gallons) and flags NEEDS A STOP. A receipt price is logged to the crew price log automatically.
+2. `learned()` compares logged legs to their stored plan (`act.est`) and suggests corrected gph and block overhead in Settings after three legs.
+3. `lib/report.js`: monthly owner report from the synced flight log; `POST /api/report {month}` returns a `/report/<id>` page (KV, 400 days); the cron Worker builds and emails last month's report to every operation member on the first of the month (`?reports=1` forces it). Fair comparison: fuel burned at the prices actually paid versus the plan.
+
+SEO
+4. `site/airports.py` generates 2,652 static airport pages (`/airports/<code>/`, medium or large fields, or a lit runway of 4,000 ft or more), 55 state pages and `/airports/`, each with Airport and Breadcrumb JSON-LD, computed density-altitude and runway-margin tables and nearby fields. `sitemap.xml` is now an index (`sitemap-pages.xml`, `sitemap-airports.xml`) with lastmod from `dataset_cycle.json`. Submitted in Google Search Console.
+5. The airport dataset moved out of `index.html` into `/data/airports.<hash>.json` (precached by the service worker; the app boots after it loads): the HTML dropped from 1.27 MB to about 220 KB.
+6. Organization, WebSite and Article structured data, Open Graph images on every static page, RSS at `/notes/feed.xml`, deep link `/?apt=KHPN` opens the airport in the app.
+
+Bugs fixed
+7. Winds aloft and the market reference never loaded for Pro users: the client fetched `/api/winds` and `/api/market` without the bearer token. Fixed; those responses are `private` now.
+8. Trip objects held by open editors were replaced on every sync response, so an edit made right after a sync could land on a stale object. `mergeShared()` now refreshes trips in place.
+9. Theme button is visible on the signed-out landing page; the root `color-scheme` follows the explicit choice.
+
+Phase B: notifications, community prices, weights
+10. Web Push with VAPID (`lib/push.js`, vendored `lib/webpush/` from @block65/webcrypto-web-push, MIT, with the Node-only crypto shim removed). Secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` on Pages and on the cron Worker. Tables `push_subs`, column `users.push_prefs`. Endpoints `/api/push/key`, `/api/push/subscribe` (POST subscription / prefs / test, DELETE). Service worker shows the notification and focuses or opens the app on click. Triggers: a crew member logs a price at an airport on a saved trip (`functions/api/data.js`), and the evening-before TAF check on dated trips (`lib/alerts.js`, cron), below 1,000 ft or 3 SM at any destination or alternate.
+11. Community prices, give to get: `ops.share_prices` (owner toggle in Account), every logged price also lands anonymized in `price_reports`; `/api/community?codes=` returns median, range, operation count and latest date when at least two operations reported in 60 days. Shown on airport pages and used as a fallback in the route finder.
+12. Weight and balance lite: profile fields empty weight, max takeoff, max landing, max zero fuel, weight per person (presets carry typical figures). Trips take pax and bags; each leg shows takeoff and landing weight against limits and caps departure fuel by weight. Weights only, no CG, labelled as such.
+
+Phase C: dates, import, onboarding, referrals
+13. Trip date, pax and bags in the trip header; Google Calendar link and .ics export when dated.
+14. Paste a route string (fixes, airways and DCT ignored) or import a ForeFlight/Garmin `.fpl` or GPX; legs are appended.
+15. Branded invite email when a crew member is added; first-run card with a one-tap sample trip from the home base.
+16. Referrals: every user has `/?ref=<first 8 of user id>`; stored on the device until sign-up (`users.referred_by`). Referred pilot's first Checkout applies coupon `REFERRAL1M` ($9.99 off once); when they subscribe, the referrer gets the same coupon on a live subscription or a banked `referral_credits` for their next checkout (webhook `rewardReferrer`).
+
+Onboarding email sequence
+17. `lib/lifecycle.js` sends three trial emails in order, one per run, only while the trial is running and no subscription exists: day 1 (fuel stop math, links `/?go=fuel`), day 3 (log one flight, `/?go=trip`), day 10 (owner report and the view-only invite, `/?go=account`), then the existing trial-ending and trial-ended notices. Sent lazily on `/api/me` and daily by the cron Worker; `users.notices` records what went out. Delivery verified to a Google inbox (primary tab).
+
 ### Known gaps for the next round
 
-- NOTAMs: waiting on FAA NMS credentials. Set the three secrets and redeploy; no code change needed.
-- Data refresh automation needs a GitHub repo with the two Cloudflare secrets; until then run `python3 refresh_data.py` from `site` and deploy by hand every 28 days.
-- Push notifications (VAPID, service worker push) and admin 2FA were deliberately deferred.
-- No real paid subscription has been completed yet; the webhook was verified with signed test events only. Do one live purchase and refund it.
-- Cloudflare email obfuscation rewrites mailto links on static pages (harmless with JS); turn off Scrape Shield email obfuscation if raw addresses are preferred.
+- NOTAMs still wait on FAA NMS credentials (three secrets, no code change).
+- Push on iPhone requires the app to be added to the Home Screen first (iOS rule); the card says so.
+- The community price pool is empty until a second operation shares; the UI says so rather than showing one operation's data.
+- Weight and balance has no CG arm math on purpose; add station arms per profile if pilots ask.
+- No real paid subscription has been completed yet; do one live purchase and refund it, then check the referral reward path with a referred test account.
 - Legal pages were drafted without lawyer review.
 
 ## Post-deployment smoke test checklist
