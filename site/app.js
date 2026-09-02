@@ -321,11 +321,12 @@ function renderNear() {
   var st = $('nearStatus');
   $('nearFilters').style.display = GEO.mode ? 'flex' : 'none';
   if (!GEO.mode) { if (st) st.textContent = ''; return; }
-  if (!fix) { st.textContent = 'No location fix. Tap the locate button again, and check location permission for this app.'; $('aptResults').innerHTML = ''; return; }
+  if (!fix) { st.textContent = 'No location fix. Tap the locate button again, and check location permission for this app.'; $('aptResults').innerHTML = ''; announceAlert('No location fix.'); return; }
   var age = fixAgeMin();
   st.textContent = 'Around your position' + (age > 2 ? ' (fix ' + age + ' min old)' : '') +
     (GEO.filter === 'jet' ? ' · fields with Jet A' : (GEO.filter === 'big' ? ' · 5,000 x 100 ft or better' : ''));
   var list = nearestList(fix, GEO.filter, 15);
+  announce(list.length + ' airports near you');
   $('aptResults').innerHTML = list.map(function (p, idx) {
     var d = p[0], a = p[1];
     var br = bestRw(a), tier = br ? rTier(br) : 2;
@@ -473,7 +474,7 @@ function flushQ(done) {
   RP.flushing = true;
   var finish = function (ok) { RP.flushing = false; if (done) done(ok); };
   var step = function () {
-    if (!S.q.length) { finish(true); return; }
+    if (!S.q.length) { announce('Saved to your account'); finish(true); return; }
     var op = S.q[0];
     var body = {};
     Object.keys(op).forEach(function (k) { if (k !== 'lid') body[k] = op[k]; });
@@ -496,6 +497,9 @@ function flushQ(done) {
 }
 
 /* ---------- toast + modal ---------- */
+/* screen-reader announcements: polite for progress and results, assertive for blocking errors */
+function announce(msg) { var el = $('live'); if (!el) return; el.textContent = ''; setTimeout(function () { el.textContent = msg; }, 30); }
+function announceAlert(msg) { var el = $('liveAlert'); if (!el) return; el.textContent = ''; setTimeout(function () { el.textContent = msg; }, 30); }
 var toastT;
 function showToast(msg) {
   var t = $('toast');
@@ -505,6 +509,7 @@ function showToast(msg) {
     document.body.appendChild(t);
   }
   t.textContent = msg; t.classList.add('on');
+  if (/could not|failed|no connection|blocked|error|not allowed/i.test(msg)) announceAlert(msg); else announce(msg);
   clearTimeout(toastT);
   toastT = setTimeout(function () { t.classList.remove('on'); }, 3200);
 }
@@ -889,8 +894,9 @@ function loadAptWx(a, force) {
     if (curDetail !== a) return;
     var d = map && map[a.c];
     var s = $('wxSlot'); if (!s) return;
-    if (!d || !d.metar) { s.innerHTML = ''; return; }
+    if (!d || !d.metar) { s.innerHTML = ''; announce('No current weather report for ' + a.c); return; }
     var m = d.metar, cat = wxCat(m);
+    announce('Weather loaded for ' + a.c + ': ' + cat.k + (force ? ', refreshed' : ''));
     var h = '<div class="card">' +
       '<div class="spread"><div class="wxline">' +
         '<span class="pill ' + cat.cls + '">' + cat.k + '</span>' +
@@ -950,14 +956,45 @@ function loadTripWx() {
 }
 
 /* ---------- theme ---------- */
+/* Hero art follows the effective theme: a daylight master for light, the blue-hour original for dark.
+   Only the selected pair is referenced, so a visit loads one full-size image. */
+var HERO = {
+  day: { full: '__IMG_HERO_DAY__', small: '__IMG_HERO_DAY_800__' },
+  night: { full: '__IMG_HERO_NIGHT__', small: '__IMG_HERO_NIGHT_800__' }
+};
+function effectiveTheme() {
+  var t = S.settings.theme || 'auto';
+  if (t === 'light' || t === 'dark') return t;
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+function heroSet() { return effectiveTheme() === 'light' ? HERO.day : HERO.night; }
+function heroPictureHTML() {
+  var h = heroSet();
+  return '<picture class="hero-media" aria-hidden="true"><source id="heroSrc" media="(max-width:640px)" srcset="' + h.small + '"><img id="heroImg" class="heroart" src="' + h.full + '" alt="" width="1600" height="900" fetchpriority="high" decoding="async"></picture>';
+}
+function syncHero() {
+  var h = heroSet(), img = $('heroImg'), src = $('heroSrc');
+  document.documentElement.setAttribute('data-hero', effectiveTheme() === 'light' ? 'day' : 'night');
+  if (src && src.getAttribute('srcset') !== h.small) src.setAttribute('srcset', h.small);
+  if (img && img.getAttribute('src') !== h.full) img.setAttribute('src', h.full);
+}
+if (window.matchMedia) {
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { applyTheme(); }); } catch (e) { /* older Safari */ }
+}
 function applyTheme() {
   var t = S.settings.theme || 'auto';
   var root = document.documentElement;
   if (t === 'auto') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', t);
   root.style.colorScheme = t === 'auto' ? 'light dark' : t;
-  $('themeBtn').textContent = t === 'auto' ? 'AUTO' : (t === 'light' ? 'DAY' : 'NIGHT');
-  $('themeBtn').setAttribute('aria-label', 'Theme: ' + t + '. Change color theme');
+  syncHero();
+  var lbl = $('themeLbl'); if (lbl) lbl.textContent = t === 'auto' ? 'AUTO' : (t === 'light' ? 'DAY' : 'NIGHT');
+  var eff = effectiveTheme();
+  var ic = $('themeBtn').querySelector('svg');
+  if (ic) ic.innerHTML = eff === 'dark'
+    ? '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'
+    : '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  $('themeBtn').setAttribute('aria-label', 'Theme: ' + (t === 'auto' ? 'automatic, currently ' + eff : t) + '. Change color theme');
   $('themeBtn').title = 'Theme: ' + t;
   if (curDetail) { drawRwMap(curDetail); }
 }
@@ -966,6 +1003,7 @@ $('themeBtn').addEventListener('click', function () {
   var i = order.indexOf(S.settings.theme || 'auto');
   S.settings.theme = order[(i + 1) % 3];
   save(); applyTheme();
+  announce('Theme: ' + (S.settings.theme === 'auto' ? 'automatic' : (S.settings.theme === 'light' ? 'day' : 'night')));
 });
 
 /* ---------- tabs ---------- */
@@ -1616,20 +1654,33 @@ $('aptSearch').addEventListener('input', function () {
       (br ? '<span class="rw">' + fmtNum(br.l) + '&times;' + fmtNum(br.w) + '</span>' : '') +
     '</button>';
   }).join('') || (this.value.trim().length >= 2 ? '<div class="empty">Nothing matches. Paved 2,500 ft+ US fields only.</div>' : '');
+  if (this.value.trim().length >= 2) announce(rs.length ? rs.length + ' airport' + (rs.length === 1 ? '' : 's') + ' found' : 'No airports match');
 });
 $('aptResults').addEventListener('click', function (e) {
   var b = e.target.closest('[data-apt]'); if (!b) return;
   openApt(b.dataset.apt);
 });
+function syncAptEmpty() {
+  var el = $('aptEmpty'); if (!el) return;
+  el.style.display = ($('aptSearch').value.trim() || GEO.mode) ? 'none' : 'block';
+}
+$('aptSearch').addEventListener('input', syncAptEmpty);
+$('aptExamples').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-ex]'); if (!b) return;
+  openApt(b.dataset.ex);
+});
+$('nearBtn2').addEventListener('click', function () { $('nearBtn').click(); });
 $('nearBtn').addEventListener('click', function () {
   if (GEO.busy) return;
   GEO.busy = true;
   $('aptSearch').value = '';
   $('nearStatus').textContent = 'Getting your position&hellip;'.replace('&hellip;', '…');
+  var ae = $('aptEmpty'); if (ae) ae.style.display = 'none';
   geoLocate().then(function () {
     GEO.busy = false;
     GEO.mode = true;
     renderNear();
+    syncAptEmpty();
   });
 });
 $('nearFilters').addEventListener('click', function (e) {
@@ -1704,7 +1755,7 @@ function openApt(code, noFetch) {
   } else {
     h += '<div class="tiny muted">No repair services on the FAA file for this field.</div>';
   }
-  h += '<div class="micro muted" style="margin-top:8px">FAA NASR, Aug 2026 cycle. Crew cars and ramp fees are FBO-level; track those below.</div></div>';
+  h += '<div class="micro muted" style="margin-top:8px">FAA NASR via OurAirports, Aug 2026 cycle. Crew cars and ramp fees are FBO-level; track those below.</div></div>';
 
   /* FBOs and crew cars */
   var fboList = (S.fbos[a.c] || []);
@@ -1764,14 +1815,14 @@ function openApt(code, noFetch) {
   }
   h += canEdit()
     ? '<hr class="dash"><div class="grid3" style="grid-template-columns:1.4fr 1fr auto">' +
-      '<input class="t" id="fbIn" placeholder="FBO" autocomplete="off">' +
-      '<input class="t mono" id="fpIn" type="number" inputmode="decimal" step="0.01" min="0" placeholder="$/gal">' +
+      '<input class="t" id="fbIn" placeholder="FBO" aria-label="FBO name" autocomplete="off">' +
+      '<input class="t mono" id="fpIn" type="number" inputmode="decimal" step="0.01" min="0" placeholder="$/gal" aria-label="Jet A price per gallon">' +
       '<button class="btn" id="fAdd">Log</button>' +
       '</div></div>'
     : '<div class="micro muted" style="margin-top:6px">View only for your account.</div></div>';
 
   h += '<h2 class="sec">Your notes</h2><div class="card">' +
-    '<textarea class="t" id="aptNote" placeholder="Ramp fees, FBO quirks, who hooks you up&hellip;">' + esc(noteVal) + '</textarea>' +
+    '<textarea class="t" id="aptNote" aria-label="Your notes for this airport" placeholder="Ramp fees, FBO quirks, who hooks you up&hellip;">' + esc(noteVal) + '</textarea>' +
   '</div>';
 
   h += '<h2 class="sec">Alternates nearby</h2><div class="card">' +
@@ -1904,6 +1955,7 @@ function closeApt() {
   curDetail = null;
   $('aptDetailView').style.display = 'none';
   $('aptSearchView').style.display = 'block';
+  syncAptEmpty();
 }
 function renderAlts(a) {
   var list = [];
@@ -2428,12 +2480,13 @@ function renderWelcome() {
         '<div class="row"><span class="muted">Breaks even at a gap of</span>' + mono('$1.03/gal', 'font-weight:700') + '</div>' +
         '<div class="row"><span class="muted">Time added</span>' + mono('35 min', 'font-weight:700') + '</div>' +
       '</div>' +
+    '<div class="micro muted" style="text-align:center;margin-top:8px;text-shadow:none">Illustrative example. Your numbers come from your airplane and your crew\'s logged prices.</div>' +
     '</div>';
 
   var h =
     '<div class="landing">' +
     '<section class="hero">' +
-      '<picture class="hero-media" aria-hidden="true"><source media="(max-width:640px)" srcset="/img/hero-blue-hour.a3a1bd3d-800.webp"><img class="heroart" src="/img/hero-blue-hour.a3a1bd3d.webp" alt="" width="1600" height="900" fetchpriority="high" decoding="async"></picture>' +
+      heroPictureHTML() +
       '<div class="herowrap">' +
       '<div>' +
         '<div class="eyebrow">For pilots who manage the airplane</div>' +
@@ -2449,7 +2502,7 @@ function renderWelcome() {
       phone +
     '</div></section>' +
 
-    '<div class="strip"><span class="k">Built on official data</span><span class="s">FAA Aviation Weather Center</span><span class="s">FAA NASR airport file</span><span class="s">FAA winds aloft</span><span class="s">U.S. EIA</span><span class="s">OilPriceAPI</span></div>' +
+    '<div class="strip"><span class="k">Built on official data</span><span class="s">FAA Aviation Weather Center</span><span class="s">FAA NASR via OurAirports</span><span class="s">FAA winds aloft</span><span class="s">U.S. EIA</span><span class="s">OilPriceAPI</span></div>' +
 
     '<section id="savings"><h2 class="sec">Where the money is</h2>' +
       '<div class="landing-heading">The spread between two FBOs is bigger than the spread between two airlines.</div>' +
@@ -2462,7 +2515,7 @@ function renderWelcome() {
       '</div>' +
     '</section>' +
 
-    '<section><h2 class="sec">What it does</h2><div class="caps">' +
+    '<section id="features"><h2 class="sec">What it does</h2><div class="caps">' +
       '<div class="card cap"><div class="demo">' +
         '<div class="row">' + mono('KMVY', 'font-weight:700;font-size:15px') + pill('good', 'Wide open') + '</div>' +
         '<svg viewBox="0 0 260 96" width="100%" height="96" fill="none"><g transform="translate(130 48)"><rect x="-92" y="-6" width="184" height="12" fill="var(--ink2)" transform="rotate(-30)"/><rect x="-52" y="-4" width="104" height="8" fill="var(--ink3)" transform="rotate(60)"/><text x="-122" y="40" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">06</text><text x="92" y="-30" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">24</text></g></svg>' +
@@ -2540,11 +2593,16 @@ function renderWelcome() {
       '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><button class="btn primary" data-auth="register" style="min-height:52px;padding:0 22px;font-size:15px">Start planning free</button><span class="micro muted">hello@jetdesk.ai · answered by a human</span></div>' +
     '</div></section>' +
 
-    '<div class="micro muted" style="text-align:center;margin:22px 0 8px">www.jetdesk.ai · ' +
-      '<a href="/airports/" style="color:inherit">Airports</a> · <a href="/notes/" style="color:inherit">Field notes</a> · <a href="/terms/" style="color:inherit">Terms</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · Planning aid only, not for navigation.</div>' +
-    '</div>';
+    '';
   $('tab-welcome').innerHTML = h;
   $('browseBtn').addEventListener('click', function () { S.browse = true; save(); showTab('apt'); });
+  $('hnav').querySelectorAll('[data-hnav]').forEach(function (a) {
+    a.onclick = function (e) {
+      e.preventDefault();
+      var el = $(a.dataset.hnav); if (!el) return;
+      el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    };
+  });
   $('seeSavings').addEventListener('click', function () {
     var el = $('savings');
     if (el) el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
@@ -2580,7 +2638,7 @@ function openAuth(mode) {
     (reg ? '<label class="f"><span class="lab">Name</span><input class="t" id="auName" autocomplete="name" placeholder="Dale"></label>' : '') +
     '<label class="f"><span class="lab">Email</span><input class="t" id="auEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="you@example.com"></label>' +
     '<label class="f"><span class="lab">Password</span><input class="t" id="auPass" type="password" autocomplete="' + (reg ? 'new-password' : 'current-password') + '" placeholder="' + (reg ? 'At least 8 characters' : '') + '"></label>' +
-    '<div class="tiny" id="auErr" style="color:var(--bad);min-height:18px"></div>' +
+    '<div class="tiny" id="auErr" role="alert" style="color:var(--bad);min-height:18px"></div>' +
     '<div class="btnrow"><button class="btn primary" id="auGo" style="flex:1">' + (reg ? 'Create account' : 'Sign in') + '</button>' +
     '<button class="btn ghost" id="auCancel">Cancel</button></div>' +
     '<div class="tiny muted" style="margin-top:12px">' +

@@ -2,6 +2,7 @@ import hashlib, json, os, re
 import legal
 import content
 import airports
+open('lib/shell.gen.js', 'w').write(legal.shell_js())
 
 head = open('app_head.html').read()
 app_js = open('app.js').read()
@@ -28,6 +29,8 @@ pwa_css = """
   .btn,.tchip,.result,.hbtn,.iconbtn{transition:transform .06s ease}
 }
 a.lbtn::after{content:"\\2197";font-size:11px;opacity:.7}
+.swbar{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:10px 12px 10px 14px;box-shadow:var(--shadow);font-size:13.5px;font-weight:600;max-width:calc(100% - 24px)}
+.swbar .mono{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-left:6px}
 a.lbtn[href^="foreflightmobile"]::after{content:""}
 @media (display-mode: standalone){ header.app{padding-top:calc(14px + env(safe-area-inset-top))} }
 """
@@ -43,25 +46,45 @@ markup = head[sm.end():].strip()
 # The plain-named files in dist/icons stay as the editable source and are not referenced.
 ICON_STEMS = ('icon-192', 'icon-512', 'icon-maskable-192', 'icon-maskable-512', 'apple-touch-icon')
 ICONS = {}
+os.makedirs('dist/icons', exist_ok=True)
+for old in os.listdir('dist/icons'):
+  os.remove(os.path.join('dist/icons', old))
 for stem in ICON_STEMS:
-  src = os.path.join('dist/icons', stem + '.png')
+  src = os.path.join('assets/icons', stem + '.png')
   if not os.path.isfile(src):
     continue
   with open(src, 'rb') as icon_file:
     icon_bytes = icon_file.read()
   hashed = stem + '.' + hashlib.md5(icon_bytes).hexdigest()[:8] + '.png'
-  for old in os.listdir('dist/icons'):
-    if old != hashed and re.fullmatch(re.escape(stem) + r'\.[0-9a-f]{8}\.png', old):
-      os.remove(os.path.join('dist/icons', old))
-  if not os.path.isfile(os.path.join('dist/icons', hashed)):
-    with open(os.path.join('dist/icons', hashed), 'wb') as icon_out:
-      icon_out.write(icon_bytes)
+  with open(os.path.join('dist/icons', hashed), 'wb') as icon_out:
+    icon_out.write(icon_bytes)
   ICONS[stem] = '/icons/' + hashed
 icon_192 = ICONS.get('icon-192', '/icons/icon-192.png')
 icon_512 = ICONS.get('icon-512', '/icons/icon-512.png')
 icon_m192 = ICONS.get('icon-maskable-192', '/icons/icon-maskable-192.png')
 icon_m512 = ICONS.get('icon-maskable-512', '/icons/icon-maskable-512.png')
 icon_apple = ICONS.get('apple-touch-icon', '/icons/apple-touch-icon.png')
+
+# Images: sources live in assets/img; every file served from /img/ gets a content hash in its name so the
+# one-year immutable cache rule never applies to an unversioned path.
+IMG = {}
+os.makedirs('dist/img', exist_ok=True)
+for old in os.listdir('dist/img'):
+  os.remove(os.path.join('dist/img', old))
+for name in sorted(os.listdir('assets/img')):
+  stem, ext = os.path.splitext(name)
+  with open(os.path.join('assets/img', name), 'rb') as img_file:
+    img_bytes = img_file.read()
+  hashed = stem + '.' + hashlib.md5(img_bytes).hexdigest()[:8] + ext
+  with open(os.path.join('dist/img', hashed), 'wb') as img_out:
+    img_out.write(img_bytes)
+  IMG[stem] = '/img/' + hashed
+og_image = 'https://www.jetdesk.ai' + IMG['og-jetdesk']
+app_js = app_js.replace('__IMG_HERO_DAY__', IMG['hero-day-theme']).replace('__IMG_HERO_DAY_800__', IMG['hero-day-theme-800']) \
+               .replace('__IMG_HERO_NIGHT__', IMG['hero-night']).replace('__IMG_HERO_NIGHT_800__', IMG['hero-night-800'])
+import legal as _legal_mod
+_legal_mod.OG_IMAGE = og_image
+_legal_mod.LOGO_URL = 'https://www.jetdesk.ai' + icon_512
 
 asset_hash = hashlib.md5()
 for asset_dir in ('dist/fonts', 'dist/icons', 'dist/img'):
@@ -100,7 +123,7 @@ structured_data = {
   "@graph": [
     {
       "@type": "Organization", "@id": "https://www.jetdesk.ai/#org", "name": "JetDesk.AI", "url": "https://www.jetdesk.ai/",
-      "logo": {"@type": "ImageObject", "url": "https://www.jetdesk.ai/icons/icon-512.png", "width": 512, "height": 512},
+      "logo": {"@type": "ImageObject", "url": "https://www.jetdesk.ai" + icon_512, "width": 512, "height": 512},
       "email": "hello@jetdesk.ai"
     },
     {
@@ -113,7 +136,7 @@ structured_data = {
       "url": "https://www.jetdesk.ai/",
       "applicationCategory": "TravelApplication",
       "publisher": {"@id": "https://www.jetdesk.ai/#org"},
-      "image": "https://www.jetdesk.ai/img/og-jetdesk.a3a1bd3d.jpg",
+      "image": og_image,
       "operatingSystem": "Web, iOS, Android",
       "description": "Trip cost, fuel-stop math, runway verdicts and live FAA weather for pilots who manage the airplane.",
       "featureList": [
@@ -143,6 +166,8 @@ structured_data = {
 }
 structured_json = json.dumps(structured_data, separators=(',', ':')).replace('</', '<\\/')
 
+hero_preload = "<script>(function(){var t='auto';try{t=(JSON.parse(localStorage.getItem('mfd1')||'{}').settings||{}).theme||'auto'}catch(e){}var d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);var N=['__IMG_HERO_NIGHT__','__IMG_HERO_NIGHT_800__'],D=['__IMG_HERO_DAY__','__IMG_HERO_DAY_800__'];var f=d?N:D;var l=document.createElement('link');l.rel='preload';l.as='image';l.href=f[0];l.setAttribute('imagesrcset',f[1]+' 800w, '+f[0]+' 1600w');l.setAttribute('imagesizes','(max-width: 640px) 800px, 1600px');l.setAttribute('fetchpriority','high');document.head.appendChild(l);document.documentElement.setAttribute('data-hero',d?'night':'day')})();</script>"
+hero_preload = hero_preload.replace('__IMG_HERO_DAY__', IMG['hero-day-theme']).replace('__IMG_HERO_DAY_800__', IMG['hero-day-theme-800']).replace('__IMG_HERO_NIGHT__', IMG['hero-night']).replace('__IMG_HERO_NIGHT_800__', IMG['hero-night-800'])
 index = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -159,7 +184,7 @@ index = f"""<!doctype html>
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" href="{icon_192}" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="{icon_apple}">
-<link rel="preload" as="image" href="/img/hero-blue-hour.a3a1bd3d.webp" imagesrcset="/img/hero-blue-hour.a3a1bd3d-800.webp 800w, /img/hero-blue-hour.a3a1bd3d.webp 1600w" imagesizes="(max-width: 640px) 800px, 1600px" fetchpriority="high">
+{hero_preload}
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -171,7 +196,7 @@ index = f"""<!doctype html>
 <meta property="og:title" content="JetDesk.AI | Know What the Trip Costs Before You File">
 <meta property="og:description" content="Know what the trip costs before you file. Fuel-stop math, runway verdicts, live weather and winds for pilots who manage the airplane.">
 <meta property="og:url" content="https://www.jetdesk.ai/">
-<meta property="og:image" content="https://www.jetdesk.ai/img/og-jetdesk.a3a1bd3d.jpg">
+<meta property="og:image" content="{og_image}">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -179,7 +204,7 @@ index = f"""<!doctype html>
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="JetDesk.AI | Know What the Trip Costs Before You File">
 <meta name="twitter:description" content="Fuel-stop math, runway verdicts, live FAA weather and winds for pilots who manage the airplane.">
-<meta name="twitter:image" content="https://www.jetdesk.ai/img/og-jetdesk.a3a1bd3d.jpg">
+<meta name="twitter:image" content="{og_image}">
 <meta name="twitter:image:alt" content="JetDesk.AI trip planning on a blue-hour airport ramp">
 <script type="application/ld+json">{structured_json}</script>
 <style>
@@ -246,13 +271,24 @@ if os.path.isdir('dist/img'):
 sw = """'use strict';
 const V = 'jetdesk-%s';
 const CORE = %s;
+const GEN = 'jetdesk-sw-gen2'; /* marker cache: set once a worker with the wait-and-offer flow has activated */
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(V).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
+  /* precache, then wait: the page decides when the new worker takes over (see pwa.js).
+     One-time exception: upgrading from a pre-gen2 worker, whose page cannot send SKIP_WAITING,
+     takes over immediately (that page reloads itself exactly once on controllerchange). */
+  e.waitUntil(caches.open(V).then((c) => c.addAll(CORE)).then(() => caches.has(GEN)).then((gen2) => {
+    if (self.registration.active && !gen2) return self.skipWaiting();
+  }));
+});
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+  if (e.data && e.data.type === 'GET_VERSION' && e.source) e.source.postMessage({ type: 'VERSION', v: V });
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== V).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== V && k !== GEN).map((k) => caches.delete(k))))
+      .then(() => caches.open(GEN))
       .then(() => self.clients.claim())
   );
 });
@@ -326,7 +362,10 @@ open('dist/_headers', 'w').write("""/*
   Cross-Origin-Resource-Policy: same-origin
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self'
 
-/fonts/*
+/fonts/fonts.css
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/fonts/*.woff2
   Cache-Control: public, max-age=31536000, immutable
 
 /icons/*
@@ -348,7 +387,7 @@ open('dist/_headers', 'w').write("""/*
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
 
 /sw.js
-  Cache-Control: no-cache
+  Cache-Control: no-cache, max-age=0, must-revalidate
 
 /index.html
   Cache-Control: no-cache
@@ -359,22 +398,26 @@ Allow: /
 Sitemap: https://www.jetdesk.ai/sitemap.xml
 """)
 
-_lm = airports.sitemap_lastmod()
+_lm = airports.sitemap_lastmod()  # airport pages: NASR dataset cycle
+import datetime as _dt
+_today = _dt.date.today().isoformat()  # home: this build
+_eff = _dt.datetime.strptime(legal.EFFECTIVE, '%B %d, %Y').date().isoformat()  # terms/privacy: effective date
+_notes_latest = max(a['iso'] for a in content.ARTICLES)
 open('dist/sitemap.xml', 'w').write("""<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>https://www.jetdesk.ai/sitemap-pages.xml</loc><lastmod>%s</lastmod></sitemap>
   <sitemap><loc>https://www.jetdesk.ai/sitemap-airports.xml</loc><lastmod>%s</lastmod></sitemap>
 </sitemapindex>
-""" % (_lm, _lm))
+""" % (_today, _lm))
 open('dist/sitemap-pages.xml', 'w').write("""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.jetdesk.ai/</loc><lastmod>%s</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://www.jetdesk.ai/terms/</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://www.jetdesk.ai/privacy/</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://www.jetdesk.ai/notes/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.jetdesk.ai/notes/fuel-stop-math/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n  <url><loc>https://www.jetdesk.ai/notes/density-altitude-turboprops/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n  <url><loc>https://www.jetdesk.ai/notes/how-jetdesk-computes-trip-cost/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-</urlset>
-""" % _lm)
+  <url><loc>https://www.jetdesk.ai/airports/</loc><lastmod>%s</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.jetdesk.ai/terms/</loc><lastmod>%s</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.jetdesk.ai/privacy/</loc><lastmod>%s</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.jetdesk.ai/notes/</loc><lastmod>%s</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+""" % (_today, _lm, _eff, _eff, _notes_latest) + ''.join('  <url><loc>https://www.jetdesk.ai/notes/%s/</loc><lastmod>%s</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>\n' % (a['slug'], a['iso']) for a in content.ARTICLES) + """</urlset>
+""")
 
 print('app version:', app_v)
 print('index bytes:', len(index))

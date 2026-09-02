@@ -14,11 +14,16 @@ PAGE_CSS = """
   --wordmark:'Michroma','Arial Black',sans-serif;
 }
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not([data-theme="light"]){
     --bg:#070B14; --card:#0B1220; --card2:#121C2E; --line:#1E2A40; --line2:#2A3A55;
     --ink:#E6EAF2; --ink2:#A7B2C3; --ink3:#8492A6;
     --acc:#4CC9FF; --acc2:#7CC4FF;
   }
+}
+:root[data-theme="dark"]{
+  --bg:#070B14; --card:#0B1220; --card2:#121C2E; --line:#1E2A40; --line2:#2A3A55;
+  --ink:#E6EAF2; --ink2:#A7B2C3; --ink3:#8492A6;
+  --acc:#4CC9FF; --acc2:#7CC4FF;
 }
 *{box-sizing:border-box}
 html{height:100%}
@@ -31,7 +36,21 @@ header.legal a.home{display:flex;align-items:center;gap:10px;color:inherit;text-
 header.legal .mark{width:30px;height:30px;flex:none}
 header.legal .wordmark{font-family:var(--wordmark);font-weight:400;font-size:14px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 header.legal .wordmark .tld{color:var(--acc2);font-size:.62em;letter-spacing:.18em;margin-left:3px}
-header.legal .back{margin-left:auto;font-size:13px;font-weight:700;text-decoration:none;border:1px solid var(--line2);background:var(--card);border-radius:8px;padding:8px 12px;color:var(--ink2)}
+header.legal .back{font-size:13px;font-weight:700;text-decoration:none;border:1px solid var(--line2);background:var(--card);border-radius:8px;padding:8px 12px;color:var(--ink2)}
+header.legal .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.skip-link{position:fixed;left:12px;top:8px;z-index:100;transform:translateY(-160%);background:var(--acc);color:#fff;border-radius:8px;padding:10px 14px;font-weight:800;text-decoration:none}
+.skip-link:focus{transform:translateY(0)}
+main:focus{outline:none}
+header.legal .theme{font-family:var(--mono);font-size:11px;letter-spacing:.12em;border:1px solid var(--line2);background:var(--card);color:var(--ink2);border-radius:8px;padding:9px 10px;cursor:pointer}
+header.legal .theme:hover{color:var(--acc)}
+@media (max-width:420px){header.legal .back{display:none}}
+.notegrid{display:grid;grid-template-columns:1fr;gap:12px;margin:18px 0}@media(min-width:640px){.notegrid{grid-template-columns:1fr 1fr}}
+.note{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit;transition:border-color .15s}
+.note:hover{border-color:var(--acc)}
+.note .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.note h2{margin:6px 0 6px;font-size:18px}
+.note p{margin:0;font-size:14px}
+.note .m{margin-top:10px;font-size:12px;color:var(--ink3)}
 main{max-width:760px;margin:0 auto;padding:28px 18px 40px}
 h1{font-family:var(--disp);font-weight:800;font-size:clamp(28px,6vw,38px);letter-spacing:-.02em;line-height:1.08;margin:0 0 6px;text-wrap:balance}
 .effdate{font-family:var(--mono);font-size:12.5px;color:var(--ink3);margin-bottom:22px}
@@ -66,7 +85,16 @@ footer.legal a{color:var(--ink3)}
 MARK_SVG = '<svg class="mark" viewBox="0 0 72 72" fill="none" aria-hidden="true"><rect x="2" y="2" width="68" height="68" rx="18" fill="var(--card)" stroke="var(--line2)" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="var(--acc)"/><path d="M22 54 H50" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.55"/></svg>'
 
 
-OG_IMAGE = 'https://www.jetdesk.ai/img/og-jetdesk.a3a1bd3d.jpg'
+OG_IMAGE = 'https://www.jetdesk.ai/img/og-jetdesk.jpg'  # replaced with the hashed path by assemble_pwa.py
+LOGO_URL = 'https://www.jetdesk.ai/icons/icon-512.png'  # same
+
+# Theme: the same setting the app keeps (localStorage mfd1.settings.theme = auto | light | dark), applied before
+# first paint and cycled by the header button. Kept tiny and inline so the pages stay a single request.
+THEME_SCRIPT = """<script>(function(){function g(){try{return (JSON.parse(localStorage.getItem('mfd1')||'{}').settings||{}).theme||'auto'}catch(e){return 'auto'}}
+function a(t){var r=document.documentElement;if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);r.style.colorScheme=t==='auto'?'light dark':t;var b=document.getElementById('themeBtn');if(b){b.textContent=t==='auto'?'AUTO':(t==='light'?'DAY':'NIGHT');b.title='Theme: '+t}}
+a(g());window.__jdTheme=function(){var o=['auto','light','dark'],t=o[(o.indexOf(g())+1)%3];try{var S=JSON.parse(localStorage.getItem('mfd1')||'{}');S.settings=S.settings||{};S.settings.theme=t;localStorage.setItem('mfd1',JSON.stringify(S))}catch(e){}a(t)};
+document.addEventListener('DOMContentLoaded',function(){a(g())})})()</script>"""
+THEME_BUTTON = '<button class="theme" id="themeBtn" type="button" onclick="__jdTheme()" aria-label="Change color theme">AUTO</button>'
 
 def breadcrumb_ld(items):
   """items: list of (name, url)"""
@@ -105,13 +133,15 @@ def legal_page(slug, title, description, body_html, extra_head='', og_type='webs
 <meta name="twitter:image" content="{OG_IMAGE}">
 {extra_head}
 <style>{PAGE_CSS}</style>
+{THEME_SCRIPT}
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="legal"><div class="inner">
   <a class="home" href="/" aria-label="JetDesk.AI home">{MARK_SVG}<span class="wordmark">Jet<span>Desk</span><span class="tld">.AI</span></span></a>
-  <a class="back" href="/">Open the app &#8594;</a>
+  <div class="right">{THEME_BUTTON}<a class="back" href="/">Open the app &#8594;</a></div>
 </div></header>
-<main>
+<main id="main" tabindex="-1">
 {body_html}
 <footer class="legal">
   JetDesk.AI · <a href="/airports/">Airport directory</a> · <a href="/notes/">Field notes</a> · <a href="/terms/">Terms of Service</a> · <a href="/privacy/">Privacy Policy</a> · <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a><br>
@@ -318,3 +348,17 @@ def build_pages():
       'What JetDesk.AI collects, what it never collects, where your location data goes (nowhere), and how to delete your data.',
       PRIVACY_BODY),
   }
+
+
+# Shared shell for the server-rendered pages (brief, report): tokens, header and the theme script, exported as JS by
+# assemble_pwa.py into lib/shell.gen.js so those pages cannot drift from the static ones.
+def shell_js():
+  import json
+  header = ('<header class="legal"><div class="inner"><a class="home" href="/" aria-label="JetDesk.AI home">' + MARK_SVG +
+            '<span class="wordmark">Jet<span>Desk</span><span class="tld">.AI</span></span></a><div class="right">' + THEME_BUTTON +
+            '<a class="print" href="javascript:window.print()" onclick="window.print();return false;">Print / PDF</a><a class="back" href="/">Open the app &#8594;</a></div></div></header>')
+  css = PAGE_CSS.split('main{')[0] + 'header.legal .print{font-size:13px;font-weight:700;text-decoration:none;border:1px solid var(--line2);background:var(--card);border-radius:8px;padding:8px 12px;color:var(--ink2)}\n@media print{header.legal{display:none}}\n'
+  return ('/* generated by assemble_pwa.py from legal.py; do not edit */\n' +
+          'export const SHELL_CSS = ' + json.dumps(css) + ';\n' +
+          'export const THEME_SCRIPT = ' + json.dumps(THEME_SCRIPT) + ';\n' +
+          'export const SHELL_HEADER = ' + json.dumps(header) + ';\n')

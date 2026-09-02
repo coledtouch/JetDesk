@@ -35,6 +35,7 @@
 
 /* ============ BASE ============ */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 [hidden]{display:none!important}
 html{height:100%}
 body{
@@ -75,10 +76,19 @@ header.app{
   display:inline-flex;align-items:center;gap:6px;flex:none;
 }
 .hbtn svg{width:16px;height:16px}
-#headerSignIn{display:none;color:var(--ink);font-family:var(--disp);font-size:13px;letter-spacing:.01em;text-transform:none}
+#headerSignIn,#headerStart,.hnav{display:none;color:var(--ink);font-family:var(--disp);font-size:13px;letter-spacing:.01em;text-transform:none}
+.hbtn.primary,#headerStart.primary{background:var(--btn);border-color:var(--btn);color:var(--btn-ink);font-weight:700}
+.hnav{gap:2px;margin-right:2px}
+.hnav a{color:var(--ink2);text-decoration:none;font-weight:600;font-size:13px;padding:0 10px;min-height:44px;display:inline-flex;align-items:center;border-radius:8px}
+.hnav a:hover{color:var(--ink);background:var(--card2)}
 .is-welcome #setBtn{display:none}
-.is-welcome #headerSignIn{display:inline-flex}
-@media (max-width:340px){header.app{padding-left:10px;padding-right:10px;gap:8px}.brand{gap:8px}.brand .mark{width:30px;height:30px}.brand .wordmark{font-size:11.5px}.brand .sub{font-size:8px;letter-spacing:.02em}.is-welcome #headerSignIn{padding-left:9px;padding-right:9px}}
+.is-welcome #headerSignIn,.is-welcome #headerStart{display:inline-flex}
+@media (min-width:860px){.is-welcome .hnav{display:inline-flex}}
+#themeBtn{min-width:44px;padding:0 10px}
+#themeBtn svg{width:18px;height:18px;flex:none}
+@media (max-width:419px){.brand .sub{display:none}#themeBtn #themeLbl{display:none}#themeBtn{padding:0;width:44px;justify-content:center}}
+@media (max-width:479px){.is-welcome #headerStart{display:none}.brand .wordmark{font-size:clamp(12px,3.6vw,15px)}}
+@media (max-width:340px){header.app{padding-left:10px;padding-right:10px;gap:8px}.brand{gap:8px}.brand .mark{width:30px;height:30px}.brand .wordmark{font-size:11.5px}}
 
 /* ============ LAYOUT ============ */
 #appMain{display:block}
@@ -270,6 +280,7 @@ canvas.rwmap{width:100%;height:190px;border:1px solid var(--line);border-radius:
 }
 .notice b{color:var(--warn)}
 footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;color:var(--ink3);text-align:center}
+footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-welcome footer.disc .compact{display:none}
 
 /* ============ SAAS: landing, plans, gates, toast ============ */
 .eyebrow{font-family:var(--wordmark);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc2);margin-bottom:10px}
@@ -278,8 +289,9 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
 .landing{max-width:1100px;margin:0 auto}
 .hero{padding:34px 24px 28px;position:relative;overflow:hidden;isolation:isolate;background:#070B14;border:1px solid #1E2A40;border-radius:24px}
 .hero-media{position:absolute;inset:0;z-index:0}
-.heroart{width:100%;height:100%;object-fit:cover;object-position:60% center;opacity:.52}
-.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(7,11,20,.98) 0%,rgba(7,11,20,.90) 38%,rgba(7,11,20,.48) 72%,rgba(7,11,20,.28) 100%),linear-gradient(0deg,rgba(7,11,20,.90),transparent 48%)}
+.heroart{width:100%;height:100%;object-fit:cover;object-position:38% center;opacity:.58}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(7,11,20,.58) 0%,rgba(7,11,20,.44) 42%,rgba(7,11,20,.60) 70%,rgba(7,11,20,.84) 100%),linear-gradient(0deg,rgba(7,11,20,.92),rgba(7,11,20,.40) 55%,transparent 100%)}
+.hero .eyebrow,.hero .herotitle,.hero .herosub,.hero .hero-proof,.hero .micro,.hero .linkbtn{text-shadow:0 1px 3px rgba(7,11,20,.9),0 10px 34px rgba(7,11,20,.7)}
 .herowrap{position:relative;z-index:2;display:grid;grid-template-columns:1fr;gap:28px;align-items:center}
 @media (min-width:860px){.herowrap{grid-template-columns:1.15fr .85fr}.hero{padding:58px 48px 42px;min-height:550px}}
 .hero .eyebrow{color:#4CC9FF}
@@ -290,9 +302,20 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
 .hero .btn.primary{background:#4CC9FF;border-color:#4CC9FF;color:#06131F}
 .hero .btn:not(.primary){color:#E6EAF2;background:rgba(11,18,32,.78);border-color:#2A3A55}
 .hero .phone{--card:#0B1220;--card2:#121C2E;--line:#1E2A40;--line2:#2A3A55;--ink:#E6EAF2;--ink2:#A7B2C3;--ink3:#8492A6;--acc:#4CC9FF;--acc2:#7CC4FF;--acc-soft:#0E2536;--good:#2FD27D;--good-soft:#0F2A1E;--bad:#FF5A5F;color:var(--ink)}
+/* daylight hero (light theme): let the image read as pearl and stone; keep a dark band behind the copy only */
+:root[data-hero="day"] .hero{background:#DCE3EC;border-color:#C5CFDB}
+:root[data-hero="day"] .heroart{opacity:.9}
+:root[data-hero="day"] .hero::after{background:linear-gradient(90deg,rgba(12,20,34,.66) 0%,rgba(12,20,34,.52) 42%,rgba(12,20,34,.60) 70%,rgba(12,20,34,.80) 100%),linear-gradient(0deg,rgba(12,20,34,.80),rgba(12,20,34,.34) 55%,transparent 100%)}
+:root[data-hero="day"] .hero .btn:not(.primary){background:rgba(11,18,32,.62);border-color:rgba(230,234,242,.28)}
+/* the phone mock is glass over the hero photo so the aircraft reads through it in both themes */
+.hero .phone{background:rgba(11,18,32,.42);border-color:rgba(230,234,242,.22);-webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1);box-shadow:0 30px 70px rgba(0,0,0,.28)}
+.hero .phone .pcard{background:rgba(18,28,46,.48);border-color:rgba(230,234,242,.14)}
+.hero .phone .pfield{background:rgba(11,18,32,.50);border-color:rgba(230,234,242,.14)}
+.hero .phone .pverdict{background:rgba(15,42,30,.62)}
 .hero-proof{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;color:#A7B2C3;font-size:12px;font-weight:700}
-.hero-proof span::before{content:"✓";color:#4CC9FF;margin-right:6px}
-@media (max-width:559px){.panel#tab-welcome{padding:10px 12px 8px}.hero{padding:30px 22px 26px;border-radius:20px}.heroart{object-position:66% center;opacity:.36}.hero::after{background:linear-gradient(180deg,rgba(7,11,20,.84) 0%,rgba(7,11,20,.94) 52%,#070B14 76%)}.hero .btnrow .btn{width:100%}.hero .phone{margin-top:4px}.strip{padding-left:4px;padding-right:4px}}
+.hero-proof span::before{content:"✓" / "";color:#4CC9FF;margin-right:6px}
+@media (max-width:559px){.panel#tab-welcome{padding:10px 12px 8px}.hero{padding:30px 22px 26px;border-radius:20px}.heroart{object-position:30% center;opacity:.55}.hero::after{background:linear-gradient(180deg,rgba(7,11,20,.60) 0%,rgba(7,11,20,.90) 46%,#070B14 72%)}.hero .btnrow .btn{width:100%}.hero .phone{margin-top:4px}.strip{padding-left:4px;padding-right:4px}
+:root[data-hero="day"] .heroart{opacity:.85;object-position:32% 30%}:root[data-hero="day"] .hero::after{background:linear-gradient(180deg,rgba(12,20,34,.58) 0%,rgba(12,20,34,.86) 46%,#0C1422 72%)}}
 .phone{background:var(--card);border:1px solid var(--line2);border-radius:36px;padding:14px;box-shadow:0 30px 70px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--acc) 20%,transparent);max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .phone .pcard{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .phone .pverdict{background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 45%,transparent);border-radius:16px;padding:16px 12px;text-align:center}
@@ -325,8 +348,8 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
 .faq:last-child{border-bottom:1px solid var(--line)}
 .faq .q{font-weight:800;font-size:15.5px;cursor:pointer;list-style:none;padding:16px 34px 16px 0;position:relative}
 .faq .q::-webkit-details-marker{display:none}
-.faq .q::after{content:"+";position:absolute;right:4px;top:12px;color:var(--acc);font-family:var(--mono);font-size:22px}
-.faq[open] .q::after{content:"−"}
+.faq .q::after{content:"+" / "";position:absolute;right:4px;top:12px;color:var(--acc);font-family:var(--mono);font-size:22px}
+.faq[open] .q::after{content:"−" / ""}
 .faq .a{font-size:14px;color:var(--ink2);line-height:1.55;padding:0 34px 16px 0}
 .finalcta{border-radius:20px;padding:28px 20px;background:radial-gradient(500px 220px at 15% 0%,color-mix(in srgb,var(--acc) 22%,transparent),transparent 60%),var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
 @media (min-width:760px){.finalcta{flex-direction:row;align-items:center;justify-content:space-between;padding:40px}}
@@ -334,7 +357,7 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
 @media (min-width:860px){.plans.three{grid-template-columns:repeat(3,1fr)}}
 .herosub{font-size:15px;line-height:1.5;color:var(--ink2);margin:0;max-width:34em}
 .landing-heading{font-family:var(--disp);font-weight:800;font-size:clamp(24px,5.5vw,34px);letter-spacing:-.02em;line-height:1.1;text-wrap:balance;margin:0 2px 10px}
-.linkbtn{background:none;border:none;padding:0;color:var(--acc2);font:inherit;font-size:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;margin-top:12px}
+.linkbtn{background:none;border:none;padding:4px 0;min-height:24px;color:var(--acc2);font:inherit;font-size:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;margin-top:12px}
 .featlist{display:grid;gap:10px}
 .feat .ft{font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:.03em}
 .feat .fd{font-size:13px;color:var(--ink2);margin-top:1px}
@@ -362,6 +385,8 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
 </style>
 
 <a class="skip-link" href="#appMain">Skip to content</a>
+<div id="live" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+<div id="liveAlert" role="alert" aria-atomic="true" class="sr-only"></div>
 <header class="app">
   <a class="brand" href="/" aria-label="JetDesk.AI home">
     <svg class="mark" viewBox="0 0 72 72" fill="none" aria-hidden="true"><rect x="2" y="2" width="68" height="68" rx="18" fill="var(--card)" stroke="var(--line2)" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="var(--acc)"/><path d="M22 54 H50" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.55"/><path d="M30 60 H42" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.30"/></svg>
@@ -370,8 +395,10 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
       <div class="sub" id="subline">TRIP COST · FUEL · RUNWAYS</div>
     </div>
   </a>
-  <button class="hbtn" id="themeBtn" aria-label="Theme">AUTO</button>
+  <nav class="hnav" id="hnav" aria-label="Site"><a href="#features" data-hnav="features">Features</a><a href="#pricing" data-hnav="pricing">Pricing</a></nav>
+  <button class="hbtn" id="themeBtn" aria-label="Theme: auto. Change color theme" title="Theme: auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span id="themeLbl">AUTO</span></button>
   <button class="hbtn" id="headerSignIn" data-auth="login">Sign in</button>
+  <button class="hbtn primary" id="headerStart" data-auth="register">Start free</button>
   <button class="hbtn" id="setBtn" aria-label="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
   </button>
@@ -389,7 +416,7 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
   <div id="aptSearchView">
     <div class="searchwrap rowline" style="gap:8px">
       <input class="t mono" id="aptSearch" type="search" autocomplete="off" autocapitalize="characters"
-             placeholder="Code, name, or city  (KMVY, Westchester…)" aria-label="Search airports" style="flex:1">
+             placeholder="Code, name, or city" aria-label="Search airports" style="flex:1">
       <button class="iconbtn" id="nearBtn" aria-label="Airports near me" style="width:46px;height:46px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px">
           <circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>
@@ -403,6 +430,12 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
       <button class="btn small" data-nf="big">Big runway</button>
     </div>
     <div id="nearStatus" class="micro muted" style="margin-top:6px"></div>
+    <div id="aptEmpty" class="card" style="margin-top:10px">
+      <div class="lab">Search by airport code, name, or city</div>
+      <div class="tiny muted" style="margin-bottom:8px">Every paved U.S. field with 2,500 ft or more. Try one:</div>
+      <div class="btnrow" id="aptExamples"><button class="btn small mono" data-ex="KHPN">KHPN</button><button class="btn small mono" data-ex="KTEB">KTEB</button><button class="btn small mono" data-ex="KBED">KBED</button><button class="btn small mono" data-ex="KMVY">KMVY</button><button class="btn small" id="nearBtn2">Near me</button></div>
+      <div class="micro muted" style="margin-top:8px">Each airport page has runways, live METAR and TAF, density altitude, runway math for your airplane, nearby alternates and your crew's fuel prices.</div>
+    </div>
     <div class="results" id="aptResults"></div>
   </div>
   <div id="aptDetailView" style="display:none"></div>
@@ -492,8 +525,8 @@ footer.disc{max-width:640px;margin:4px auto 10px;padding:0 16px;font-size:11px;c
   <div class="sheet" id="sheetBody"></div>
 </div>
 
-<footer class="disc">
-  <a href="https://www.jetdesk.ai" style="color:inherit;text-decoration:none;font-family:var(--disp);font-weight:600;letter-spacing:.08em">WWW.JETDESK.AI</a> · Planning aid only, not for navigation. Runway data: FAA via OurAirports, Aug 2026.
-  Verify fuel prices, weather, NOTAMs and performance through official briefing sources before flight.<br>
-  <a href="/terms/" style="color:inherit">Terms of Service</a> · <a href="/privacy/" style="color:inherit">Privacy Policy</a> · <a href="mailto:hello@jetdesk.ai" style="color:inherit">hello@jetdesk.ai</a>
+<footer class="disc" id="appFoot">
+  <span class="full">Planning aid only, not for navigation. Runway data: FAA NASR via OurAirports, Aug 2026 cycle. Verify fuel prices, weather, NOTAMs and performance through official briefing sources before flight.<br>
+  <a href="/airports/" style="color:inherit">Airport directory</a> · <a href="/notes/" style="color:inherit">Field notes</a> · <a href="/terms/" style="color:inherit">Terms</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="mailto:hello@jetdesk.ai" style="color:inherit">hello@jetdesk.ai</a></span>
+  <span class="compact">Planning aid only, not for navigation · <a href="/terms/" style="color:inherit">Terms</a> · <a href="/privacy/" style="color:inherit">Privacy</a></span>
 </footer>

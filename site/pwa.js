@@ -3,14 +3,78 @@
 'use strict';
 var APP_V = '__APP_V__';
 
-/* ---- service worker ---- */
+/* ---- service worker: install quietly, then hand over on our terms ----
+   A new worker precaches and WAITS. If nothing on this page can be lost (no queued sync, no open editor,
+   no modal), the page tells it to take over and reloads once. Otherwise a small "Update available" bar
+   offers the reload. A per-version marker in sessionStorage guarantees at most one automatic reload,
+   so two tabs racing an update can never loop. */
+var SW = { reg: null, reloading: false };
+function swSafeToReload() {
+  try {
+    var S = JSON.parse(localStorage.getItem('mfd1') || '{}');
+    if (S.q && S.q.length) return false;
+  } catch (e) {}
+  if (document.querySelector('#modalWrap.on, #sheetWrap.on, #legEd, #addLegCard')) return false;
+  var ae = document.activeElement;
+  if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && ae.value) return false;
+  return true;
+}
+function swVersionOf(worker, cb) {
+  var done = false, ch = new MessageChannel();
+  ch.port1.onmessage = function (e) { if (!done) { done = true; cb(e.data && e.data.v); } };
+  try { worker.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) { cb(null); }
+  setTimeout(function () { if (!done) { done = true; cb(null); } }, 800);
+}
+function swActivate(worker) {
+  if (SW.reloading) return;
+  SW.reloading = true;
+  worker.postMessage({ type: 'SKIP_WAITING' });
+}
+function swOffer(worker) {
+  swVersionOf(worker, function (v) {
+    var key = 'jd_sw_auto_' + (v || 'x');
+    var autoDone = false;
+    try { autoDone = sessionStorage.getItem(key) === '1'; } catch (e) {}
+    if (!autoDone && swSafeToReload()) {
+      try { sessionStorage.setItem(key, '1'); } catch (e) {}
+      swActivate(worker);
+      return;
+    }
+    showUpdateBar(worker, v);
+  });
+}
+function showUpdateBar(worker, v) {
+  if (document.getElementById('swBar')) return;
+  var bar = document.createElement('div');
+  bar.id = 'swBar'; bar.className = 'swbar'; bar.setAttribute('role', 'status');
+  bar.innerHTML = '<span>Update available' + (v ? ' <span class="mono">' + v.replace('jetdesk-', '') + '</span>' : '') + '</span>' +
+    '<button class="btn primary small" id="swGo">Reload</button><button class="btn ghost small" id="swLater" aria-label="Not now">Later</button>';
+  document.body.appendChild(bar);
+  document.getElementById('swGo').addEventListener('click', function () { if (worker && worker.state !== 'activated') swActivate(worker); else location.reload(); });
+  document.getElementById('swLater').addEventListener('click', function () { bar.remove(); });
+}
 if ('serviceWorker' in navigator) {
   var hadController = !!navigator.serviceWorker.controller;
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js').catch(function () {});
+    navigator.serviceWorker.register('/sw.js').then(function (reg) {
+      SW.reg = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) swOffer(reg.waiting);
+      reg.addEventListener('updatefound', function () {
+        var nw = reg.installing; if (!nw) return;
+        nw.addEventListener('statechange', function () {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) swOffer(nw);
+        });
+      });
+      /* look for a newer build when the app comes back to the foreground */
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reg.update().catch(function () {}); });
+    }).catch(function () {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', function () {
-    if (hadController && !window.__mfdReloaded) { window.__mfdReloaded = true; location.reload(); }
+    /* the new worker now controls this page (this tab or a sibling asked for it): reload once if nothing
+       can be lost, otherwise leave the page alone and offer the reload */
+    if (!hadController || window.__mfdReloaded) return;
+    window.__mfdReloaded = true;
+    if (swSafeToReload()) location.reload(); else showUpdateBar(null, null);
   });
 }
 

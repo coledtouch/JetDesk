@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 1, 2026, app version `v8a66d6bd`, live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 2, 2026, app version `vfedf2513`, live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -63,7 +63,7 @@ Operations
 14. `site/refresh_data.py` and the weekly GitHub workflow for NASR cycle refresh; `dataset_cycle.json` records the cycle in use (2026-08-06).
 15. `site/workers/cron` deployed as `jetdesk-cron` with a "JetDesk cron worker" API token (Edit Cloudflare Workers template, account scoped). Manual run verified.
 
-### Round 4 (v15ea1630 through v8a66d6bd, current)
+### Round 4 (v15ea1630 through v8a66d6bd)
 
 Source of truth moved to GitHub: `coledtouch/JetDesk` (private), repo root = this package layout (`site/`, `.github/workflows/refresh-data.yml` at the root). The weekly data refresh runs there with repository secrets `CLOUDFLARE_API_TOKEN` (Pages:Edit) and `CLOUDFLARE_ACCOUNT_ID`; its first run deployed successfully. Commit source changes there before deploying so the refresh job never overwrites a newer build.
 
@@ -95,6 +95,23 @@ Phase C: dates, import, onboarding, referrals
 
 Onboarding email sequence
 17. `lib/lifecycle.js` sends three trial emails in order, one per run, only while the trial is running and no subscription exists: day 1 (fuel stop math, links `/?go=fuel`), day 3 (log one flight, `/?go=trip`), day 10 (owner report and the view-only invite, `/?go=account`), then the existing trial-ending and trial-ended notices. Sent lazily on `/api/me` and daily by the cron Worker; `users.notices` records what went out. Delivery verified to a Google inbox (primary tab).
+
+Theme-aware hero (Codex hero handoff, v94710394)
+18. `site/dist/img/hero-day-theme.webp` (1600x900) and `-800.webp` built from the daylight master at WebP q84. `app.js` picks the pair from the effective theme (`effectiveTheme()`: explicit choice beats `prefers-color-scheme`), renders `<picture>` with ids `heroSrc`/`heroImg`, and `syncHero()` swaps the sources on every theme change (button or OS change event). `data-hero="day|night"` on the root drives a light-mode hero treatment in `app_head.html` (image at .88, dark band behind the copy only). A small inline script in the head chooses the single preload from the stored theme so one full-size hero loads per visit; both day files are precached by the service worker.
+
+Static pages and hero, v980df75d
+19. Both hero photos are mirrored so the aircraft sits on the left behind the copy (`hero-blue-hour.f1a2b3c4*.webp` replaces the a3a1bd3d files; the old night files are gone from `dist/img`). Gradients and text shadows were reworked for legibility over the aircraft, and the Fuel Stop phone mock is frosted glass so the photo reads through it.
+20. Every static page (legal, notes, airports) and the server-rendered brief and report pages share one shell: brand tokens with the same light/dark override pattern as the app, a sticky header with the theme button (AUTO, DAY, NIGHT, stored in the same `mfd1.settings.theme` the app reads, so the choice follows the pilot between pages and app) and an "Open the app" link. `legal.py` is the single source; `assemble_pwa.py` writes `lib/shell.gen.js` from it for the two Functions pages, so run the build before deploying Functions.
+21. Field notes grew to eight (reserve fuel, winds aloft, weight before fuel, the owner report, the two-week price rule) with a card index, reading times and related notes on each article; `sitemap-pages.xml` is generated from `content.ARTICLES`.
+
+### Round 5 (vfedf2513, current): production review pass
+
+1. Cache and service worker. Hero images, icons and the OG image live in `site/assets/` and are emitted with content hashes under `/img/` and `/icons/` with immutable cache headers; `_headers` gives `/sw.js` no-cache and `/fonts/fonts.css` one hour. The worker precaches and then waits; `pwa.js` activates it only when nothing can be lost (no unsynced queue, no open sheet, modal or leg editor, no focused field with text) and otherwise shows an "Update available: Reload / Later" bar; one reload per version, guarded against loops. A marker cache `jetdesk-sw-gen2` lets the first worker of this generation take over immediately from the pre-gen2 production worker, whose page could not request activation (that page reloads itself once). Verified locally: v980df75d to vfedf2513 in two tabs reloaded each tab exactly once; a further upgrade with a modal open showed the bar and did not reload.
+2. Landing. Header nav (Features, Pricing) from 860 px, "Start free" header CTA, theme button with a sun or moon icon and AUTO, DAY or NIGHT label, "Illustrative example" note under the phone mock, full footer with provenance and links on the landing, compact footer in the app. No new claims, counts, prices or testimonials.
+3. Mobile. Brand subline and theme label hide under 420 px, header CTA under 480 px so the wordmark never clips at 320 or 390; search placeholder shortened; hero photo slightly more visible on phones; every control at least 44 px.
+4. Accessibility. Live regions announce search counts, Near Me results, weather loads, saves, errors and theme changes; skip links on the app and every static page (`legal.py`, so also the report and brief pages through `lib/shell.gen.js`); aria labels on the FBO, price and notes inputs; the theme button reports its state.
+5. SEO and trust. Airport page titles are 26 to 65 characters (`airports.page_title`), descriptions 148 to 165 (`airports.page_description`), one canonical and one H1 each, JSON-LD unchanged. Provenance reads "FAA NASR via OurAirports, <Mon YYYY> cycle" everywhere and `refresh_data.py` rewrites that phrase in `app_head.html`, `app.js`, `airports.py` and `legal.py` on each refresh (the workflow's commit step adds those files). Sitemap lastmod values are real: home = build date, `/airports/` and airport pages = dataset cycle, terms and privacy = effective date, notes = article dates; `/airports/` is listed once, in `sitemap-pages.xml`.
+6. Custom domain caching note. The jetdesk.ai zone's Browser Cache TTL raises any lower origin max-age to 4 hours for cacheable assets (seen on `/sw.js` and `/fonts/fonts.css`; the pages.dev host serves the origin headers). Browsers fetch the service worker script fresh regardless, so this is cosmetic; to make the origin headers win, set Caching, Configuration, Browser Cache TTL to "Respect Existing Headers" in the zone dashboard.
 
 ### Known gaps for the next round
 

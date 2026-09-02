@@ -2,7 +2,7 @@
 # would actually use, plus a state index. Built by assemble_pwa.py from airports_us.json (FAA NASR via OurAirports).
 # Every number on the page is computed from the dataset, and the planning figures use the same rules of thumb
 # as the app (see notes/density-altitude-turboprops), so the pages say something a pilot can use.
-import json, math
+import json, re, math
 from legal import legal_page, breadcrumb_ld
 
 STATES = {'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California','CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia','HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa','KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland','MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi','MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire','NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina','ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania','RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee','TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington','WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming','DC':'District of Columbia','PR':'Puerto Rico','VI':'U.S. Virgin Islands','GU':'Guam','AS':'American Samoa','MP':'Northern Mariana Islands'}
@@ -57,6 +57,13 @@ def density_altitude(elev_ft, oat_c):
 def fmt(n):
   return '{:,}'.format(int(round(n)))
 
+def cycle_label():
+  import datetime
+  try:
+    return datetime.date.fromisoformat(sitemap_lastmod()).strftime('%b %Y')
+  except Exception:
+    return 'Aug 2026'
+
 def sitemap_lastmod():
   try:
     return json.load(open('dataset_cycle.json')).get('cycle', '2026-09-01')
@@ -87,13 +94,39 @@ def build(ap):
     pages[slug] = state_page(st, sorted(lst, key=lambda x: (-(longest(x)['l'] if longest(x) else 0), x['c'])))
     urls.append('https://www.jetdesk.ai/' + slug + '/')
   pages['airports'] = index_page(states)
-  urls.insert(0, 'https://www.jetdesk.ai/airports/')
+  # /airports/ itself is listed in sitemap-pages.xml
   sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(
     '  <url><loc>%s</loc><lastmod>%s</lastmod><changefreq>monthly</changefreq><priority>%s</priority></url>\n' % (u, lastmod, '0.7' if u.endswith('/airports/') else '0.5') for u in urls) + '</urlset>\n'
   return pages, sitemap, len(sel)
 
 def state_slug(st):
   return '/airports/' + st.lower() + '/'
+
+def page_title(code, name, place):
+  """~50-65 characters: 'KHPN Runways, Elevation & Pilot Planning | JetDesk' with the airport name when it fits."""
+  base = '%s Runways, Elevation & Pilot Planning | JetDesk' % code
+  short = re.sub(r'\b(Regional|International|Municipal|County|Executive|Memorial)\b', lambda m: {'Regional': 'Rgnl', 'International': 'Intl', 'Municipal': 'Muni', 'County': 'Co', 'Executive': 'Exec', 'Memorial': 'Mem'}[m.group(1)], name)
+  short = re.sub(r'\s*(Airport|Field|Airpark)$', '', short).strip()
+  with_name = '%s %s Runways & Pilot Planning | JetDesk' % (code, short)
+  return with_name if 45 <= len(with_name) <= 65 else base
+
+def page_description(code, name, loc, rws, lr, elev):
+  """140-165 characters."""
+  where = (' in ' + loc) if loc else ''
+  n = '%d runway%s' % (len(rws), '' if len(rws) == 1 else 's')
+  rw = ('%s, longest %s ft' % (n, fmt(lr['l']))) if lr else n
+  tail_long = 'Density altitude, turboprop runway margins, nearby alternates and fuel-stop planning.'
+  tail_mid = 'Density altitude, turboprop runway margins, alternates and fuel-stop planning.'
+  tail_short = 'Density altitude, runway margins, alternates and fuel stops.'
+  cands = ['%s %s%s: %s, elevation %s ft. %s' % (code, name, where, rw, fmt(elev), t) for t in (tail_long, tail_mid, tail_short)]
+  cands += ['%s%s: %s, elevation %s ft. %s' % (code, where, rw, fmt(elev), t) for t in (tail_long, tail_mid, tail_short)]
+  cands += ['%s: %s, elevation %s ft. %s' % (code, rw, fmt(elev), t) for t in (tail_long, tail_mid, tail_short)]
+  d = next((c for c in cands if len(c) <= 165), cands[-1])
+  for extra in (' Free pilot planning from JetDesk.AI.', ' From JetDesk.AI.'):
+    if len(d) < 140 and len(d + extra) <= 165:
+      d += extra
+      break
+  return d
 
 def airport_page(a, big, by):
   code = a['c']; name = a.get('n') or code; city = a.get('m') or ''; st = a.get('st') or ''
@@ -123,8 +156,7 @@ def airport_page(a, big, by):
     else:
       margin_txt = 'On a 35°C afternoon the longest runway (%s, %s ft) is short of the 1.5x landing figure for a Meridian-class turboprop (%s ft). Treat this as a cool-morning field for heavier turboprops and run the POH numbers.' % (lr['id'], fmt(lr['l']), fmt(worst[4]))
   title = '%s %s' % (code, name)
-  desc = '%s (%s)%s: %d runway%s%s, elevation %s ft. Density altitude, turboprop runway margins, nearby alternates and fuel-stop planning from JetDesk.AI.' % (
-    code, name, ' in ' + loc if loc else '', len(rws), '' if len(rws) == 1 else 's', (', longest %s at %s x %s ft' % (lr['id'], fmt(lr['l']), fmt(lr['w'] or 0))) if lr else '', fmt(elev))
+  desc = page_description(code, name, loc, rws, lr, elev)
   rw_rows = ''.join('<tr><td><b class="mono">%s</b></td><td class="mono">%s &times; %s ft</td><td>%s</td><td>%s</td></tr>' % (
     esc(r['id']), fmt(r['l']), fmt(r.get('w') or 0), esc(surface(r.get('s'))), 'lit' if r.get('lit') else 'unlit') for r in rws)
   da_rows = ''.join('<tr><td>%s</td><td class="mono">%s ft</td><td class="mono">%s ft</td><td class="mono">%s ft</td><td class="mono"><b>%s ft</b></td></tr>' % (
@@ -149,7 +181,7 @@ def airport_page(a, big, by):
   <div class="c"><div class="n">{fmt(lr['l']) if lr else '–'}</div><div class="l">Longest ft{(' · ' + esc(lr['id'])) if lr else ''}</div></div>
   <div class="c"><div class="n">{'%.2f' % abs(a['la'])}{'N' if a['la'] >= 0 else 'S'}</div><div class="l">{'%.2f' % abs(a['lo'])}{'W' if a['lo'] < 0 else 'E'}</div></div>
 </div>
-<p class="lead">{esc(name)}{' serves ' + esc(city) + ', ' + esc(stname) if city else ''} at {fmt(elev)} ft elevation{(' with its longest runway, ' + esc(lr['id']) + ', at ' + fmt(lr['l']) + ' by ' + fmt(lr.get('w') or 0) + ' ft') if lr else ''}. The figures below are computed from the FAA airport file and the same rules of thumb JetDesk uses on the airport page in the app; the POH and current NOTAMs are the authority.</p>
+<p class="lead">{esc(name)}{' serves ' + esc(city) + ', ' + esc(stname) if city else ''} at {fmt(elev)} ft elevation{(' with its longest runway, ' + esc(lr['id']) + ', at ' + fmt(lr['l']) + ' by ' + fmt(lr.get('w') or 0) + ' ft') if lr else ''}. The figures below are computed from FAA NASR runway data (via OurAirports) and the same rules of thumb JetDesk uses on the airport page in the app; the POH and current NOTAMs are the authority.</p>
 <p><a class="cta" href="/?apt={esc(code)}">Open {esc(code)} in JetDesk: live METAR, TAF, winds and runway verdict &#8594;</a></p>
 
 <h2><span class="num">01</span>Runways</h2>
@@ -168,7 +200,7 @@ def airport_page(a, big, by):
 <p>No public API publishes FBO fuel prices, so JetDesk does not guess. Pilots and crews log the price they actually paid at {esc(code)}, the app flags a price stale after two weeks, and the route finder ranks every field within a corridor of your route by net savings after the cost of the extra cycle. <a href="/?apt={esc(code)}">Log a price at {esc(code)}</a> or read <a href="/notes/fuel-stop-math/">what a fuel stop actually saves</a>.</p>
 <p style="margin-top:26px"><a href="{state_slug(st)}">All {esc(stname)} airports</a> · <a href="/airports/">Airport directory</a> · <a href="/">Open JetDesk</a></p>
 """
-  return legal_page('airports/' + code.lower(), title, desc, body, extra_head=extra, full_title='%s %s runways, elevation and turboprop planning | JetDesk.AI' % (code, name))
+  return legal_page('airports/' + code.lower(), title, desc, body, extra_head=extra, full_title=page_title(code, name, city or stname))
 
 def state_page(st, lst):
   stname = STATES.get(st, st)
@@ -181,6 +213,6 @@ def index_page(states):
   order = sorted(states.keys(), key=lambda s: STATES.get(s, s))
   items = ''.join('<a href="%s"><b>%s</b> %s · %d</a>' % (state_slug(st), esc(st), esc(STATES.get(st, st)), len(states[st])) for st in order)
   total = sum(len(v) for v in states.values())
-  body = '<nav class="crumbs" aria-label="Breadcrumb"><a href="/">JetDesk</a></nav><h1>U.S. airport directory for pilots who manage the airplane</h1><div class="effdate">%s FIELDS · FAA NASR DATA</div><p class="lead">Runways, elevation, density altitude margins for turboprops, and nearby alternates for every U.S. airport a Meridian, PC-12, TBM, King Air or light jet would use. Pick a state, or open the app for live weather, winds aloft and fuel-stop math.</p><p><a class="cta" href="/">Open JetDesk &#8594;</a></p><div class="cols">%s</div><p style="margin-top:26px"><a href="/notes/">Field notes</a> · <a href="/">Open JetDesk</a></p>' % (fmt(total), items)
+  body = '<nav class="crumbs" aria-label="Breadcrumb"><a href="/">JetDesk</a></nav><h1>U.S. airport directory for pilots who manage the airplane</h1><div class="effdate">%s FIELDS · FAA NASR VIA OURAIRPORTS, %s CYCLE</div><p class="lead">Runways, elevation, density altitude margins for turboprops, and nearby alternates for every U.S. airport a Meridian, PC-12, TBM, King Air or light jet would use. Pick a state, or open the app for live weather, winds aloft and fuel-stop math.</p><p><a class="cta" href="/">Open JetDesk &#8594;</a></p><div class="cols">%s</div><p style="margin-top:26px"><a href="/notes/">Field notes</a> · <a href="/">Open JetDesk</a></p>' % (fmt(total), cycle_label().upper(), items)
   extra = '<script type="application/ld+json">%s</script>' % breadcrumb_ld([('JetDesk.AI', 'https://www.jetdesk.ai/'), ('Airports', 'https://www.jetdesk.ai/airports/')])
   return legal_page('airports', 'U.S. airport directory', 'Runways, elevation, density altitude margins and nearby alternates for %s U.S. airports used by turboprops and light jets, from JetDesk.AI.' % fmt(total), body, extra_head=extra)

@@ -41,6 +41,6 @@ jobs:
         run: |
           git config user.name "jetdesk-bot"
           git config user.email "hello@jetdesk.ai"
-          git add airports_us.json dataset_cycle.json app_head.html app.js
+          git add airports_us.json dataset_cycle.json app_head.html app.js airports.py legal.py
           git commit -m "Refresh airport data to NASR cycle $(python3 -c "import json;print(json.load(open('dataset_cycle.json'))['cycle'])")" || echo "nothing to commit"
           git push

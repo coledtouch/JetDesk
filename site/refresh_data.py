@@ -55,10 +55,9 @@ def main():
   subprocess.check_call([sys.executable, 'build_dataset.py'])
   # stamp the cycle into the app footer text and the dataset stamp file
   label = datetime.date.fromisoformat(cycle).strftime('%b %Y')
-  for fn in ('app_head.html', 'app.js'):
+  for fn in ('app_head.html', 'app.js', 'airports.py', 'legal.py'):
     s = open(fn).read()
-    s2 = re.sub(r'FAA via OurAirports, [A-Z][a-z]{2} \d{4}', 'FAA via OurAirports, ' + label, s)
-    s2 = re.sub(r'FAA NASR, [A-Z][a-z]{2} \d{4} cycle', 'FAA NASR, ' + label + ' cycle', s2)
+    s2 = re.sub(r'FAA NASR via OurAirports, [A-Z][a-z]{2} \d{4} cycle', 'FAA NASR via OurAirports, ' + label + ' cycle', s)
     if s2 != s:
       open(fn, 'w').write(s2)
   json.dump({'cycle': cycle, 'built': datetime.datetime.utcnow().isoformat() + 'Z'}, open(STAMP, 'w'))
