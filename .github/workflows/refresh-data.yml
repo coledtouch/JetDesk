@@ -35,7 +35,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 pages deploy dist --project-name meridian-flight-desk --commit-dirty=true
+        # wrangler.toml in this repo carries <PLACEHOLDER> binding ids; with it present, wrangler tries to apply
+        # them to the project and the deploy fails (Sep 3 2026). Deploy without it: the project keeps the
+        # bindings and secrets configured in the dashboard, and functions/ is picked up from the working directory.
+        run: |
+          mv wrangler.toml wrangler.toml.example
+          npx --yes wrangler@4 pages deploy dist --project-name meridian-flight-desk --commit-dirty=true --branch main
+          mv wrangler.toml.example wrangler.toml
       - name: Commit the refreshed dataset
         if: steps.check.outputs.changed == '1' || github.event_name == 'workflow_dispatch'
         run: |
