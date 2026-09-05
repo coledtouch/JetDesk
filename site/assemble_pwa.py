@@ -44,7 +44,7 @@ markup = head[sm.end():].strip()
 # and Cloudflare's edge cache on the custom domain kept the previous icons under the plain
 # names after a deploy; a new hash is a new URL, so a changed icon always reaches the phone.
 # The plain-named files in dist/icons stay as the editable source and are not referenced.
-ICON_STEMS = ('icon-192', 'icon-512', 'icon-maskable-192', 'icon-maskable-512', 'apple-touch-icon')
+ICON_STEMS = ('icon-192', 'icon-512', 'icon-maskable-192', 'icon-maskable-512', 'apple-touch-icon', 'badge-96')
 ICONS = {}
 os.makedirs('dist/icons', exist_ok=True)
 for old in os.listdir('dist/icons'):
@@ -64,6 +64,7 @@ icon_512 = ICONS.get('icon-512', '/icons/icon-512.png')
 icon_m192 = ICONS.get('icon-maskable-192', '/icons/icon-maskable-192.png')
 icon_m512 = ICONS.get('icon-maskable-512', '/icons/icon-maskable-512.png')
 icon_apple = ICONS.get('apple-touch-icon', '/icons/apple-touch-icon.png')
+icon_badge = ICONS.get('badge-96', icon_192)
 
 # Images: sources live in assets/img; every file served from /img/ gets a content hash in its name so the
 # one-year immutable cache rule never applies to an unversioned path.
@@ -348,7 +349,7 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
-""" % (app_v, json.dumps(core), icon_192, icon_192)
+""" % (app_v, json.dumps(core), icon_192, icon_badge)
 open('dist/sw.js', 'w').write(sw)
 
 # ---- headers ----
