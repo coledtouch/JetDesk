@@ -311,11 +311,27 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .hero .btn.primary{background:#4CC9FF;border-color:#4CC9FF;color:#06131F}
 .hero .btn:not(.primary){color:#E6EAF2;background:rgba(11,18,32,.78);border-color:#2A3A55}
 .hero .phone{--card:#0B1220;--card2:#121C2E;--line:#1E2A40;--line2:#2A3A55;--ink:#E6EAF2;--ink2:#A7B2C3;--ink3:#8492A6;--acc:#4CC9FF;--acc2:#7CC4FF;--acc-soft:#0E2536;--good:#2FD27D;--good-soft:#0F2A1E;--bad:#FF5A5F;color:var(--ink)}
-/* daylight hero (light theme): let the image read as pearl and stone; keep a dark band behind the copy only */
-:root[data-hero="day"] .hero{background:#DCE3EC;border-color:#C5CFDB}
-:root[data-hero="day"] .heroart{opacity:.9}
-:root[data-hero="day"] .hero::after{background:linear-gradient(90deg,rgba(12,20,34,.66) 0%,rgba(12,20,34,.52) 42%,rgba(12,20,34,.60) 70%,rgba(12,20,34,.80) 100%),linear-gradient(0deg,rgba(12,20,34,.80),rgba(12,20,34,.34) 55%,transparent 100%)}
-:root[data-hero="day"] .hero .btn:not(.primary){background:rgba(11,18,32,.62);border-color:rgba(230,234,242,.28)}
+/* Day hero: pearl surfaces, navy copy, a soft light veil instead of a dark band; the photograph stays clear.
+   On wide screens the image is mirrored so the aircraft sits behind the glass calculator, away from the copy. */
+:root[data-hero="day"] .hero{background:#EEF2F7;border-color:#C5CFDB}
+:root[data-hero="day"] .heroart{opacity:1;object-position:62% 45%}
+@media (min-width:860px){:root[data-hero="day"] .heroart{transform:scaleX(-1);object-position:38% 45%}}
+:root[data-hero="day"] .hero::after{background:linear-gradient(90deg,rgba(244,246,250,.88) 0%,rgba(244,246,250,.70) 34%,rgba(244,246,250,.22) 56%,rgba(244,246,250,0) 76%),linear-gradient(0deg,rgba(238,242,247,.86),rgba(238,242,247,.10) 36%,transparent 100%)}
+:root[data-hero="day"] .hero .eyebrow{color:#0B5FCC}
+:root[data-hero="day"] .hero .herotitle{color:#0F172A}
+:root[data-hero="day"] .hero .herotitle .ion{color:#0E7CFF}
+:root[data-hero="day"] .hero .herosub,:root[data-hero="day"] .hero .micro{color:#334155}
+:root[data-hero="day"] .hero .eyebrow,:root[data-hero="day"] .hero .herotitle,:root[data-hero="day"] .hero .herosub,:root[data-hero="day"] .hero .hero-proof,:root[data-hero="day"] .hero .micro,:root[data-hero="day"] .hero .linkbtn,:root[data-hero="day"] .hero .hero-jump a{text-shadow:0 1px 0 rgba(255,255,255,.7),0 0 18px rgba(244,246,250,.9)}
+:root[data-hero="day"] .hero .btn.primary{background:#0E7CFF;border-color:#0E7CFF;color:#fff}
+:root[data-hero="day"] .hero .btn:not(.primary){color:#0F172A;background:rgba(255,255,255,.82);border-color:#C5CFDB}
+:root[data-hero="day"] .hero .hero-proof{color:#334155}
+:root[data-hero="day"] .hero .hero-proof span::before{color:#0B5FCC}
+:root[data-hero="day"] .hero .linkbtn,:root[data-hero="day"] .hero .hero-jump a{color:#0B5FCC}
+:root[data-hero="day"] .hero .phone{--card:#FFFFFF;--card2:#F4F6FA;--line:#DCE3EC;--line2:#C5CFDB;--ink:#0F172A;--ink2:#475569;--ink3:#5B6779;--acc:#0E7CFF;--acc2:#0B5FCC;--acc-soft:#E3F0FF;--good:#0E9F5B;--good-soft:#E1F5EA;--bad:#D93A3F;background:rgba(255,255,255,.74);border-color:rgba(15,23,42,.12);box-shadow:0 24px 60px rgba(15,23,42,.18)}
+:root[data-hero="day"] .hero .phone .pcard{background:rgba(255,255,255,.66);border-color:rgba(15,23,42,.08)}
+:root[data-hero="day"] .hero .phone .pfield{background:rgba(255,255,255,.80);border-color:rgba(15,23,42,.10)}
+:root[data-hero="day"] .hero .phone .pverdict{background:rgba(225,245,234,.88)}
+:root[data-hero="day"] .hero .phone .pmath-toggle{background:rgba(255,255,255,.8);color:#0B5FCC;border-color:#C5CFDB}
 /* the phone mock is glass over the hero photo so the aircraft reads through it in both themes */
 .hero .phone{background:rgba(11,18,32,.42);border-color:rgba(230,234,242,.22);-webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1);box-shadow:0 30px 70px rgba(0,0,0,.28)}
 .hero .phone .pcard{background:rgba(18,28,46,.48);border-color:rgba(230,234,242,.14)}
@@ -323,8 +339,10 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .hero .phone .pverdict{background:rgba(15,42,30,.62)}
 .hero-proof{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;color:#A7B2C3;font-size:12px;font-weight:700}
 .hero-proof span::before{content:"✓" / "";color:#4CC9FF;margin-right:6px}
-@media (max-width:559px){.panel#tab-welcome{padding:10px 12px 8px}.hero{padding:30px 22px 26px;border-radius:20px}.heroart{object-position:30% center;opacity:.55}.hero::after{background:linear-gradient(180deg,rgba(7,11,20,.60) 0%,rgba(7,11,20,.90) 46%,#070B14 72%)}.hero .btnrow .btn{width:100%}.hero .phone{margin-top:4px}.strip{padding-left:4px;padding-right:4px}
-:root[data-hero="day"] .heroart{opacity:.85;object-position:32% 30%}:root[data-hero="day"] .hero::after{background:linear-gradient(180deg,rgba(12,20,34,.58) 0%,rgba(12,20,34,.86) 46%,#0C1422 72%)}}
+@media (max-width:559px){.panel#tab-welcome{padding:10px 12px 8px}.hero{padding:26px 18px 22px;border-radius:20px}.heroart{object-position:30% center;opacity:.55}.hero::after{background:linear-gradient(180deg,rgba(7,11,20,.60) 0%,rgba(7,11,20,.90) 46%,#070B14 72%)}.hero .btnrow .btn{width:100%}.hero .phone{margin-top:0}.strip{padding-left:4px;padding-right:4px}
+:root[data-hero="day"] .heroart{opacity:1;object-position:36% 40%}:root[data-hero="day"] .hero::after{background:linear-gradient(180deg,rgba(244,246,250,.60) 0%,rgba(244,246,250,.74) 42%,rgba(238,242,247,.90) 72%,#EEF2F7 100%)}
+.hero .hero-proof{margin-top:10px}.hero-jump{margin-top:10px}.hero .herosub{font-size:14.5px}.phone .pverdict{padding:12px 10px}.phone .pverdict .n{font-size:38px}}
+@media (max-width:359px){.hero{padding:22px 14px 20px}.herotitle{font-size:31px}.herosub{font-size:14px}.phone{padding:10px;border-radius:26px;gap:8px}.phone .pcard{padding:10px}.pfield{padding:7px 8px}.pfield .v{font-size:12px}.phone .pverdict .n{font-size:36px}.hero .phone .row{gap:6px}}
 .phone{background:var(--card);border:1px solid var(--line2);border-radius:36px;padding:14px;box-shadow:0 30px 70px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--acc) 20%,transparent);max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .phone .pcard{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .phone .pverdict{background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 45%,transparent);border-radius:16px;padding:16px 12px;text-align:center}
@@ -391,6 +409,59 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
   border:1px dashed var(--line2);border-radius:12px;background:transparent;
   padding:22px 14px;text-align:center;color:var(--ink2);font-size:13.5px;
 }
+
+/* ============ LANDING: structure, hierarchy, fit ============ */
+.nowrap{white-space:nowrap}
+.anchor{scroll-margin-top:calc(64px + 20px)} /* fixed header plus breathing room for #features, #pricing and friends */
+.herowrap>*{min-width:0}
+.herocopy{min-width:0}
+.hero-jump{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:14px;font-size:13px;font-weight:700}
+.hero-jump a{color:#7CC4FF;text-decoration:none;min-height:32px;display:inline-flex;align-items:center;padding:0 2px;border-bottom:1px solid transparent}
+.hero-jump a:hover{border-bottom-color:currentColor}
+@media (min-width:860px){.hero-jump{display:none}}
+.phone{max-width:min(340px,100%)}
+.phone .phead{padding:2px 4px 0;gap:6px;flex-wrap:wrap}
+.phone .pbrand{font-family:var(--wordmark);font-size:11px;letter-spacing:.08em;margin-right:auto}
+.pill.sample{font-size:9.5px;letter-spacing:.06em;text-transform:none;font-family:var(--body);font-weight:700}
+.demo .sample{align-self:flex-end;margin-bottom:-2px}
+.pgrid{gap:8px}
+.pgrid .pfield{min-width:0}
+.pfield .v{overflow-wrap:anywhere}
+.pmath-toggle{border:1px solid var(--line2);background:var(--card);color:var(--acc2);border-radius:10px;min-height:44px;font:inherit;font-size:13px;font-weight:700;width:100%}
+.pmath-toggle[aria-expanded="true"]::after{content:" \2191"}
+.pmath-toggle[aria-expanded="false"]::after{content:" \2193"}
+.pnote{text-align:center;margin-top:2px;text-shadow:none}
+.lede{margin:0 2px 14px;font-size:15px;line-height:1.55;max-width:46em}
+.caps.lead3{grid-template-columns:1fr}
+@media (min-width:700px){.caps.lead3{grid-template-columns:repeat(3,1fr)}}
+.cap .ct,.step .st{margin:0}
+.cap .ct{font-size:16px;font-weight:800;font-family:var(--body)}
+.step .st{font-weight:800;font-size:16px;font-family:var(--body);margin-top:6px}
+.capmore{margin-top:12px;padding:16px}
+.capmore-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:700px){.capmore-grid{grid-template-columns:repeat(3,1fr);gap:20px}}
+.capmore .feat .ft{font-size:15px;font-weight:800;margin:0}
+.capmore .feat .fd{font-size:13.5px;line-height:1.5;margin-top:3px}
+.landing section.anchor{margin-top:10px}
+.plans.two{grid-template-columns:1fr;gap:12px;align-items:stretch}
+@media (min-width:700px){.plans.two{grid-template-columns:1fr 1.15fr}}
+.plan{display:flex;flex-direction:column}
+.plan .plist{flex:1}
+.plan .plancta{margin-top:auto}
+.plan .pricenote{font-size:12.5px;color:var(--ink2);margin:0 0 4px}
+.billing{display:inline-flex;border:1px solid var(--line2);border-radius:999px;padding:3px;margin:8px 0 6px;gap:2px;background:var(--card2)}
+.billing input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.billing label{border-radius:999px;padding:0 14px;min-height:38px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer}
+.billing label .save{font-size:10.5px;color:var(--good);font-family:var(--mono);letter-spacing:.02em}
+.billing input:checked+label{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.billing input:focus-visible+label{outline:2px solid var(--acc);outline-offset:2px}
+.plan.pro .price-year{display:none}
+.plan.pro:has(#billAnnual:checked) .price-month{display:none}
+.plan.pro:has(#billAnnual:checked) .price-year{display:block}
+.finalhead{font-family:var(--disp);font-weight:800;font-size:clamp(22px,5vw,30px);letter-spacing:-.02em;line-height:1.1}
+/* signed-in or browsing users never see the marketing page flash: the head script sets data-app before paint */
+:root[data-app] #tab-welcome{display:none}
+:root[data-app] body.is-welcome #headerSignIn,:root[data-app] body.is-welcome #headerStart,:root[data-app] body.is-welcome .hnav{display:none}
 </style>
 
 <a class="skip-link" href="#appMain">Skip to content</a>
@@ -415,7 +486,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 
 <main id="appMain">
 <!-- ============ TRIP TAB ============ -->
-<section id="tab-trip" class="panel on" role="tabpanel" aria-labelledby="tb-trip" tabindex="-1">
+<section id="tab-trip" class="panel" role="tabpanel" aria-labelledby="tb-trip" tabindex="-1" hidden>
   <div class="tripchips" id="tripChips"></div>
   <div id="tripBody"></div>
 </section>
@@ -502,10 +573,130 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 <section id="tab-account" class="panel" role="tabpanel" aria-labelledby="tb-account" tabindex="-1" hidden></section>
 
 <!-- ============ WELCOME (anonymous) ============ -->
-<section id="tab-welcome" class="panel" aria-label="JetDesk overview" tabindex="-1" hidden></section>
+<section id="tab-welcome" class="panel on" aria-label="JetDesk overview" tabindex="-1">
+<div class="landing">
+<section class="hero">
+  <picture class="hero-media" aria-hidden="true"><source id="heroSrc" media="(max-width:640px)" srcset="__IMG_HERO_NIGHT_800__"><img id="heroImg" class="heroart" src="__IMG_HERO_NIGHT__" alt="" width="1600" height="900" fetchpriority="high" decoding="async"></picture>
+  <script>(function(){if(document.documentElement.getAttribute('data-hero')!=='day')return;var s=document.getElementById('heroSrc'),i=document.getElementById('heroImg');if(s)s.setAttribute('srcset','__IMG_HERO_DAY_800__');if(i)i.setAttribute('src','__IMG_HERO_DAY__')})();</script>
+  <div class="herowrap">
+    <div class="herocopy">
+      <div class="eyebrow">For pilots who manage the airplane</div>
+      <h1 class="herotitle">Know what the trip costs <span class="ion">before you file.</span></h1>
+      <p class="herosub">Live FAA weather, winds aloft, runway verdicts, fuel-stop math and your crew's FBO intel on one screen. So the calls you make on the ramp are made with numbers, not memory.</p>
+      <div class="btnrow" style="margin-top:16px">
+        <button class="btn primary" type="button" data-auth="register" style="min-height:50px;padding:0 20px;font-size:15px">Start planning free</button>
+        <button class="btn" type="button" id="browseBtn" style="min-height:50px">Explore airport data</button>
+      </div>
+      <div class="hero-proof"><span>No credit card</span><span>14-day Pro trial</span><span>Works offline</span></div>
+      <nav class="hero-jump" aria-label="On this page"><a href="#savings">The math</a><a href="#features">Features</a><a href="#pricing">Pricing</a></nav>
+    </div>
+    <div class="phone" role="img" aria-label="Illustrative fuel-stop example: landing at KHPN at $9.40 a gallon versus a stop at KBDR at $7.10, 150 gallons, 10-minute detour, worth the stop, plus $191 net">
+      <div class="row phead"><span class="pbrand">JETDESK</span><span class="pill acc">Fuel stop</span><span class="pill dim sample">Illustrative example</span></div>
+      <div class="pcard">
+        <div class="grid2 pgrid"><div class="pfield"><div class="l">Land at</div><div class="v"><span class="nowrap">KHPN</span> · <span class="nowrap">$9.40</span></div></div><div class="pfield"><div class="l">Stop at</div><div class="v"><span class="nowrap">KBDR</span> · <span class="nowrap">$7.10</span></div></div></div>
+        <div class="grid3 pgrid pmore"><div class="pfield"><div class="l">Gallons</div><div class="v">150</div></div><div class="pfield"><div class="l">Detour</div><div class="v nowrap">10 min</div></div><div class="pfield"><div class="l">Ramp</div><div class="v">$0</div></div></div>
+      </div>
+      <div class="pverdict"><div class="w">WORTH THE STOP</div><div class="n nowrap">+$191</div><div class="micro muted">net after the extra landing, takeoff and detour</div></div>
+      <button class="pmath-toggle" type="button" id="pmathToggle" aria-expanded="true" aria-controls="pmath" hidden>Show the math</button>
+      <div class="pcard pmath" id="pmath" style="font-size:12px">
+        <div class="row"><span class="muted">Price gap × 150 gal ($2.30)</span><span class="mono nowrap" style="color:var(--good);font-weight:700">+$345</span></div>
+        <div class="row"><span class="muted">Stop cycle 15 gal + detour 7 gal</span><span class="mono nowrap" style="color:var(--bad);font-weight:700">&minus;$154</span></div>
+        <div class="row"><span class="muted">Breaks even at a gap of</span><span class="mono nowrap" style="font-weight:700">$1.03/gal</span></div>
+        <div class="row"><span class="muted">Time added</span><span class="mono nowrap" style="font-weight:700">35 min</span></div>
+      </div>
+      <div class="micro muted pnote">Your numbers come from your airplane and your crew's logged prices.</div>
+    </div>
+    <script>(function(){if(!matchMedia('(max-width:859px)').matches)return;var m=document.getElementById('pmath'),b=document.getElementById('pmathToggle');if(!m||!b)return;m.hidden=true;b.hidden=false;b.setAttribute('aria-expanded','false');var g=document.querySelector('.pmore');if(g)g.hidden=true})();</script>
+  </div>
+</section>
+
+<div class="strip"><span class="k">Built on official data</span><span class="s">FAA Aviation Weather Center</span><span class="s">FAA NASR via OurAirports</span><span class="s">FAA winds aloft</span><span class="s">U.S. EIA</span><span class="s">OilPriceAPI</span></div>
+
+<section id="savings" class="anchor"><h2 class="sec">Where the money is</h2>
+  <div class="landing-heading">Cheaper fuel isn't always a cheaper stop.</div>
+  <p class="muted lede">A $2.30 gap on 150 gallons looks like $345. Charge the extra takeoff and landing, the detour and the ramp fee against it and JetDesk hands back what is actually left: <span class="nowrap mono" style="color:var(--good);font-weight:700">+$191</span>, a number with a sign in front of it.</p>
+  <div class="stats">
+    <div class="card stat2"><div class="n">$2.30</div><div class="t">per gallon, 27 nm apart</div><div class="d">Sample spread between a premium FBO and the field down the coast, same day.</div></div>
+    <div class="card stat2"><div class="n" style="color:var(--good)">+$191</div><div class="t">net on one stop</div><div class="d">After the extra takeoff, landing, detour minutes and ramp fee are charged against it.</div></div>
+    <div class="card stat2"><div class="n" style="color:var(--ink)">42<span class="tiny muted"> vs </span>35</div><div class="t">minutes, out and back</div><div class="d">Same 110 nm leg with forecast winds applied. The owner's ETA stops being a guess.</div></div>
+    <div class="card stat2"><div class="n" style="color:var(--ink)">4<span class="tiny muted"> tabs </span>&#8594;<span class="tiny muted"> </span>1</div><div class="t">screen before you file</div><div class="d">AirNav, the weather site, the notes app and the owner text thread, on one page per airport.</div></div>
+  </div>
+</section>
+
+<section id="features" class="anchor"><h2 class="sec">What it does</h2>
+  <div class="caps lead3">
+    <div class="card cap"><div class="demo"><span class="pill dim sample">Sample</span>
+      <div class="row"><span class="mono" style="font-weight:700;font-size:15px">KMVY</span><span class="pill good">Wide open</span></div>
+      <svg viewBox="0 0 260 96" width="100%" height="96" fill="none" aria-hidden="true"><g transform="translate(130 48)"><rect x="-92" y="-6" width="184" height="12" fill="var(--ink2)" transform="rotate(-30)"/><rect x="-52" y="-4" width="104" height="8" fill="var(--ink3)" transform="rotate(60)"/><text x="-122" y="40" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">06</text><text x="92" y="-30" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">24</text></g></svg>
+      <div class="row"><span class="mono">06/24 · 5,504 × 100</span><span class="pill dim">Lit</span></div><div class="row"><span class="mono">15/33 · 3,327 × 75</span><span class="pill bad">Tight</span></div>
+    </div><h3 class="ct">Runway verdicts, to scale</h3><div class="cd">Every runway drawn from FAA geometry and graded wide open, workable or tight. Unlit fields flagged before an 11 p.m. arrival, not during one.</div></div>
+
+    <div class="card cap"><div class="demo"><span class="pill dim sample">Sample</span>
+      <div class="wxline"><span class="pill vfr">VFR</span><span class="mono" style="font-weight:700">14009KT 10+ SM</span><span class="mono" style="color:var(--ink2)">25/14 A3012</span></div>
+      <div class="lab" style="margin:2px 0 0">Runway winds now · <span style="color:var(--acc)">best: 16</span></div>
+      <div class="row"><span class="mono"><span class="dot good"></span> 16 · 9 kt head · 0 cross</span><span class="mono" style="color:var(--ink3)">6,081×150</span></div>
+      <div class="row"><span class="mono"><span class="dot good"></span> 23 · 3 kt head · 9L cross</span><span class="mono" style="color:var(--ink3)">8,700×150</span></div>
+      <div class="micro muted">Field 55 ft · density altitude 1,320 ft</div>
+    </div><h3 class="ct">Live weather with a runway pick</h3><div class="cd">METAR and TAF on every airport and arrival, head and crosswind per runway from the live wind, density altitude, and the best runway right now.</div></div>
+
+    <div class="card cap"><div class="demo"><span class="pill dim sample">Sample</span>
+      <div class="row"><span class="mono" style="font-weight:700;font-size:15px">KHPN <span style="color:var(--acc)">&#9656;</span> KPVD</span><span class="pill acc">FL260</span></div>
+      <div class="legstats"><span class="stat nowrap"><span class="n">110</span><span class="u">nm</span></span><span class="stat nowrap"><span class="n">35</span><span class="u">min</span></span><span class="stat nowrap"><span class="n">292</span><span class="u">kt GS</span></span><span class="stat nowrap"><span class="n">28</span><span class="u">gal</span></span></div>
+      <div class="micro muted">winds aloft 300/58 at FL260 (BDL)</div>
+      <div class="row" style="background:var(--card);border-radius:10px;padding:8px 10px"><span class="mono" style="font-size:11px">05/23 · 8,700 × 150 · LIT</span><span class="pill vfr">VFR</span></div>
+    </div><h3 class="ct">Legs that know the wind</h3><div class="cd">FAA winds aloft at your cruise altitude give each leg its real groundspeed, block time, burn and cost. Out and back stop looking identical.</div></div>
+  </div>
+  <div class="card capmore">
+    <div class="capmore-grid">
+      <div class="feat"><h3 class="ft">Near Me, with no bars</h3><div class="fd">GPS-sorted fields with distance and bearing, filtered to Jet A or big runways. The database rides on the phone, so it works where the signal does not.</div></div>
+      <div class="feat"><h3 class="ft">Crew intel that follows the airport</h3><div class="fd">Prices, FBOs, crew cars, fees and the quirks worth remembering, shared with your co-pilot or the owner and synced to every phone.</div></div>
+      <div class="feat"><h3 class="ft">Market floor and field facts</h3><div class="fd">The official Jet A spot price and WTI crude, fetched live with their observation time, so you know when the whole market moves. Plus FAA-file fuel types, repair services and landing-fee flags per airport.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="anchor"><h2 class="sec">How it works</h2><div class="card"><div class="steps">
+  <div class="step"><div class="num">01</div><h3 class="st">Build the trip</h3><div class="sd">Add legs by airport code. Distance, winds-corrected time, burn and cost fill in per leg with the arrival runway graded. One tap opens the route in ForeFlight.</div></div>
+  <div class="step"><div class="num">02</div><h3 class="st">Check the field</h3><div class="sd">Live METAR and TAF, crosswind per runway, density altitude, fuel and repair on the FAA file, your crew's prices and FBO notes, and alternates within 25, 40 or 60 nm.</div></div>
+  <div class="step"><div class="num">03</div><h3 class="st">Score the fuel stop</h3><div class="sd">Pick where you land and where the cheap gas is. The calculator charges the stop against you and hands back a signed dollar figure and a breakeven.</div></div>
+</div></div></section>
+
+<section id="pricing" class="anchor"><h2 class="sec">Pricing</h2>
+  <div class="landing-heading" style="margin-bottom:6px">Less than one ramp fee a month.</div>
+  <p class="muted lede">Two plans. Every account starts with 14 days of Pro, no card. On day 15 it continues on Free unless you subscribe; nothing is charged and there is nothing to cancel.</p>
+  <div class="plans two">
+    <div class="card plan"><div class="lab">Free</div><div class="price">$0<span class="per"> forever</span></div><div class="pricenote">Includes the 14-day Pro trial.</div>
+      <ul class="plist"><li>Airport lookup and runway verdicts</li><li>Live METAR and TAF, density altitude</li><li>Near Me with filters</li><li>Fuel-stop calculator</li><li>One saved trip</li><li>Your own price log</li></ul>
+      <div class="plancta"><button class="btn" type="button" data-auth="register" style="width:100%">Create free account</button></div></div>
+    <div class="card plan pro"><div class="row"><div class="lab">Pro</div><span class="pill acc">14-day trial, no card</span></div>
+      <fieldset class="billing" aria-label="Pro billing period"><legend class="sr-only">Billing period</legend>
+        <input type="radio" name="bill" id="billMonthly" value="monthly" checked><label for="billMonthly">Monthly</label>
+        <input type="radio" name="bill" id="billAnnual" value="annual"><label for="billAnnual">Annual <span class="save">save 34%</span></label>
+      </fieldset>
+      <div class="price price-month" id="priceMonthly">$9.99<span class="per">/mo</span></div><div class="pricenote price-month">Billed monthly. Cancel any time from your account.</div>
+      <div class="price price-year" id="priceAnnual">$79<span class="per"> billed yearly</span></div><div class="pricenote price-year">$6.58 a month, one invoice for the owner's books. Cancel any time.</div>
+      <ul class="plist"><li>Everything in Free</li><li>Unlimited trips</li><li>Winds-aloft groundspeeds</li><li>Live crosswind and best runway</li><li>Market reference</li><li>FBO and crew-car intel</li><li>Crew sharing, up to 10 people</li></ul>
+      <div class="plancta"><button class="btn primary" type="button" data-auth="register" style="width:100%">Start the 14-day Pro trial</button></div></div>
+  </div>
+</section>
+
+<section class="anchor"><h2 class="sec">Straight answers</h2>
+  <details class="faq" open><summary class="q">Does it replace ForeFlight?</summary><div class="a">No. It is the desk beside it. You still file and fly in ForeFlight; JetDesk is where the cost, runway and FBO homework gets done first, and every trip opens in ForeFlight with one tap.</div></details>
+  <details class="faq"><summary class="q">Does it work with no signal?</summary><div class="a">Yes. The airport and runway database, your trips, prices, notes and both calculators live on the phone. Weather, winds and market data rejoin the moment you have coverage.</div></details>
+  <details class="faq"><summary class="q">Where do fuel prices come from?</summary><div class="a">From you and your crew, in ten seconds per airport, with AirNav one tap away to check. Prices flag themselves stale after two weeks. The market reference tells you when the whole board is moving.</div></details>
+  <details class="faq"><summary class="q">What happens after the 14-day trial?</summary><div class="a">Your account continues on Free. Nothing is charged because no card was taken, and your trips, prices and notes stay. Subscribe to Pro whenever the math says it pays for itself.</div></details>
+  <details class="faq"><summary class="q">Can I try it without an account?</summary><div class="a">Yes. Explore airport and runway data first. A free account adds saved trips, your price log and the 14-day Pro trial with no credit card.</div></details>
+</section>
+
+<section style="margin-top:22px"><div class="finalcta">
+  <div><div class="finalhead">Your next trip is a number, not a guess.</div><div class="muted" style="font-size:14px;margin-top:6px">Free account, 14 days of Pro, nothing to install but a home-screen icon.</div></div>
+  <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><button class="btn primary" type="button" data-auth="register" style="min-height:52px;padding:0 22px;font-size:15px">Start planning free</button><span class="micro muted">hello@jetdesk.ai · answered by a human</span></div>
+</div></section>
+</div>
+</section>
 </main>
 
-<nav class="tabs" id="tabNav" aria-label="App sections" role="tablist">
+<nav class="tabs" id="tabNav" aria-label="App sections" role="tablist" hidden>
   <button id="tb-trip" class="on" role="tab" aria-selected="true" aria-controls="tab-trip" aria-label="Trip">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
     <span>Trip</span>

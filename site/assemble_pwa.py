@@ -81,8 +81,11 @@ for name in sorted(os.listdir('assets/img')):
     img_out.write(img_bytes)
   IMG[stem] = '/img/' + hashed
 og_image = 'https://www.jetdesk.ai' + IMG['og-jetdesk']
-app_js = app_js.replace('__IMG_HERO_DAY__', IMG['hero-day-theme']).replace('__IMG_HERO_DAY_800__', IMG['hero-day-theme-800']) \
-               .replace('__IMG_HERO_NIGHT__', IMG['hero-night']).replace('__IMG_HERO_NIGHT_800__', IMG['hero-night-800'])
+def _hero_paths(text):
+  return text.replace('__IMG_HERO_DAY__', IMG['hero-day-theme']).replace('__IMG_HERO_DAY_800__', IMG['hero-day-theme-800']) \
+             .replace('__IMG_HERO_NIGHT__', IMG['hero-night']).replace('__IMG_HERO_NIGHT_800__', IMG['hero-night-800'])
+app_js = _hero_paths(app_js)
+markup = _hero_paths(markup)
 import legal as _legal_mod
 _legal_mod.OG_IMAGE = og_image
 _legal_mod.LOGO_URL = 'https://www.jetdesk.ai' + icon_512
@@ -235,10 +238,14 @@ for old in os.listdir('dist/data'):
 data_path = '/data/airports.' + data_hash + '.json'
 open('dist' + data_path, 'w').write(open('airports_us.json').read())
 app_js_safe = app_js.replace('</script', '<\\/script')
-boot_js = ('function __jdBoot(d){window.__AP=d;\n' + app_js_safe + '\n}\n' +
-  "(function(){var u='" + data_path + "';var go=function(d){try{__jdBoot(d)}catch(e){console.error(e)}};" +
-  "fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(go).catch(function(){" +
-  "caches&&caches.match?caches.match(u).then(function(r){return r?r.json():[]}).then(go).catch(function(){go([])}):go([])})})();")
+# The app runs at once (the landing page is real HTML); the dataset arrives afterwards through window.__jdSetAirports,
+# from the network, else from the service worker cache, else as a visible failure state. A slow or failed dataset can
+# no longer leave the page blank.
+boot_js = (app_js_safe + '\n' +
+  "(function(){var u='" + data_path + "';var set=function(d,ok){try{window.__jdSetAirports(d,ok)}catch(e){console.error(e)}};" +
+  "var fromCache=function(){return (self.caches&&caches.match)?caches.match(u).then(function(r){if(!r)throw new Error('no cache');return r.json()}):Promise.reject(new Error('no caches'))};" +
+  "fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){set(d,true)}).catch(function(){" +
+  "fromCache().then(function(d){set(d,true)}).catch(function(){set([],false)})})})();")
 pwa_js_safe = pwa_js.replace('</script', '<\\/script')
 
 structured_data = {
@@ -289,7 +296,7 @@ structured_data = {
 }
 structured_json = json.dumps(structured_data, separators=(',', ':')).replace('</', '<\\/')
 
-hero_preload = "<script>(function(){var t='auto';try{t=(JSON.parse(localStorage.getItem('mfd1')||'{}').settings||{}).theme||'auto'}catch(e){}var d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);var N=['__IMG_HERO_NIGHT__','__IMG_HERO_NIGHT_800__'],D=['__IMG_HERO_DAY__','__IMG_HERO_DAY_800__'];var f=d?N:D;var l=document.createElement('link');l.rel='preload';l.as='image';l.href=f[0];l.setAttribute('imagesrcset',f[1]+' 800w, '+f[0]+' 1600w');l.setAttribute('imagesizes','(max-width: 640px) 800px, 1600px');l.setAttribute('fetchpriority','high');document.head.appendChild(l);document.documentElement.setAttribute('data-hero',d?'night':'day')})();</script>"
+hero_preload = "<script>(function(){var t='auto';try{t=(JSON.parse(localStorage.getItem('mfd1')||'{}').settings||{}).theme||'auto'}catch(e){}var d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);try{var app=localStorage.getItem('jd_tok')||(JSON.parse(localStorage.getItem('mfd1')||'{}').browse);if(app)document.documentElement.setAttribute('data-app','1')}catch(e){}var N=['__IMG_HERO_NIGHT__','__IMG_HERO_NIGHT_800__'],D=['__IMG_HERO_DAY__','__IMG_HERO_DAY_800__'];var f=d?N:D;var l=document.createElement('link');l.rel='preload';l.as='image';l.href=f[0];l.setAttribute('imagesrcset',f[1]+' 800w, '+f[0]+' 1600w');l.setAttribute('imagesizes','(max-width: 640px) 800px, 1600px');l.setAttribute('fetchpriority','high');document.head.appendChild(l);document.documentElement.setAttribute('data-hero',d?'night':'day')})();</script>"
 hero_preload = hero_preload.replace('__IMG_HERO_DAY__', IMG['hero-day-theme']).replace('__IMG_HERO_DAY_800__', IMG['hero-day-theme-800']).replace('__IMG_HERO_NIGHT__', IMG['hero-night']).replace('__IMG_HERO_NIGHT_800__', IMG['hero-night-800'])
 index = f"""<!doctype html>
 <html lang="en">
@@ -336,7 +343,7 @@ index = f"""<!doctype html>
 {pwa_css}
 </style>
 </head>
-<body>
+<body class="is-welcome">
 {markup}
 <script>
 {boot_js}

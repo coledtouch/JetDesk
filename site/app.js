@@ -1,16 +1,27 @@
 /* JetDesk.AI */
-/* The airport dataset is a separate, precached JSON file; the build wraps this whole file in a boot
-   function that runs once the data has arrived (see assemble_pwa.py). */
+/* The airport dataset is a separate, precached JSON file. The app boots immediately (the marketing page is
+   real HTML) and the build hands the dataset to window.__jdSetAirports when it arrives (see assemble_pwa.py);
+   anything that needs airports re-renders then. */
 (function () {
 'use strict';
 
 /* ---------- data ---------- */
-var AP = window.__AP || [];
+var AP = [];
 var BY = {};                       // code -> airport
-AP.forEach(function (a) {
-  BY[a.c] = a;
-  if (a.f && !BY[a.f]) BY[a.f] = a;
-});
+var AP_READY = false, AP_FAILED = false;
+function setAirports(list, ok) {
+  AP = list || []; BY = {};
+  AP.forEach(function (a) {
+    BY[a.c] = a;
+    if (a.f && !BY[a.f]) BY[a.f] = a;
+  });
+  AP_READY = ok !== false && AP.length > 0;
+  AP_FAILED = !AP_READY;
+  onAirportsReady();
+}
+function dataStatusHTML() {
+  return '<div class="empty">' + (AP_FAILED ? 'The airport database could not be loaded. Check your connection and reload.' : 'Loading the airport database\u2026') + '</div>';
+}
 
 function lookup(q) {
   if (!q) return null;
@@ -168,6 +179,19 @@ function bestRw(a) {
   return b;
 }
 function faaOf(a) { return a.f || (a.c.length === 4 && a.c[0] === 'K' ? a.c.slice(1) : a.c); }
+/* FAA NASR fuel codes -> the labels a pilot uses (Jet A itself is the green pill) */
+function fuelLabels(a) {
+  if (!a.fu) return [];
+  var out = [], seen = {};
+  a.fu.split(',').forEach(function (t) {
+    t = t.trim();
+    var w = /^100LL$/.test(t) ? '100LL' : /^100$/.test(t) ? '100 octane' : /^UL94$/.test(t) ? 'UL94' : /^MOGAS$/.test(t) ? 'Mogas' :
+            /^A\+\+$/.test(t) ? 'Jet A with FSII, +100' : /^A\+$/.test(t) ? 'Jet A with FSII' : /^A1\+$/.test(t) ? 'Jet A-1 with FSII' : /^A1$/.test(t) ? 'Jet A-1' :
+            /^J8$/.test(t) ? 'JP-8' : /^B/.test(t) ? 'Jet B' : /^A$/.test(t) ? '' : t;
+    if (w && !seen[w]) { seen[w] = 1; out.push(w); }
+  });
+  return out;
+}
 function hasJetA(a) {
   if (!a.fu) return false;
   return a.fu.split(',').some(function (t) {
@@ -1187,7 +1211,7 @@ function legCardHTML(leg, i) {
     return '<div class="card leg v-bad"><div class="spread"><div class="legroute">' + esc(leg.from) +
       ' <span class="arr">&#9656;</span> ' + esc(leg.to) + '</div>' +
       '<button class="iconbtn" data-delleg="' + i + '" aria-label="Delete leg">&#10005;</button></div>' +
-      '<div class="tiny muted" style="margin-top:6px">Airport not in database. Check the code.</div></div>';
+      '<div class="tiny muted" style="margin-top:6px">' + (AP_READY ? 'Airport not in database. Check the code.' : (AP_FAILED ? 'Airport database not loaded. Reload when connected.' : 'Loading the airport database\u2026')) + '</div></div>';
   }
   var pl = legPlan(leg, A, B), c = pl.calc;
   var br = bestRw(B), tier = br ? rTier(br) : 2, tw = TIER[tier];
@@ -1688,6 +1712,7 @@ function wireSuggest(input, sugBox, onPick) {
 var curDetail = null;
 $('aptSearch').addEventListener('input', function () {
   if (GEO.mode) { GEO.mode = false; $('nearFilters').style.display = 'none'; $('nearStatus').textContent = ''; }
+  if (!AP_READY) { $('aptResults').innerHTML = this.value.trim().length >= 2 ? dataStatusHTML() : ''; return; }
   var rs = search(this.value, 14);
   $('aptResults').innerHTML = rs.map(function (a) {
     var br = bestRw(a), tier = br ? rTier(br) : 2;
@@ -1784,12 +1809,13 @@ function openApt(code, noFetch) {
 
   /* services and fees (FAA NASR) */
   h += '<h2 class="sec">Services and fees</h2><div class="card">';
+  /* FAA fuel codes decoded into words; the raw code string is not shown */
+  var fuelWords = fuelLabels(a);
   h += '<div class="wxline" style="margin-bottom:8px">' +
     (hasJetA(a) ? '<span class="pill good">Jet A</span>'
       : (a.fu ? '<span class="pill bad">No Jet A</span>' : '<span class="pill dim">No fuel on file</span>')) +
-    (a.fu && a.fu.indexOf('100') !== -1 ? '<span class="pill dim">100LL</span>' : '') +
+    fuelWords.map(function (w) { return '<span class="pill dim">' + w + '</span>'; }).join('') +
     (a.fee ? '<span class="pill warn">Landing fee</span>' : '') +
-    (a.fu ? '<span class="micro muted mono">' + esc(a.fu) + '</span>' : '') +
   '</div>';
   if (a.mx) {
     var ma = MXWORD[a.mx.charAt(0)] || MXWORD['-'];
@@ -1839,7 +1865,7 @@ function openApt(code, noFetch) {
   if (loggedIn()) {
     h += '<div style="margin-bottom:8px"><span class="pill good">Synced</span> <span class="tiny muted">Shared with your crew, saved to your account.</span></div>';
   } else {
-    h += '<div style="margin-bottom:8px"><span class="pill dim">This phone only</span> <span class="tiny muted">Create a free account to keep prices across devices.</span></div>';
+    h += '<div style="margin-bottom:8px"><span class="pill dim">This device only</span> <span class="tiny muted">Create a free account to keep prices across devices.</span></div>';
   }
   if (log.length) {
     h += log.map(function (f, i) {
@@ -2505,153 +2531,35 @@ window.addEventListener('resize', function () {
 });
 
 /* ================= WELCOME (landing) ================= */
+/* The landing page is real HTML in app_head.html (so it renders without scripts and before the airport data);
+   this only wires its controls, once. */
+var welcomeWired = false;
 function renderWelcome() {
-  var p = (AUTH.me && AUTH.me.prices) || { monthly: 9.99, annual: 79 };
-  var savePct = Math.round((1 - p.annual / (p.monthly * 12)) * 100);
-  var annualSave = Math.max(0, p.monthly * 12 - p.annual).toFixed(2);
-  var pill = function (cls, t) { return '<span class="pill ' + cls + '">' + t + '</span>'; };
-  var mono = function (t, extra) { return '<span class="mono" style="' + (extra || '') + '">' + t + '</span>'; };
-  var phone =
-    '<div class="phone" aria-hidden="true">' +
-      '<div class="row" style="padding:4px 6px 0"><span style="font-family:var(--wordmark);font-size:11px;letter-spacing:.08em">JETDESK</span>' + pill('acc', 'Fuel stop') + '</div>' +
-      '<div class="pcard">' +
-        '<div class="grid2" style="gap:8px"><div class="pfield"><div class="l">Land at</div><div class="v">KHPN · $9.40</div></div><div class="pfield"><div class="l">Stop at</div><div class="v">KBDR · $7.10</div></div></div>' +
-        '<div class="grid3" style="gap:8px"><div class="pfield"><div class="l">Gallons</div><div class="v">150</div></div><div class="pfield"><div class="l">Detour</div><div class="v">10 min</div></div><div class="pfield"><div class="l">Ramp</div><div class="v">$0</div></div></div>' +
-      '</div>' +
-      '<div class="pverdict"><div class="w">WORTH THE STOP</div><div class="n">+$191</div><div class="micro muted">net after the extra landing, takeoff and detour</div></div>' +
-      '<div class="pcard" style="font-size:12px">' +
-        '<div class="row"><span class="muted">Price gap × 150 gal ($2.30)</span>' + mono('+$345', 'color:var(--good);font-weight:700') + '</div>' +
-        '<div class="row"><span class="muted">Stop cycle 15 gal + detour 7 gal</span>' + mono('&#8722;$154', 'color:var(--bad);font-weight:700') + '</div>' +
-        '<div class="row"><span class="muted">Breaks even at a gap of</span>' + mono('$1.03/gal', 'font-weight:700') + '</div>' +
-        '<div class="row"><span class="muted">Time added</span>' + mono('35 min', 'font-weight:700') + '</div>' +
-      '</div>' +
-    '<div class="micro muted" style="text-align:center;margin-top:8px;text-shadow:none">Illustrative example. Your numbers come from your airplane and your crew\'s logged prices.</div>' +
-    '</div>';
-
-  var h =
-    '<div class="landing">' +
-    '<section class="hero">' +
-      heroPictureHTML() +
-      '<div class="herowrap">' +
-      '<div>' +
-        '<div class="eyebrow">For pilots who manage the airplane</div>' +
-        '<h1 class="herotitle">Know what the trip costs <span class="ion">before you file.</span></h1>' +
-        '<p class="herosub">Live FAA weather, winds aloft, runway verdicts, fuel-stop math and your crew\'s FBO intel on one screen. So the calls you make on the ramp are made with numbers, not memory.</p>' +
-        '<div class="btnrow" style="margin-top:16px">' +
-          '<button class="btn primary" data-auth="register" style="min-height:50px;padding:0 20px;font-size:15px">Start planning free</button>' +
-          '<button class="btn" id="browseBtn" style="min-height:50px">Explore airport data</button>' +
-        '</div>' +
-        '<div class="hero-proof"><span>No credit card</span><span>14-day Pro trial</span><span>Works offline</span></div>' +
-        '<button class="linkbtn" id="seeSavings">See the +$191 fuel-stop math &#8595;</button>' +
-      '</div>' +
-      phone +
-    '</div></section>' +
-
-    '<div class="strip"><span class="k">Built on official data</span><span class="s">FAA Aviation Weather Center</span><span class="s">FAA NASR via OurAirports</span><span class="s">FAA winds aloft</span><span class="s">U.S. EIA</span><span class="s">OilPriceAPI</span></div>' +
-
-    '<section id="savings"><h2 class="sec">Where the money is</h2>' +
-      '<div class="landing-heading">The spread between two FBOs is bigger than the spread between two airlines.</div>' +
-      '<p class="muted" style="margin:0 2px 14px;font-size:15px;line-height:1.55;max-width:46em">Jet A at the FBO the owner likes can run two dollars a gallon over the field twenty minutes away. On a 150-gallon load that is $345 before you count what the extra landing costs. JetDesk counts it: every stop is scored against its own burn, detour and ramp fee, and the answer is a number with a sign in front of it.</p>' +
-      '<div class="stats">' +
-        '<div class="card stat2"><div class="n">$2.30</div><div class="t">per gallon, 27 nm apart</div><div class="d">Sample spread between a premium FBO and the field down the coast, same day.</div></div>' +
-        '<div class="card stat2"><div class="n" style="color:var(--good)">+$191</div><div class="t">net on one stop</div><div class="d">After the extra takeoff, landing, detour minutes and ramp fee are charged against it.</div></div>' +
-        '<div class="card stat2"><div class="n" style="color:var(--ink)">42<span class="tiny muted"> vs </span>35</div><div class="t">minutes, out and back</div><div class="d">Same 110 nm leg with forecast winds applied. The owner\'s ETA stops being a guess.</div></div>' +
-        '<div class="card stat2"><div class="n" style="color:var(--ink)">4<span class="tiny muted"> tabs </span>&#8594;<span class="tiny muted"> </span>1</div><div class="t">screen before you file</div><div class="d">AirNav, the weather site, the notes app and the owner text thread, on one page per airport.</div></div>' +
-      '</div>' +
-    '</section>' +
-
-    '<section id="features"><h2 class="sec">What it does</h2><div class="caps">' +
-      '<div class="card cap"><div class="demo">' +
-        '<div class="row">' + mono('KMVY', 'font-weight:700;font-size:15px') + pill('good', 'Wide open') + '</div>' +
-        '<svg viewBox="0 0 260 96" width="100%" height="96" fill="none"><g transform="translate(130 48)"><rect x="-92" y="-6" width="184" height="12" fill="var(--ink2)" transform="rotate(-30)"/><rect x="-52" y="-4" width="104" height="8" fill="var(--ink3)" transform="rotate(60)"/><text x="-122" y="40" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">06</text><text x="92" y="-30" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">24</text></g></svg>' +
-        '<div class="row">' + mono('06/24 · 5,504 × 100') + pill('dim', 'Lit') + '</div><div class="row">' + mono('15/33 · 3,327 × 75') + pill('bad', 'Tight') + '</div>' +
-      '</div><div class="ct">Runway verdicts, to scale</div><div class="cd">Every runway drawn from FAA geometry and graded wide open, workable or tight. Unlit fields flagged before an 11 p.m. arrival, not during one.</div></div>' +
-
-      '<div class="card cap"><div class="demo">' +
-        '<div class="row">' + mono('KHPN <span style="color:var(--acc)">&#9656;</span> KPVD', 'font-weight:700;font-size:15px') + pill('acc', 'FL260') + '</div>' +
-        '<div class="legstats"><span class="stat"><span class="n">110</span><span class="u">nm</span></span><span class="stat"><span class="n">35</span><span class="u">min</span></span><span class="stat"><span class="n">292</span><span class="u">kt GS</span></span><span class="stat"><span class="n">28</span><span class="u">gal</span></span></div>' +
-        '<div class="micro muted">winds aloft 300/58 at FL260 (BDL)</div>' +
-        '<div class="row" style="background:var(--card);border-radius:10px;padding:8px 10px">' + mono('05/23 · 8,700 × 150 · LIT', 'font-size:11px') + pill('vfr', 'VFR') + '</div>' +
-      '</div><div class="ct">Legs that know the wind</div><div class="cd">FAA winds aloft at your cruise altitude give each leg its real groundspeed, block time, burn and cost. Out and back stop looking identical.</div></div>' +
-
-      '<div class="card cap"><div class="demo">' +
-        '<div class="wxline">' + pill('vfr', 'VFR') + mono('14009KT 10+ SM', 'font-weight:700') + mono('25/14 A3012', 'color:var(--ink2)') + '</div>' +
-        '<div class="lab" style="margin:2px 0 0">Runway winds now · <span style="color:var(--acc)">best: 16</span></div>' +
-        '<div class="row">' + mono('<span class="dot good"></span> 16 · 9 kt head · 0 cross') + mono('6,081×150', 'color:var(--ink3)') + '</div>' +
-        '<div class="row">' + mono('<span class="dot good"></span> 23 · 3 kt head · 9L cross') + mono('8,700×150', 'color:var(--ink3)') + '</div>' +
-        '<div class="micro muted">Field 55 ft · density altitude 1,320 ft</div>' +
-      '</div><div class="ct">Live weather with a runway pick</div><div class="cd">METAR and TAF on every airport and arrival, head and crosswind per runway from the live wind, density altitude, and the best runway right now.</div></div>' +
-
-      '<div class="card cap"><div class="demo">' +
-        '<div class="micro muted">Around your position · Jet A only</div>' +
-        '<div class="row">' + mono('<span class="dot good"></span> KLGA · 7,002×150') + mono('18.9 nm · 203°', 'color:var(--ink3)') + '</div>' +
-        '<div class="row">' + mono('<span class="dot good"></span> KTEB · 6,997×150') + mono('20.6 nm · 231°', 'color:var(--ink3)') + '</div>' +
-        '<div class="row">' + mono('<span class="dot warn"></span> KDXR · 4,421×150') + mono('20.9 nm · 029°', 'color:var(--ink3)') + '</div>' +
-        '<div class="row">' + mono('<span class="dot good"></span> KFRG · 6,833×150') + mono('24.3 nm · 147°', 'color:var(--ink3)') + '</div>' +
-      '</div><div class="ct">Near Me, with no bars</div><div class="cd">GPS-sorted fields with distance and bearing, filtered to Jet A or big runways. The database rides on the phone, so it works where the signal does not.</div></div>' +
-
-      '<div class="card cap"><div class="demo">' +
-        '<div class="row"><b>Signature East</b>' + pill('good', 'Crew car') + '</div><div class="micro muted">Crew car 2 h max, ask for Tony</div>' +
-        '<div class="row"><b>Million Air</b>' + pill('warn', '+$2/gal') + '</div><div class="micro muted">Owner\'s pick, he gets the car service. Tanker where it\'s cheap.</div>' +
-        '<div class="row" style="border-top:1px dashed var(--line2);padding-top:8px">' + mono('$7.10', 'font-weight:700') + '<span class="muted">Sikorsky self-serve</span>' + mono('Sep 1', 'color:var(--ink3)') + '</div>' +
-      '</div><div class="ct">Crew intel that follows the airport</div><div class="cd">Prices, FBOs, crew cars, fees and the quirks worth remembering, shared with your co-pilot or the owner and synced to every phone.</div></div>' +
-
-      '<div class="card cap"><div class="demo">' +
-        '<div class="lab" style="margin:0">Jet A wholesale · Gulf Coast spot</div>' +
-        '<div class="row">' + mono('$3.62<span class="tiny muted"> /gal</span>', 'font-size:22px;font-weight:700') + pill('good', '&#9660; 9¢ / 30 d') + '</div>' +
-        '<div class="row" style="border-top:1px dashed var(--line2);padding-top:8px"><span class="tiny muted">WTI crude ' + pill('acc', 'live') + '</span>' + mono('$85.90', 'font-weight:700') + '</div>' +
-        '<div class="row"><span class="tiny muted">Services · KHPN</span><span>' + pill('good', 'Jet A') + ' ' + pill('warn', 'Landing fee') + '</span></div>' +
-      '</div><div class="ct">Market floor and field facts</div><div class="cd">Official Jet A spot and live crude so you know when the whole market moves, plus FAA-file fuel types, repair services and landing-fee flags per airport.</div></div>' +
-    '</div></section>' +
-
-    '<section><h2 class="sec">How it works</h2><div class="card"><div class="steps">' +
-      '<div class="step"><div class="num">01</div><div class="st">Build the trip</div><div class="sd">Add legs by airport code. Distance, winds-corrected time, burn and cost fill in per leg with the arrival runway graded. One tap opens the route in ForeFlight.</div></div>' +
-      '<div class="step"><div class="num">02</div><div class="st">Check the field</div><div class="sd">Live METAR and TAF, crosswind per runway, density altitude, fuel and repair on the FAA file, your crew\'s prices and FBO notes, and alternates within 25, 40 or 60 nm.</div></div>' +
-      '<div class="step"><div class="num">03</div><div class="st">Score the fuel stop</div><div class="sd">Pick where you land and where the cheap gas is. The calculator charges the stop against you and hands back a signed dollar figure and a breakeven.</div></div>' +
-    '</div></div></section>' +
-
-    '<section id="pricing"><h2 class="sec">Pricing</h2>' +
-      '<div class="landing-heading" style="margin-bottom:6px">Less than one ramp fee a month.</div>' +
-      '<p class="muted" style="margin:0 2px 14px;font-size:15px">Every account starts with 14 days of Pro, no card. Pro pays for itself the first time it says skip the stop.</p>' +
-      '<div class="plans three">' +
-        '<div class="card plan"><div class="lab">Free</div><div class="price">$0</div>' +
-          '<ul class="plist"><li>Airport lookup and runway verdicts</li><li>Live METAR and TAF, density altitude</li><li>Near Me with filters</li><li>Fuel-stop calculator</li><li>One saved trip</li><li>Your own price log</li></ul>' +
-          '<button class="btn" data-auth="register" style="width:100%">Create free account</button></div>' +
-        '<div class="card plan pro"><div class="row"><div class="lab">Pro monthly</div>' + pill('acc', '14-day trial') + '</div><div class="price">$' + p.monthly.toFixed(2) + '<span class="per">/mo</span></div>' +
-          '<ul class="plist"><li>Everything in Free</li><li>Unlimited trips</li><li>Winds-aloft groundspeeds</li><li>Live crosswind and best runway</li><li>Market reference</li><li>FBO and crew-car intel</li><li>Crew sharing, up to 10 people</li></ul>' +
-          '<button class="btn primary" data-auth="register" style="width:100%">Start Pro trial</button></div>' +
-        '<div class="card plan"><div class="row"><div class="lab">Pro annual</div>' + pill('good', 'save ' + savePct + '%') + '</div><div class="price">$' + p.annual + '<span class="per">/yr</span></div>' +
-          '<ul class="plist"><li>Everything in Pro</li><li>Save $' + annualSave + ' compared with monthly</li><li>One invoice for the owner\'s books</li><li>Cancel any time from your account</li></ul>' +
-          '<button class="btn" data-auth="register" style="width:100%">Start free trial</button></div>' +
-      '</div>' +
-    '</section>' +
-
-    '<section><h2 class="sec">Straight answers</h2>' +
-      '<details class="faq" open><summary class="q">Does it replace ForeFlight?</summary><div class="a">No. It is the desk beside it. You still file and fly in ForeFlight; JetDesk is where the cost, runway and FBO homework gets done first, and every trip opens in ForeFlight with one tap.</div></details>' +
-      '<details class="faq"><summary class="q">Does it work with no signal?</summary><div class="a">Yes. The airport and runway database, your trips, prices, notes and both calculators live on the phone. Weather, winds and market data rejoin the moment you have coverage.</div></details>' +
-      '<details class="faq"><summary class="q">Where do fuel prices come from?</summary><div class="a">From you and your crew, in ten seconds per airport, with AirNav one tap away to check. Prices flag themselves stale after two weeks. The market reference tells you when the whole board is moving.</div></details>' +
-      '<details class="faq"><summary class="q">Can I try it without an account?</summary><div class="a">Yes. Explore airport and runway data first. A free account adds saved trips, your price log and a 14-day Pro trial with no credit card.</div></details>' +
-    '</section>' +
-
-    '<section style="margin-top:22px"><div class="finalcta">' +
-      '<div><div style="font-family:var(--disp);font-weight:800;font-size:clamp(22px,5vw,30px);letter-spacing:-.02em;line-height:1.1">Your next trip is a number, not a guess.</div><div class="muted" style="font-size:14px;margin-top:6px">Free account, 14 days of Pro, nothing to install but a home-screen icon.</div></div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><button class="btn primary" data-auth="register" style="min-height:52px;padding:0 22px;font-size:15px">Start planning free</button><span class="micro muted">hello@jetdesk.ai · answered by a human</span></div>' +
-    '</div></section>' +
-
-    '';
-  $('tab-welcome').innerHTML = h;
+  if (welcomeWired) return;
+  welcomeWired = true;
+  var smooth = function () { return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'; };
   $('browseBtn').addEventListener('click', function () { S.browse = true; save(); showTab('apt'); });
-  $('hnav').querySelectorAll('[data-hnav]').forEach(function (a) {
-    a.onclick = function (e) {
+  $('hnav').querySelectorAll('[data-hnav]').forEach(function (nav) {
+    nav.onclick = function (e) {
+      var el = $(nav.dataset.hnav); if (!el) return;
       e.preventDefault();
-      var el = $(a.dataset.hnav); if (!el) return;
-      el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      el.scrollIntoView({ behavior: smooth(), block: 'start' });
+      history.replaceState(null, '', '#' + nav.dataset.hnav);
     };
   });
-  $('seeSavings').addEventListener('click', function () {
-    var el = $('savings');
-    if (el) el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  var tog = $('pmathToggle'), math = $('pmath'), more = document.querySelector('.pmore');
+  if (tog && math) tog.addEventListener('click', function () {
+    var open = tog.getAttribute('aria-expanded') === 'true';
+    tog.setAttribute('aria-expanded', open ? 'false' : 'true');
+    math.hidden = open; if (more) more.hidden = open;
+    tog.firstChild.textContent = open ? 'Show the math' : 'Hide the math';
   });
+  /* prices come from the server when a signed-in user sees this page (they normally do not) */
+  var p = AUTH.me && AUTH.me.prices;
+  if (p && $('priceMonthly')) {
+    $('priceMonthly').innerHTML = '$' + p.monthly.toFixed(2) + '<span class="per">/mo</span>';
+    $('priceAnnual').innerHTML = '$' + p.annual + '<span class="per"> billed yearly</span>';
+  }
 }
 function feat(t, d) {
   return '<div class="feat"><div class="ft">' + t + '</div><div class="fd">' + d + '</div></div>';
@@ -3233,9 +3141,17 @@ if (bq.get('go') && /^(trip|apt|fuel|account)$/.test(bq.get('go'))) {
   setTimeout(function () { if (loggedIn() || goTab === 'apt' || goTab === 'fuel') showTab(goTab); }, 0);
   history.replaceState(null, '', '/');
 }
-if (bq.get('apt') && lookup(bq.get('apt'))) {
-  var deepApt = lookup(bq.get('apt')).c;
-  setTimeout(function () { openApt(deepApt); showTab('apt'); }, 0);
-  history.replaceState(null, '', '/');
+var pendingApt = bq.get('apt') || null;
+function onAirportsReady() {
+  if (curTab !== 'welcome') renderAll();
+  if ($('aptSearch').value.trim()) $('aptSearch').dispatchEvent(new Event('input'));
+  if (pendingApt) {
+    var hit = lookup(pendingApt);
+    pendingApt = null;
+    if (hit) { openApt(hit.c); showTab('apt'); history.replaceState(null, '', '/'); }
+    else if (AP_READY) { history.replaceState(null, '', '/'); }
+  }
 }
+window.__jdSetAirports = setAirports;
+if (window.__AP) setAirports(window.__AP, true);
 })();
