@@ -190,7 +190,7 @@ def airport_page(a, big, by):
 <h2><span class="num">02</span>Density altitude and turboprop runway margins</h2>
 <p>Standard temperature at {fmt(elev)} ft is about {round(isa)}°C. Every 1,000 ft of density altitude adds roughly 8 percent to a turboprop's takeoff distance and 5 percent to its landing distance. The table uses Piper Meridian book numbers (2,438 ft takeoff and 2,110 ft landing over a 50 ft obstacle at sea level, ISA, max weight) as a reference airplane; heavier turboprops and light jets scale the same way from their own POH figures.</p>
 <div class="tablewrap"><table><thead><tr><th>Conditions</th><th>Density altitude</th><th>Takeoff est.</th><th>Landing est.</th><th>Landing &times; 1.5</th></tr></thead><tbody>{da_rows}</tbody></table></div>
-<div class="callout safety"><b>Planning aid only.</b> {esc(margin_txt) if margin_txt else 'Verify takeoff and landing performance with your aircraft flight manual before every flight.'} These are estimates for planning; verify with the approved flight manual before every flight.</div>
+<div class="callout safety"><b>Planning aid only.</b> {esc(margin_txt) if margin_txt else 'Verify takeoff and landing performance with your aircraft flight manual before every flight.'} The percentages are a generic rule of thumb applied to one reference airplane, not certified performance data for any specific aircraft, and the runway size categories describe the runway, not your airplane's suitability. Verify with the approved flight manual before every flight.</div>
 
 <h2><span class="num">03</span>Nearby fields with 5,000 ft or more</h2>
 <p>Useful as alternates, as fuel stops when the price at {esc(code)} is high, or as the longer runway on a hot afternoon.</p>
