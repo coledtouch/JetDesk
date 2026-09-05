@@ -102,8 +102,9 @@ def breadcrumb_ld(items):
   return _json.dumps({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
     {"@type": "ListItem", "position": i + 1, "name": n, "item": u} for i, (n, u) in enumerate(items)]}, separators=(',', ':')).replace('</', '<\\/')
 
-def legal_page(slug, title, description, body_html, extra_head='', og_type='website', full_title=None):
+def legal_page(slug, title, description, body_html, extra_head='', og_type='website', full_title=None, robots='index,follow,max-image-preview:large,max-snippet:-1', canonical=None):
   page_title = full_title or (title + ' | JetDesk.AI')
+  canonical_tag = ('<link rel="canonical" href="%s">' % canonical) if canonical is not None else ('<link rel="canonical" href="https://www.jetdesk.ai/%s/">' % slug)
   return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -111,11 +112,11 @@ def legal_page(slug, title, description, body_html, extra_head='', og_type='webs
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{page_title}</title>
 <meta name="description" content="{description}">
-<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta name="robots" content="{robots}">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F6FA">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070B14">
-<link rel="canonical" href="https://www.jetdesk.ai/{slug}/">
+{canonical_tag}
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="stylesheet" href="/fonts/fonts.css">
 <meta property="og:type" content="{og_type}">
@@ -335,6 +336,46 @@ PRIVACY_BODY = f"""
 <h2 id="contact"><span class="num">14</span>Contact</h2>
 <p>JetDesk.AI · Massachusetts, United States · <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a>. Privacy questions land with a human, not a queue.</p>
 """
+
+
+# Status pages. The service worker precaches /offline.html and returns it (status 503) for a public page that is not
+# cached on the device, so an unavailable page never shows a different document. Pages serves 404.html with a real
+# 404 for any path that does not exist; its presence also turns off the single-page fallback that made unknown
+# URLs answer with the homepage. Both are noindex and self-contained (inline CSS, no font stylesheet needed).
+STATUS_CSS = """
+.status{max-width:560px;margin:8vh auto 0}
+.status .k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);margin-bottom:12px}
+.status h1{font-size:clamp(26px,5.5vw,34px)}
+.status .path{font-family:var(--mono);font-size:13.5px;color:var(--ink2);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:14px 0 18px;word-break:break-all}
+.status .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0 8px}
+.status .row a,.status .row button{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:10px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+.status .row .cta{background:var(--acc);color:#06131F;border:1px solid var(--acc);margin:0}
+.status .row .alt{background:var(--card);color:var(--ink);border:1px solid var(--line2)}
+.status .links{font-size:14px;color:var(--ink2)}
+"""
+
+def status_page(slug, title, description, body_html, extra_script=''):
+  return legal_page(slug, title, description, body_html, extra_head='<style>' + STATUS_CSS + '</style>' + extra_script,
+                    robots='noindex,nofollow', canonical='')
+
+def offline_page():
+  body = ('<div class="status"><div class="k">Offline</div><h1>This page is not saved on this device</h1>'
+          '<p class="lead">You are offline and JetDesk has no copy of this page. Nothing else has been shown in its place.</p>'
+          '<div class="path" id="offlinePath">Requested page</div>'
+          '<div class="row"><button class="cta" type="button" onclick="location.reload()">Try again</button><a class="alt" href="/">Open the app</a></div>'
+          '<p class="links">The app itself works offline: airport and runway data, your trips, prices, notes and both calculators are stored on this device. Live weather, winds and this page return when you have coverage.</p></div>')
+  script = ('<script>document.addEventListener("DOMContentLoaded",function(){var p=document.getElementById("offlinePath");'
+            'if(p)p.textContent=location.pathname+location.search;window.addEventListener("online",function(){location.reload()})})</script>')
+  return status_page('offline.html', 'Offline', 'This page is not available offline.', body, script).replace('<link rel="canonical" href="">\n', '')
+
+def not_found_page():
+  body = ('<div class="status"><div class="k">404</div><h1>There is no page here</h1>'
+          '<p class="lead">The address may be mistyped, or the page has moved. Airport pages use the four-letter ICAO code in lowercase, for example <a href="/airports/khpn/">/airports/khpn/</a>.</p>'
+          '<div class="path" id="nfPath">Requested page</div>'
+          '<div class="row"><a class="cta" href="/">Open the app</a><a class="alt" href="/airports/">Airport directory</a><a class="alt" href="/notes/">Field notes</a></div>'
+          '<p class="links">Looking for an airport? <a href="/airports/">Browse by state</a>, or open the app and type the code, name or city.</p></div>')
+  script = '<script>document.addEventListener("DOMContentLoaded",function(){var p=document.getElementById("nfPath");if(p)p.textContent=location.pathname})</script>'
+  return status_page('404.html', 'Page not found', 'That page does not exist on JetDesk.AI.', body, script).replace('<link rel="canonical" href="">\n', '')
 
 
 def build_pages():

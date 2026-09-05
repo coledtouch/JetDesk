@@ -103,7 +103,129 @@ for asset_path in ('dist/favicon.ico',):
     with open(asset_path, 'rb') as asset_file:
       asset_hash.update(asset_file.read())
 
-app_v = 'v' + hashlib.md5((css + markup + app_js + data + asset_hash.hexdigest()).encode()).hexdigest()[:8]
+# service worker source (filled in below); it takes part in the version hash so that any change to caching
+# behaviour, the PWA layer or the offline page produces a new cache name and a new worker
+SW_TEMPLATE = """'use strict';
+const V = 'jetdesk-%s';
+const CORE = %s;
+const SHELL = '/';            /* cache key for the application shell (index.html served at /) */
+const OFFLINE = '/offline';   /* dist/offline.html; Pages serves it at /offline */
+const GEN = 'jetdesk-sw-gen2'; /* marker cache: set once a worker with the wait-and-offer flow has activated */
+/* Application routes get the shell: / with any query (deep links such as /?apt=KTEB) and /index.html.
+   Everything else that navigates (airport pages, field notes, terms, privacy, briefs, reports) is a public
+   document and is cached under its own URL only. */
+const isAppRoute = (p) => p === '/' || p === '/index.html';
+self.addEventListener('install', (e) => {
+  /* precache, then wait: the page decides when the new worker takes over (see pwa.js).
+     One-time exception: upgrading from a pre-gen2 worker, whose page cannot send SKIP_WAITING,
+     takes over immediately (that page reloads itself exactly once on controllerchange). */
+  e.waitUntil(caches.open(V).then((c) => c.addAll(CORE)).then(() => caches.has(GEN)).then((gen2) => {
+    if (self.registration.active && !gen2) return self.skipWaiting();
+  }));
+});
+self.addEventListener('message', (e) => {
+  if (!e.data) return;
+  if (e.data.type === 'SKIP_WAITING') self.skipWaiting();
+  if (e.data.type === 'GET_VERSION') {
+    /* the page listens on the MessageChannel port it transferred; e.source is the fallback for callers without one */
+    const reply = { type: 'VERSION', v: V };
+    if (e.ports && e.ports[0]) e.ports[0].postMessage(reply);
+    else if (e.source) e.source.postMessage(reply);
+  }
+});
+self.addEventListener('activate', (e) => {
+  /* Every earlier cache goes, including the pre-veae7ebbd-fix caches whose shell entry could hold an airport or
+     legal document. Trips, notes, prices and settings live in localStorage and are never touched here. */
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== V && k !== GEN).map((k) => caches.delete(k))))
+      .then(() => caches.open(GEN))
+      .then(() => self.clients.claim())
+  );
+});
+function cacheable(res) {
+  return !!(res && res.ok && res.type === 'basic' && !res.redirected);
+}
+function offlinePage() {
+  return caches.match(OFFLINE).then((r) => r
+    ? r.text().then((body) => new Response(body, { status: 503, statusText: 'Offline', headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } }))
+    : Response.error());
+}
+/* App shell: the network within 2.5 s, otherwise the precached shell. Only a fresh copy of the shell itself is ever
+   stored under SHELL, so the shell can no longer be replaced by another document. */
+function shellFirst(req) {
+  return new Promise((resolve) => {
+    let done = false;
+    const fromCache = () => caches.match(SHELL).then((r) => r || offlinePage()).then(resolve);
+    const timer = setTimeout(() => { if (!done) { done = true; fromCache(); } }, 2500);
+    fetch(req).then((res) => {
+      clearTimeout(timer);
+      if (done) return;
+      done = true;
+      if (cacheable(res)) { const copy = res.clone(); caches.open(V).then((c) => c.put(SHELL, copy)); }
+      resolve(res);
+    }).catch(() => { clearTimeout(timer); if (!done) { done = true; fromCache(); } });
+  });
+}
+/* Public documents: network first and cached under their own URL for offline reading. A cached copy is served
+   after 2.5 s on a slow connection; with no copy the request waits for the network, and if the network fails the
+   honest offline page is returned instead of any other document. */
+function documentFirst(req) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (r) => { if (!done) { done = true; resolve(r); } };
+    const timer = setTimeout(() => { caches.match(req, { ignoreSearch: true }).then((hit) => { if (hit) finish(hit); }); }, 2500);
+    fetch(req).then((res) => {
+      clearTimeout(timer);
+      if (cacheable(res)) { const copy = res.clone(); caches.open(V).then((c) => c.put(req, copy)); }
+      finish(res);
+    }).catch(() => {
+      clearTimeout(timer);
+      caches.match(req, { ignoreSearch: true }).then((hit) => hit ? finish(hit) : offlinePage().then(finish));
+    });
+  });
+}
+/* ---- push notifications ---- */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'JetDesk', body: e.data ? e.data.text() : '' }; }
+  const opts = { body: d.body || '', icon: '%s', badge: '%s', tag: d.tag || 'jetdesk', renotify: !!d.tag, data: { url: d.url || '/' } };
+  e.waitUntil(self.registration.showNotification(d.title || 'JetDesk', opts));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || '/', location.origin).href;
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus(); } }
+    return clients.openWindow(url);
+  }));
+});
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) return;
+  if (url.pathname.startsWith('/api/')) return; /* live data: network only */
+  if (req.mode === 'navigate') {
+    e.respondWith(isAppRoute(url.pathname) ? shellFirst(req) : documentFirst(req));
+    return;
+  }
+  e.respondWith(
+    caches.match(req, { ignoreSearch: true }).then((hit) => {
+      if (hit) return hit;
+      return fetch(req).then((res) => {
+        if (cacheable(res)) {
+          const copy = res.clone();
+          caches.open(V).then((c) => c.put(req, copy));
+        }
+        return res;
+      });
+    })
+  );
+});
+"""
+_offline_html = legal.offline_page()
+app_v = 'v' + hashlib.md5((css + markup + app_js + data + asset_hash.hexdigest() + pwa_js + SW_TEMPLATE + _offline_html).encode()).hexdigest()[:8]
 pwa_js = pwa_js.replace('__APP_V__', app_v).replace('__ICON_192__', icon_192)
 # dataset as its own precached file; the app boots once it has loaded (offline: from the service worker cache)
 data_hash = hashlib.md5(data.encode()).hexdigest()[:8]
@@ -230,6 +352,8 @@ open('dist/index.html', 'w').write(index)
 # ---- legal pages (standalone /terms/ and /privacy/) ----
 _pages = dict(legal.build_pages())
 _pages.update(content.build_pages())
+open('dist/offline.html', 'w').write(_offline_html)
+open('dist/404.html', 'w').write(legal.not_found_page())
 _ap_pages, _ap_sitemap, _ap_count = airports.build(json.loads(open('airports_us.json').read()))
 _pages.update(_ap_pages)
 os.makedirs('dist/notes', exist_ok=True)
@@ -264,92 +388,12 @@ manifest = {
 open('dist/manifest.webmanifest', 'w').write(json.dumps(manifest, indent=2))
 
 # ---- service worker ----
-core = ['/', '/index.html', '/manifest.webmanifest', '/favicon.ico', data_path]
+core = ['/', '/offline', '/manifest.webmanifest', '/favicon.ico', data_path]
 core += sorted(ICONS.values())
 core += ['/fonts/' + f for f in sorted(os.listdir('dist/fonts')) if f.endswith('.woff2')]
 if os.path.isdir('dist/img'):
   core += ['/img/' + f for f in sorted(os.listdir('dist/img')) if f.lower().endswith('.webp')]
-sw = """'use strict';
-const V = 'jetdesk-%s';
-const CORE = %s;
-const GEN = 'jetdesk-sw-gen2'; /* marker cache: set once a worker with the wait-and-offer flow has activated */
-self.addEventListener('install', (e) => {
-  /* precache, then wait: the page decides when the new worker takes over (see pwa.js).
-     One-time exception: upgrading from a pre-gen2 worker, whose page cannot send SKIP_WAITING,
-     takes over immediately (that page reloads itself exactly once on controllerchange). */
-  e.waitUntil(caches.open(V).then((c) => c.addAll(CORE)).then(() => caches.has(GEN)).then((gen2) => {
-    if (self.registration.active && !gen2) return self.skipWaiting();
-  }));
-});
-self.addEventListener('message', (e) => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
-  if (e.data && e.data.type === 'GET_VERSION' && e.source) e.source.postMessage({ type: 'VERSION', v: V });
-});
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== V && k !== GEN).map((k) => caches.delete(k))))
-      .then(() => caches.open(GEN))
-      .then(() => self.clients.claim())
-  );
-});
-function networkFirst(req, fallbackURL) {
-  return new Promise((resolve) => {
-    let done = false;
-    const timer = setTimeout(() => { if (!done) { done = true; fromCache(); } }, 2500);
-    const fromCache = () =>
-      caches.match(req).then((r) => r || caches.match(fallbackURL)).then((r) => resolve(r || Response.error()));
-    fetch(req).then((res) => {
-      clearTimeout(timer);
-      if (done) return;
-      done = true;
-      if (res && res.ok) {
-        const copy = res.clone();
-        caches.open(V).then((c) => c.put(fallbackURL, copy));
-      }
-      resolve(res);
-    }).catch(() => { clearTimeout(timer); if (!done) { done = true; fromCache(); } });
-  });
-}
-/* ---- push notifications ---- */
-self.addEventListener('push', (e) => {
-  let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'JetDesk', body: e.data ? e.data.text() : '' }; }
-  const opts = { body: d.body || '', icon: '%s', badge: '%s', tag: d.tag || 'jetdesk', renotify: !!d.tag, data: { url: d.url || '/' } };
-  e.waitUntil(self.registration.showNotification(d.title || 'JetDesk', opts));
-});
-self.addEventListener('notificationclick', (e) => {
-  e.notification.close();
-  const url = new URL((e.notification.data && e.notification.data.url) || '/', location.origin).href;
-  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-    for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus(); } }
-    return clients.openWindow(url);
-  }));
-});
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  if (url.origin !== location.origin) return;
-  if (url.pathname.startsWith('/api/')) return; /* live data: network only */
-  if (req.mode === 'navigate') {
-    e.respondWith(networkFirst(req, '/index.html'));
-    return;
-  }
-  e.respondWith(
-    caches.match(req, { ignoreSearch: true }).then((hit) => {
-      if (hit) return hit;
-      return fetch(req).then((res) => {
-        if (res && res.ok) {
-          const copy = res.clone();
-          caches.open(V).then((c) => c.put(req, copy));
-        }
-        return res;
-      });
-    })
-  );
-});
-""" % (app_v, json.dumps(core), icon_192, icon_badge)
+sw = SW_TEMPLATE % (app_v, json.dumps(core), icon_192, icon_badge)
 open('dist/sw.js', 'w').write(sw)
 
 # ---- headers ----
@@ -361,7 +405,7 @@ open('dist/_headers', 'w').write("""/*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self'
 
 /fonts/fonts.css
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
@@ -389,6 +433,12 @@ open('dist/_headers', 'w').write("""/*
 
 /sw.js
   Cache-Control: no-cache, max-age=0, must-revalidate
+
+/offline
+  Cache-Control: no-cache
+
+/404
+  Cache-Control: no-cache
 
 /index.html
   Cache-Control: no-cache

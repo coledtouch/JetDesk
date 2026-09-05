@@ -20,10 +20,20 @@ function swSafeToReload() {
   return true;
 }
 function swVersionOf(worker, cb) {
+  /* the worker answers on the transferred port; a window-level VERSION message is accepted too, for a worker
+     that answers through e.source instead */
   var done = false, ch = new MessageChannel();
-  ch.port1.onmessage = function (e) { if (!done) { done = true; cb(e.data && e.data.v); } };
-  try { worker.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) { cb(null); }
-  setTimeout(function () { if (!done) { done = true; cb(null); } }, 800);
+  var finish = function (v) {
+    if (done) return;
+    done = true;
+    navigator.serviceWorker.removeEventListener('message', onMsg);
+    cb(v || null);
+  };
+  var onMsg = function (e) { if (e.data && e.data.type === 'VERSION') finish(e.data.v); };
+  ch.port1.onmessage = function (e) { finish(e.data && e.data.v); };
+  navigator.serviceWorker.addEventListener('message', onMsg);
+  try { worker.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) { finish(null); }
+  setTimeout(function () { finish(null); }, 800);
 }
 function swActivate(worker) {
   if (SW.reloading) return;
