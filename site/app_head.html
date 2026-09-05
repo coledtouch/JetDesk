@@ -165,6 +165,10 @@ input.t,select.t,textarea.t{
 textarea.t{min-height:70px;line-height:1.4}
 input.t.mono,select.t.mono{font-family:var(--mono)}
 input.t::placeholder,textarea.t::placeholder{color:var(--ink3)}
+.f{margin-bottom:10px}
+.ferr{font-size:12px;color:var(--bad);margin-top:4px;line-height:1.35}
+.ferr:empty{display:none}
+input.t[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 1px color-mix(in srgb,var(--bad) 40%,transparent)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 
@@ -273,6 +277,11 @@ canvas.rwmap{width:100%;height:190px;border:1px solid var(--line);border-radius:
   padding:16px 16px calc(20px + env(safe-area-inset-bottom));
 }
 .sheet .grab{width:44px;height:4px;border-radius:4px;background:var(--line2);margin:0 auto 12px}
+/* account, legal and code dialogs: a centered card from 700 px up; phones keep the bottom sheet */
+@media (min-width:700px){
+  #modalWrap .sheet{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);width:min(480px,calc(100% - 32px));max-height:min(86vh,760px);border-radius:18px;border:1px solid var(--line2);padding:22px 22px 20px;box-shadow:var(--shadow)}
+  #modalWrap .grab{display:none}
+}
 .notice{
   border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
   background:var(--warn-soft);color:var(--ink);border-radius:10px;

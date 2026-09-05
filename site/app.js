@@ -514,25 +514,69 @@ function showToast(msg) {
   toastT = setTimeout(function () { t.classList.remove('on'); }, 3200);
 }
 var dialogReturnFocus = null;
-function setPageInert(on) {
-  document.querySelectorAll('header.app,#appMain,nav.tabs,footer.disc').forEach(function (el) { el.inert = on; });
-  document.body.classList.toggle('modal-open', on);
+var MODAL = { kind: null };
+/* Everything outside the topmost open dialog is inert (the skip link, toasts and the update bar included), so
+   keyboard focus and assistive tech stay inside it. Called after every open or close. */
+function syncInert() {
+  var top = $('modalWrap').classList.contains('on') ? 'modalWrap' : ($('sheetWrap').classList.contains('on') ? 'sheetWrap' : null);
+  Array.prototype.forEach.call(document.body.children, function (el) {
+    if (el.tagName === 'SCRIPT') return;
+    el.inert = !!top && el.id !== top;
+  });
+  document.body.classList.toggle('modal-open', !!top);
 }
-function openModal(html) {
+function setPageInert(on) { syncInert(); }
+var FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+function focusablesIn(root) {
+  return Array.prototype.filter.call(root.querySelectorAll(FOCUSABLE), function (el) {
+    return el.offsetParent !== null || el === document.activeElement;
+  });
+}
+/* Tab and Shift+Tab wrap inside the open dialog */
+function trapFocus(wrapId) {
+  var wrap = $(wrapId);
+  wrap.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab' || !wrap.classList.contains('on')) return;
+    var list = focusablesIn(wrap.querySelector('.sheet'));
+    if (!list.length) { e.preventDefault(); return; }
+    var first = list[0], last = list[list.length - 1], ae = document.activeElement;
+    if (e.shiftKey && (ae === first || !wrap.contains(ae))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (ae === last || !wrap.contains(ae))) { e.preventDefault(); first.focus(); }
+  });
+}
+trapFocus('modalWrap'); trapFocus('sheetWrap');
+/* the dialog is named by its visible heading */
+function labelDialog(wrapId, bodyId, fallback) {
+  var h = $(bodyId).querySelector('h1,h2,h3');
+  if (h) {
+    if (!h.id) h.id = wrapId + 'Title';
+    $(wrapId).setAttribute('aria-labelledby', h.id);
+    $(wrapId).removeAttribute('aria-label');
+  } else {
+    $(wrapId).removeAttribute('aria-labelledby');
+    $(wrapId).setAttribute('aria-label', fallback);
+  }
+}
+function openModal(html, kind) {
   if (!$('modalWrap').classList.contains('on')) dialogReturnFocus = document.activeElement;
+  MODAL.kind = kind || null;
   $('modalBody').innerHTML = '<div class="grab"></div>' + html;
+  $('modalBody').scrollTop = 0;
+  labelDialog('modalWrap', 'modalBody', 'Dialog');
   $('modalWrap').classList.add('on');
   $('modalWrap').setAttribute('aria-hidden', 'false');
-  setPageInert(true);
+  syncInert();
   setTimeout(function () {
     var f = $('modalBody').querySelector('input,select,textarea,button,[href],[tabindex]:not([tabindex="-1"])');
     if (f) f.focus();
   }, 0);
 }
 function closeModal() {
+  if (MODAL.kind === 'auth') AUTH_DRAFT.password = '';   /* leaving the account form drops the password; name and email stay for this page load */
+  MODAL.kind = null;
   $('modalWrap').classList.remove('on');
   $('modalWrap').setAttribute('aria-hidden', 'true');
-  setPageInert(false);
+  syncInert();
   if (dialogReturnFocus && dialogReturnFocus.isConnected) dialogReturnFocus.focus();
   dialogReturnFocus = null;
 }
@@ -2325,9 +2369,10 @@ function openSheet() {
     '<div class="notice" style="margin-top:14px"><b>Planning aid only.</b> Estimates use your numbers above. ' +
     'Always verify fuel prices, weather, NOTAMs, and performance with official sources and your POH before flight.</div>' +
     '<div class="btnrow" style="margin-top:14px"><button class="btn primary" id="sheetDone" style="flex:1">Done</button></div>';
+  labelDialog('sheetWrap', 'sheetBody', 'Settings');
   $('sheetWrap').classList.add('on');
   $('sheetWrap').setAttribute('aria-hidden', 'false');
-  setPageInert(true);
+  syncInert();
   setTimeout(function () { var f = $('sheetBody').querySelector('input,select,textarea,button'); if (f) f.focus(); }, 0);
 
   $('sheetDone').addEventListener('click', closeSheet);
@@ -2430,7 +2475,7 @@ function closeSheet() {
   save();
   $('sheetWrap').classList.remove('on');
   $('sheetWrap').setAttribute('aria-hidden', 'true');
-  setPageInert(false);
+  syncInert();
   renderSub(); renderAll();
   flushQ(function () { if (curDetail) openApt(curDetail.c, true); });
   if (sheetReturnFocus && sheetReturnFocus.isConnected) sheetReturnFocus.focus();
@@ -2631,38 +2676,90 @@ document.addEventListener('click', function (e) {
   if (e.target.closest('[data-verify]')) openVerify();
 });
 
+/* The account form keeps its draft in memory only (never storage) so reading the terms, switching between sign in
+   and sign up, or the forgot-password flow does not erase what was typed. The password is dropped when the account
+   dialog is dismissed. */
+var AUTH_DRAFT = { name: '', email: '', password: '' };
+function fieldError(id, msg) {
+  var input = $(id), box = $(id + 'Err');
+  if (!input) return;
+  if (msg) { input.setAttribute('aria-invalid', 'true'); if (box) box.textContent = msg; }
+  else { input.removeAttribute('aria-invalid'); if (box) box.textContent = ''; }
+}
 function openAuth(mode) {
   var reg = mode === 'register';
+  var field = function (id, label, attrs, hint) {
+    return '<div class="f"><label class="lab" for="' + id + '">' + label + '</label>' +
+      '<input class="t" id="' + id + '" name="' + id + '" ' + attrs + ' aria-describedby="' + id + 'Err' + (hint ? ' ' + id + 'Hint' : '') + '">' +
+      (hint ? '<div class="micro muted" id="' + id + 'Hint" style="margin-top:4px">' + hint + '</div>' : '') +
+      '<div class="ferr" id="' + id + 'Err"></div></div>';
+  };
   openModal(
     '<h2 class="sec" style="margin-top:0">' + (reg ? 'Create your account' : 'Sign in') + '</h2>' +
-    (reg ? '<label class="f"><span class="lab">Name</span><input class="t" id="auName" autocomplete="name" placeholder="Dale"></label>' : '') +
-    '<label class="f"><span class="lab">Email</span><input class="t" id="auEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="you@example.com"></label>' +
-    '<label class="f"><span class="lab">Password</span><input class="t" id="auPass" type="password" autocomplete="' + (reg ? 'new-password' : 'current-password') + '" placeholder="' + (reg ? 'At least 8 characters' : '') + '"></label>' +
+    '<form id="auForm" novalidate autocomplete="on">' +
+    (reg ? field('auName', 'Name', 'type="text" autocomplete="name" required maxlength="80" placeholder="Dale"') : '') +
+    field('auEmail', 'Email', 'type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required placeholder="you@example.com"') +
+    field('auPass', 'Password', 'type="password" autocomplete="' + (reg ? 'new-password' : 'current-password') + '" required minlength="8"' + (reg ? ' placeholder="At least 8 characters"' : ''), reg ? '8 characters or more.' : '') +
     '<div class="tiny" id="auErr" role="alert" style="color:var(--bad);min-height:18px"></div>' +
-    '<div class="btnrow"><button class="btn primary" id="auGo" style="flex:1">' + (reg ? 'Create account' : 'Sign in') + '</button>' +
-    '<button class="btn ghost" id="auCancel">Cancel</button></div>' +
+    '<div class="btnrow"><button class="btn primary" type="submit" id="auGo" style="flex:1">' + (reg ? 'Create account' : 'Sign in') + '</button>' +
+    '<button class="btn ghost" type="button" id="auCancel">Cancel</button></div>' +
+    '</form>' +
     '<div class="tiny muted" style="margin-top:12px">' +
-      (reg ? 'Already have one? <button class="linkbtn" data-swap="login">Sign in</button>' : 'New here? <button class="linkbtn" data-swap="register">Create a free account</button> · <button class="linkbtn" id="auForgot">Forgot password?</button>') +
-      (reg ? '<div style="margin-top:6px">By creating an account you agree to the <button class="linkbtn" data-legal="1">terms and privacy policy</button>.</div>' : '') +
-    '</div>'
+      (reg ? 'Already have one? <button class="linkbtn" type="button" data-swap="login">Sign in</button>' : 'New here? <button class="linkbtn" type="button" data-swap="register">Create a free account</button> · <button class="linkbtn" type="button" id="auForgot">Forgot password?</button>') +
+      (reg ? '<div style="margin-top:6px">By creating an account you agree to the <button class="linkbtn" type="button" data-legal="register">terms and privacy policy</button>.</div>' : '') +
+    '</div>',
+    'auth'
   );
+  /* restore the draft */
+  if ($('auName')) $('auName').value = AUTH_DRAFT.name;
+  $('auEmail').value = AUTH_DRAFT.email;
+  $('auPass').value = AUTH_DRAFT.password;
+  $('auForm').addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'auName') AUTH_DRAFT.name = t.value;
+    if (t.id === 'auEmail') AUTH_DRAFT.email = t.value;
+    if (t.id === 'auPass') AUTH_DRAFT.password = t.value;
+    if (t.getAttribute('aria-invalid')) fieldError(t.id, '');
+  });
   $('auCancel').addEventListener('click', closeModal);
   if ($('auForgot')) $('auForgot').addEventListener('click', function () { openForgot($('auEmail').value.trim()); });
   $('modalBody').querySelectorAll('[data-swap]').forEach(function (b) {
     b.addEventListener('click', function () { openAuth(b.dataset.swap); });
   });
-  var go = function () {
+  var validate = function () {
+    var ok = true, first = null;
+    var check = function (id, msg) {
+      var el = $(id); if (!el) return;
+      var v = el.value.trim();
+      var bad = (el.required && !v) || (el.type === 'email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) || (el.minLength > 0 && el.value.length && el.value.length < el.minLength);
+      fieldError(id, bad ? msg(v) : '');
+      if (bad) { ok = false; if (!first) first = el; }
+    };
+    check('auName', function () { return 'Enter your name.'; });
+    check('auEmail', function (v) { return v ? 'Enter a valid email address.' : 'Enter your email address.'; });
+    check('auPass', function (v) { return v ? 'Password needs at least 8 characters.' : (reg ? 'Choose a password of at least 8 characters.' : 'Enter your password.'); });
+    if (first) first.focus();
+    return ok;
+  };
+  var go = function (e) {
+    if (e) e.preventDefault();
+    $('auErr').textContent = '';
+    if (!validate()) return;
     var email = $('auEmail').value.trim(), pass = $('auPass').value;
     var body = { email: email, password: pass };
-    if (reg) { body.name = $('auName').value.trim(); try { var rf = localStorage.getItem('jd_ref'); if (rf) body.ref = rf; } catch (e) {} }
-    $('auErr').textContent = '';
+    if (reg) { body.name = $('auName').value.trim(); try { var rf = localStorage.getItem('jd_ref'); if (rf) body.ref = rf; } catch (e2) {} }
     $('auGo').disabled = true; $('auGo').textContent = reg ? 'Creating...' : 'Signing in...';
     api('/api/auth/' + (reg ? 'register' : 'login'), { body: body }).then(function (r) {
       if (!r.ok) {
-        $('auErr').textContent = r.data.error || (r.status === 0 ? 'No connection. Try again with signal.' : 'Something went wrong.');
+        var msg = r.data.error || (r.status === 0 ? 'No connection. Try again with signal.' : 'Something went wrong.');
+        if (/email/i.test(msg) && !/password/i.test(msg)) { fieldError('auEmail', msg); $('auEmail').focus(); }
+        else if (/password/i.test(msg) && !/email/i.test(msg)) { fieldError('auPass', msg); $('auPass').focus(); }
+        else $('auErr').textContent = msg;
         $('auGo').disabled = false; $('auGo').textContent = reg ? 'Create account' : 'Sign in';
         return;
       }
+      AUTH_DRAFT = { name: '', email: '', password: '' };
+      MODAL.kind = null;
       setTok(r.data.token); AUTH.me = r.data.me; applyProfile();
       S.browse = true; save();
       closeModal();
@@ -2673,8 +2770,7 @@ function openAuth(mode) {
       if (reg && AUTH.me.email_ready) setTimeout(openVerify, 600);
     });
   };
-  $('auGo').addEventListener('click', go);
-  $('auPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+  $('auForm').addEventListener('submit', go);
   setTimeout(function () { var f = $(reg ? 'auName' : 'auEmail'); if (f) f.focus(); }, 80);
 }
 
@@ -2698,7 +2794,8 @@ function openForgot(prefill) {
     '</div>' +
     '<div class="tiny" id="fgErr" style="color:var(--bad);min-height:18px"></div>' +
     '<div class="btnrow"><button class="btn primary" id="fgGo" style="flex:1">Send code</button><button class="btn ghost" id="fgCancel">Cancel</button></div>' +
-    '<div class="tiny muted" style="margin-top:12px"><button class="linkbtn" id="fgBack">Back to sign in</button></div>'
+    '<div class="tiny muted" style="margin-top:12px"><button class="linkbtn" type="button" id="fgBack">Back to sign in</button></div>',
+    'forgot'
   );
   var step = 1;
   $('fgCancel').addEventListener('click', closeModal);
@@ -2736,7 +2833,8 @@ function openVerify() {
     '<input class="t mono" id="vfCode" inputmode="numeric" maxlength="6" placeholder="123456" style="font-size:24px;letter-spacing:.2em;text-align:center">' +
     '<div class="tiny" id="vfErr" style="color:var(--bad);min-height:18px"></div>' +
     '<div class="btnrow"><button class="btn primary" id="vfGo" style="flex:1">Verify</button><button class="btn ghost" id="vfLater">Later</button></div>' +
-    '<div class="tiny muted" style="margin-top:10px">No code? <button class="linkbtn" id="vfResend">Send again</button></div>'
+    '<div class="tiny muted" style="margin-top:10px">No code? <button class="linkbtn" type="button" id="vfResend">Send again</button></div>',
+    'verify'
   );
   $('vfLater').addEventListener('click', closeModal);
   $('vfGo').addEventListener('click', function () {
@@ -2750,7 +2848,7 @@ function openVerify() {
   });
 }
 
-function openLegal() {
+function openLegal(backTo) {
   openModal(
     '<h2 class="sec" style="margin-top:0">Terms and privacy</h2>' +
     '<div class="tiny" style="line-height:1.55">' +
@@ -2761,13 +2859,18 @@ function openLegal() {
     '<p><b>Data sources.</b> Airport and runway data from the FAA and OurAirports; weather from the FAA Aviation Weather Center; market data from the U.S. EIA and OilPriceAPI. Accuracy is not guaranteed.</p>' +
     '<p style="margin-top:10px"><b>The full documents.</b> <a href="/terms/">Terms of Service</a> · <a href="/privacy/">Privacy Policy</a></p>' +
     '</div>' +
-    '<div class="btnrow" style="margin-top:12px"><button class="btn primary" id="lgClose" style="flex:1">Close</button></div>'
+    '<div class="btnrow" style="margin-top:12px">' +
+      (backTo ? '<button class="btn primary" type="button" id="lgBack" style="flex:1">Back to ' + (backTo === 'register' ? 'sign-up' : 'sign in') + '</button><button class="btn ghost" type="button" id="lgClose">Close</button>'
+              : '<button class="btn primary" type="button" id="lgClose" style="flex:1">Close</button>') +
+    '</div>',
+    'legal'
   );
   $('lgClose').addEventListener('click', closeModal);
+  if ($('lgBack')) $('lgBack').addEventListener('click', function () { openAuth(backTo); });
 }
 document.addEventListener('click', function (e) {
   var l = e.target.closest('[data-legal]');
-  if (l) openLegal();
+  if (l) openLegal(l.dataset.legal === 'register' || l.dataset.legal === 'login' ? l.dataset.legal : null);
 });
 
 /* ================= ACCOUNT TAB ================= */
