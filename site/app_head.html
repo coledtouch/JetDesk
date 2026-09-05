@@ -7,6 +7,7 @@
   --ink:#0F172A; --ink2:#475569; --ink3:#5B6779;
   --acc:#0E7CFF; --acc-soft:#E3F0FF; --acc2:#0B5FCC; --acc2-soft:#E3F0FF;
   --good:#0E9F5B; --good-soft:#E1F5EA; --warn:#B7791F; --warn-soft:#FFF3D6; --bad:#D93A3F; --bad-soft:#FCE4E5;
+  --good-ink:#087443; --warn-ink:#8A5A12; --bad-ink:#B42328; /* small text on soft backgrounds: 4.5:1 or better */
   --btn:#0F172A; --btn-ink:#F4F6FA;
   --shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.06);
   --disp:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;
@@ -20,6 +21,7 @@
     --ink:#E6EAF2; --ink2:#A7B2C3; --ink3:#8492A6;
     --acc:#4CC9FF; --acc-soft:#0E2536; --acc2:#7CC4FF; --acc2-soft:#0E2536;
     --good:#2FD27D; --good-soft:#0F2A1E; --warn:#FFB020; --warn-soft:#2B2110; --bad:#FF5A5F; --bad-soft:#2B1416;
+    --good-ink:#2FD27D; --warn-ink:#FFB020; --bad-ink:#FF5A5F;
     --btn:#4CC9FF; --btn-ink:#06131F;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
   }
@@ -29,6 +31,7 @@
   --ink:#E6EAF2; --ink2:#A7B2C3; --ink3:#8492A6;
   --acc:#4CC9FF; --acc-soft:#0E2536; --acc2:#7CC4FF; --acc2-soft:#0E2536;
   --good:#2FD27D; --good-soft:#0F2A1E; --warn:#FFB020; --warn-soft:#2B2110; --bad:#FF5A5F; --bad-soft:#2B1416;
+  --good-ink:#2FD27D; --warn-ink:#FFB020; --bad-ink:#FF5A5F;
   --btn:#4CC9FF; --btn-ink:#06131F;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
 }
@@ -117,15 +120,15 @@ hr.dash{border:none;border-top:1px dashed var(--line2);margin:10px 0}
   font-family:var(--mono);font-weight:700;letter-spacing:.04em;text-transform:uppercase;
   font-size:10.5px;padding:4px 9px;border:1px solid transparent;white-space:nowrap;
 }
-.pill.good{background:var(--good-soft);color:var(--good);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
-.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
-.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.pill.good{background:var(--good-soft);color:var(--good-ink);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+.pill.warn{background:var(--warn-soft);color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+.pill.bad{background:var(--bad-soft);color:var(--bad-ink);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
 .pill.acc{background:var(--acc-soft);color:var(--acc2);border-color:color-mix(in srgb,var(--acc2) 35%,transparent)}
 .pill.dim{background:var(--card2);color:var(--ink2);border-color:var(--line2)}
-.pill.vfr{background:var(--good-soft);color:var(--good);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+.pill.vfr{background:var(--good-soft);color:var(--good-ink);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
 .pill.mvfr{background:var(--acc2-soft);color:var(--acc2);border-color:color-mix(in srgb,var(--acc2) 35%,transparent)}
-.pill.ifr{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
-.pill.lifr{background:var(--acc-soft);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 35%,transparent)}
+.pill.ifr{background:var(--bad-soft);color:var(--bad-ink);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.pill.lifr{background:var(--acc-soft);color:var(--acc2);border-color:color-mix(in srgb,var(--acc) 35%,transparent)}
 .wxline{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
 .wxraw{font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;margin:8px 0 0}
 .wxmini{display:inline-flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
@@ -258,14 +261,14 @@ canvas.rwmap{width:100%;height:190px;border:1px solid var(--line);border-radius:
 .verdict.save{background:var(--good-soft);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
 .verdict.skip{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
 .verdict .vword{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.16em;text-transform:uppercase}
-.verdict.save .vword{color:var(--good)} .verdict.skip .vword{color:var(--bad)}
+.verdict.save .vword{color:var(--good-ink)} .verdict.skip .vword{color:var(--bad-ink)}
 .verdict .vnum{font-family:var(--mono);font-weight:700;font-size:38px;line-height:1.15}
 .verdict.save .vnum{color:var(--good)} .verdict.skip .vnum{color:var(--bad)}
 .verdict .vsub{font-size:12px;color:var(--ink2);margin-top:2px}
 .bk{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
 .bk:last-child{border-bottom:none}
 .bk .v{font-family:var(--mono);font-weight:700;white-space:nowrap}
-.bk.plus .v{color:var(--good)} .bk.minus .v{color:var(--bad)}
+.bk.plus .v{color:var(--good-ink)} .bk.minus .v{color:var(--bad-ink)}
 
 /* ============ SHEET (settings) ============ */
 .sheetwrap{position:fixed;inset:0;z-index:60;display:none}
@@ -310,7 +313,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .hero .linkbtn{color:#7CC4FF}
 .hero .btn.primary{background:#4CC9FF;border-color:#4CC9FF;color:#06131F}
 .hero .btn:not(.primary){color:#E6EAF2;background:rgba(11,18,32,.78);border-color:#2A3A55}
-.hero .phone{--card:#0B1220;--card2:#121C2E;--line:#1E2A40;--line2:#2A3A55;--ink:#E6EAF2;--ink2:#A7B2C3;--ink3:#8492A6;--acc:#4CC9FF;--acc2:#7CC4FF;--acc-soft:#0E2536;--good:#2FD27D;--good-soft:#0F2A1E;--bad:#FF5A5F;color:var(--ink)}
+.hero .phone{--card:#0B1220;--card2:#121C2E;--line:#1E2A40;--line2:#2A3A55;--ink:#E6EAF2;--ink2:#A7B2C3;--ink3:#8492A6;--acc:#4CC9FF;--acc2:#7CC4FF;--acc-soft:#0E2536;--good:#2FD27D;--good-soft:#0F2A1E;--bad:#FF5A5F;--good-ink:#2FD27D;--bad-ink:#FF5A5F;color:var(--ink)}
 /* Day hero: pearl surfaces, navy copy, a soft light veil instead of a dark band; the photograph stays clear.
    On wide screens the image is mirrored so the aircraft sits behind the glass calculator, away from the copy. */
 :root[data-hero="day"] .hero{background:#EEF2F7;border-color:#C5CFDB}
@@ -327,7 +330,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 :root[data-hero="day"] .hero .hero-proof{color:#334155}
 :root[data-hero="day"] .hero .hero-proof span::before{color:#0B5FCC}
 :root[data-hero="day"] .hero .linkbtn,:root[data-hero="day"] .hero .hero-jump a{color:#0B5FCC}
-:root[data-hero="day"] .hero .phone{--card:#FFFFFF;--card2:#F4F6FA;--line:#DCE3EC;--line2:#C5CFDB;--ink:#0F172A;--ink2:#475569;--ink3:#5B6779;--acc:#0E7CFF;--acc2:#0B5FCC;--acc-soft:#E3F0FF;--good:#0E9F5B;--good-soft:#E1F5EA;--bad:#D93A3F;background:rgba(255,255,255,.74);border-color:rgba(15,23,42,.12);box-shadow:0 24px 60px rgba(15,23,42,.18)}
+:root[data-hero="day"] .hero .phone{--card:#FFFFFF;--card2:#F4F6FA;--line:#DCE3EC;--line2:#C5CFDB;--ink:#0F172A;--ink2:#475569;--ink3:#5B6779;--acc:#0E7CFF;--acc2:#0B5FCC;--acc-soft:#E3F0FF;--good:#0E9F5B;--good-soft:#E1F5EA;--bad:#D93A3F;--good-ink:#087443;--bad-ink:#B42328;background:rgba(255,255,255,.74);border-color:rgba(15,23,42,.12);box-shadow:0 24px 60px rgba(15,23,42,.18)}
 :root[data-hero="day"] .hero .phone .pcard{background:rgba(255,255,255,.66);border-color:rgba(15,23,42,.08)}
 :root[data-hero="day"] .hero .phone .pfield{background:rgba(255,255,255,.80);border-color:rgba(15,23,42,.10)}
 :root[data-hero="day"] .hero .phone .pverdict{background:rgba(225,245,234,.88)}
@@ -346,7 +349,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .phone{background:var(--card);border:1px solid var(--line2);border-radius:36px;padding:14px;box-shadow:0 30px 70px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--acc) 20%,transparent);max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .phone .pcard{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .phone .pverdict{background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 45%,transparent);border-radius:16px;padding:16px 12px;text-align:center}
-.phone .pverdict .w{font-family:var(--wordmark);font-size:10px;letter-spacing:.18em;color:var(--good)}
+.phone .pverdict .w{font-family:var(--wordmark);font-size:10px;letter-spacing:.18em;color:var(--good-ink)}
 .phone .pverdict .n{font-family:var(--mono);font-weight:700;font-size:42px;line-height:1.1;color:var(--good)}
 .pfield{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .pfield .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:800}
@@ -427,7 +430,8 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .pgrid{gap:8px}
 .pgrid .pfield{min-width:0}
 .pfield .v{overflow-wrap:anywhere}
-.pmath-toggle{border:1px solid var(--line2);background:var(--card);color:var(--acc2);border-radius:10px;min-height:44px;font:inherit;font-size:13px;font-weight:700;width:100%}
+.pmath-toggle{display:none;border:1px solid var(--line2);background:var(--card);color:var(--acc2);border-radius:10px;min-height:44px;font:inherit;font-size:13px;font-weight:700;width:100%}
+@media (max-width:859px){.phone .pmath,.phone .pmore{display:none}.phone.expanded .pmath{display:flex}.phone.expanded .pmore{display:grid}.pmath-toggle{display:block}}
 .pmath-toggle[aria-expanded="true"]::after{content:" \2191"}
 .pmath-toggle[aria-expanded="false"]::after{content:" \2193"}
 .pnote{text-align:center;margin-top:2px;text-shadow:none}
@@ -452,7 +456,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .billing{display:inline-flex;border:1px solid var(--line2);border-radius:999px;padding:3px;margin:8px 0 6px;gap:2px;background:var(--card2)}
 .billing input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
 .billing label{border-radius:999px;padding:0 14px;min-height:38px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer}
-.billing label .save{font-size:10.5px;color:var(--good);font-family:var(--mono);letter-spacing:.02em}
+.billing label .save{font-size:10.5px;color:var(--good-ink);font-family:var(--mono);letter-spacing:.02em}
 .billing input:checked+label{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
 .billing input:focus-visible+label{outline:2px solid var(--acc);outline-offset:2px}
 .plan.pro .price-year{display:none}
@@ -597,16 +601,15 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
         <div class="grid3 pgrid pmore"><div class="pfield"><div class="l">Gallons</div><div class="v">150</div></div><div class="pfield"><div class="l">Detour</div><div class="v nowrap">10 min</div></div><div class="pfield"><div class="l">Ramp</div><div class="v">$0</div></div></div>
       </div>
       <div class="pverdict"><div class="w">WORTH THE STOP</div><div class="n nowrap">+$191</div><div class="micro muted">net after the extra landing, takeoff and detour</div></div>
-      <button class="pmath-toggle" type="button" id="pmathToggle" aria-expanded="true" aria-controls="pmath" hidden>Show the math</button>
+      <button class="pmath-toggle" type="button" id="pmathToggle" aria-expanded="false" aria-controls="pmath">Show the math</button>
       <div class="pcard pmath" id="pmath" style="font-size:12px">
-        <div class="row"><span class="muted">Price gap × 150 gal ($2.30)</span><span class="mono nowrap" style="color:var(--good);font-weight:700">+$345</span></div>
-        <div class="row"><span class="muted">Stop cycle 15 gal + detour 7 gal</span><span class="mono nowrap" style="color:var(--bad);font-weight:700">&minus;$154</span></div>
+        <div class="row"><span class="muted">Price gap × 150 gal ($2.30)</span><span class="mono nowrap" style="color:var(--good-ink);font-weight:700">+$345</span></div>
+        <div class="row"><span class="muted">Stop cycle 15 gal + detour 7 gal</span><span class="mono nowrap" style="color:var(--bad-ink);font-weight:700">&minus;$154</span></div>
         <div class="row"><span class="muted">Breaks even at a gap of</span><span class="mono nowrap" style="font-weight:700">$1.03/gal</span></div>
         <div class="row"><span class="muted">Time added</span><span class="mono nowrap" style="font-weight:700">35 min</span></div>
       </div>
       <div class="micro muted pnote">Your numbers come from your airplane and your crew's logged prices.</div>
     </div>
-    <script>(function(){if(!matchMedia('(max-width:859px)').matches)return;var m=document.getElementById('pmath'),b=document.getElementById('pmathToggle');if(!m||!b)return;m.hidden=true;b.hidden=false;b.setAttribute('aria-expanded','false');var g=document.querySelector('.pmore');if(g)g.hidden=true})();</script>
   </div>
 </section>
 
@@ -614,7 +617,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 
 <section id="savings" class="anchor"><h2 class="sec">Where the money is</h2>
   <div class="landing-heading">Cheaper fuel isn't always a cheaper stop.</div>
-  <p class="muted lede">A $2.30 gap on 150 gallons looks like $345. Charge the extra takeoff and landing, the detour and the ramp fee against it and JetDesk hands back what is actually left: <span class="nowrap mono" style="color:var(--good);font-weight:700">+$191</span>, a number with a sign in front of it.</p>
+  <p class="muted lede">A $2.30 gap on 150 gallons looks like $345. Charge the extra takeoff and landing, the detour and the ramp fee against it and JetDesk hands back what is actually left: <span class="nowrap mono" style="color:var(--good-ink);font-weight:700">+$191</span>, a number with a sign in front of it.</p>
   <div class="stats">
     <div class="card stat2"><div class="n">$2.30</div><div class="t">per gallon, 27 nm apart</div><div class="d">Sample spread between a premium FBO and the field down the coast, same day.</div></div>
     <div class="card stat2"><div class="n" style="color:var(--good)">+$191</div><div class="t">net on one stop</div><div class="d">After the extra takeoff, landing, detour minutes and ramp fee are charged against it.</div></div>
@@ -633,7 +636,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 
     <div class="card cap"><div class="demo"><span class="pill dim sample">Sample</span>
       <div class="wxline"><span class="pill vfr">VFR</span><span class="mono" style="font-weight:700">14009KT 10+ SM</span><span class="mono" style="color:var(--ink2)">25/14 A3012</span></div>
-      <div class="lab" style="margin:2px 0 0">Runway winds now · <span style="color:var(--acc)">best: 16</span></div>
+      <div class="lab" style="margin:2px 0 0">Runway winds now · <span style="color:var(--acc2)">best: 16</span></div>
       <div class="row"><span class="mono"><span class="dot good"></span> 16 · 9 kt head · 0 cross</span><span class="mono" style="color:var(--ink3)">6,081×150</span></div>
       <div class="row"><span class="mono"><span class="dot good"></span> 23 · 3 kt head · 9L cross</span><span class="mono" style="color:var(--ink3)">8,700×150</span></div>
       <div class="micro muted">Field 55 ft · density altitude 1,320 ft</div>

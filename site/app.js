@@ -2547,12 +2547,12 @@ function renderWelcome() {
       history.replaceState(null, '', '#' + nav.dataset.hnav);
     };
   });
-  var tog = $('pmathToggle'), math = $('pmath'), more = document.querySelector('.pmore');
-  if (tog && math) tog.addEventListener('click', function () {
+  var tog = $('pmathToggle'), phone = document.querySelector('.hero .phone');
+  if (tog && phone) tog.addEventListener('click', function () {
     var open = tog.getAttribute('aria-expanded') === 'true';
     tog.setAttribute('aria-expanded', open ? 'false' : 'true');
-    math.hidden = open; if (more) more.hidden = open;
-    tog.firstChild.textContent = open ? 'Show the math' : 'Hide the math';
+    phone.classList.toggle('expanded', !open);
+    tog.textContent = open ? 'Show the math' : 'Hide the math';
   });
   /* prices come from the server when a signed-in user sees this page (they normally do not) */
   var p = AUTH.me && AUTH.me.prices;
