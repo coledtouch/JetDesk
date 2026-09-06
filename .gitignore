@@ -13,3 +13,11 @@ __pycache__/
 .dev.vars
 node_modules/
 *.zip
+site/dist/404.html
+site/dist/offline.html
+site/dist/sitemap-pages.xml
+site/dist/sitemap-airports.xml
+site/dist/airports/
+site/dist/data/
+site/dist/img/*.????????.*
+site/dist/img/*.????????-800.*
