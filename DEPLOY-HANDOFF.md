@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 6, 2026, app version `vf8be8b5e` (Rounds 6 and 6b, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 6, 2026, app version `vc57b1933` (Rounds 6, 6b and 6c, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -134,6 +134,14 @@ Deployed September 6, 2026 01:52 UTC as deployment `de91f6f7-1bd7-48bf-876d-7c2c
 1. Day hero files re-encoded from `hero-day-theme-v1.png` (1672 by 941, the only master) at WebP q90: 1600 by 900 at 75 KB and 800 by 450 at 29 KB. The Night photo has no master beyond the 37 KB WebP, so its pixels are unchanged.
 2. Night overlay: photo opacity .58 to .86 with a lighter left band and bottom fade, so the aircraft reads behind the copy; phones show the tail and ramp lights.
 3. Day composition now matches Night (aircraft left, nose right, no mirroring) at Cole's request, with a slightly wider pearl veil on the left for the navy headline.
+
+### Round 6c (vc57b1933): mobile hero framing
+
+Deployed September 6, 2026 17:20 UTC as deployment `25e1f6c9-a809-422c-8d61-9fd2a892eab1` after a preview on branch `hero-mobile`. Rollback target: `de91f6f7-1bd7-48bf-876d-7c2c1a0f87d4` (vf8be8b5e).
+
+1. Below 860 px the hero photo was covering the full 900 px column: filling that from a 16:9 frame shows about a quarter of its width, scaled past the file's own pixels, which is why phones got a soft close-up of the propeller. The photo is now a band at the top of the hero at the frame's own shape (about 10 percent trimmed off the sides), masked into the hero background at its lower edge. The hero's height is unchanged.
+2. Day and Night share one `object-position` at every breakpoint; only the veil differs. Night on phones: image opacity .84 to .96 with a lighter veil over the band.
+3. The `<picture>` source and the head preload both carry `800w, 1600w` with `sizes="115vw"` describing the real slot, so a high-density phone loads the 1600 px file. They disagreed before (`imagesizes` said 800 px, the source had no descriptors), which could fetch both files.
 
 ### Known gaps for the next round
 
