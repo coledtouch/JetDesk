@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 6, 2026, app version `vc4d6e6e2` (Round 6, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 6, 2026, app version `vf8be8b5e` (Rounds 6 and 6b, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -126,6 +126,14 @@ Source: GitHub `main` (vfedf2513) plus the notification badge icon that was live
 7. Workflow: `refresh-data.yml` deploys with `wrangler.toml` moved aside (the placeholder ids failed the Sep 3 run).
 
 Deployed September 6, 2026 01:05 UTC as deployment `38e680a0-db7e-4038-ab0f-0981de1e4f2a` (the exact preview artifact; wrangler uploaded no new files). Method: from `site` with `wrangler.toml` renamed, `npx wrangler@4 pages deploy dist --project-name meridian-flight-desk --branch main`; the project keeps its dashboard bindings and secrets. Rollback target: deployment `f499893c-7a84-4671-937c-2fac297f17d1` (veae7ebbd, Sep 2 2026). Production Lighthouse mobile after deploy: Performance 96 to 97, Accessibility 100, Best Practices 100, SEO 100, LCP 2.0 to 2.3 s, CLS 0; the Cloudflare Web Analytics beacon loads with a clean console.
+
+### Round 6b (vf8be8b5e): hero images
+
+Deployed September 6, 2026 01:52 UTC as deployment `de91f6f7-1bd7-48bf-876d-7c2c1a0f87d4` after a preview on branch `hero-2026-09-06`. Rollback target: `38e680a0-db7e-4038-ab0f-0981de1e4f2a` (vc4d6e6e2).
+
+1. Day hero files re-encoded from `hero-day-theme-v1.png` (1672 by 941, the only master) at WebP q90: 1600 by 900 at 75 KB and 800 by 450 at 29 KB. The Night photo has no master beyond the 37 KB WebP, so its pixels are unchanged.
+2. Night overlay: photo opacity .58 to .86 with a lighter left band and bottom fade, so the aircraft reads behind the copy; phones show the tail and ramp lights.
+3. Day composition now matches Night (aircraft left, nose right, no mirroring) at Cole's request, with a slightly wider pearl veil on the left for the navy headline.
 
 ### Known gaps for the next round
 
