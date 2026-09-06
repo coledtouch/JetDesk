@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the production source of truth as of September 5, 2026: app version `vc4d6e6e2` (Round 6, below) once deployed, over `veae7ebbd` live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 6, 2026, app version `vc4d6e6e2` (Round 6, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -125,7 +125,7 @@ Source: GitHub `main` (vfedf2513) plus the notification badge icon that was live
 6. Airport pages: the callout says the percentages are a generic rule of thumb applied to one reference airplane and that runway size categories describe the runway, not the airplane. The model itself is unchanged and still needs review by someone with aircraft performance expertise.
 7. Workflow: `refresh-data.yml` deploys with `wrangler.toml` moved aside (the placeholder ids failed the Sep 3 run).
 
-Deploying: run the build, then from `site` with `wrangler.toml` renamed, `npx wrangler@4 pages deploy dist --project-name meridian-flight-desk --branch main`. The project keeps its dashboard bindings and secrets. Rollback target before this round: deployment `f499893c-7a84-4671-937c-2fac297f17d1` (veae7ebbd, Sep 2 2026).
+Deployed September 6, 2026 01:05 UTC as deployment `38e680a0-db7e-4038-ab0f-0981de1e4f2a` (the exact preview artifact; wrangler uploaded no new files). Method: from `site` with `wrangler.toml` renamed, `npx wrangler@4 pages deploy dist --project-name meridian-flight-desk --branch main`; the project keeps its dashboard bindings and secrets. Rollback target: deployment `f499893c-7a84-4671-937c-2fac297f17d1` (veae7ebbd, Sep 2 2026). Production Lighthouse mobile after deploy: Performance 96 to 97, Accessibility 100, Best Practices 100, SEO 100, LCP 2.0 to 2.3 s, CLS 0; the Cloudflare Web Analytics beacon loads with a clean console.
 
 ### Known gaps for the next round
 
