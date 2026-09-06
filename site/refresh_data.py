@@ -35,7 +35,7 @@ def main():
   cycle = current_cycle()
   prev = {}
   if os.path.exists(STAMP):
-    prev = json.load(open(STAMP))
+    prev = json.load(open(STAMP, encoding='utf-8'))
   print('current NASR cycle:', cycle, '| built with:', prev.get('cycle', 'unknown'))
   if '--check' in sys.argv:
     print('changed' if prev.get('cycle') != cycle else 'unchanged')
@@ -56,11 +56,11 @@ def main():
   # stamp the cycle into the app footer text and the dataset stamp file
   label = datetime.date.fromisoformat(cycle).strftime('%b %Y')
   for fn in ('app_head.html', 'app.js', 'airports.py', 'legal.py'):
-    s = open(fn).read()
+    s = open(fn, encoding='utf-8').read()
     s2 = re.sub(r'FAA NASR via OurAirports, [A-Z][a-z]{2} \d{4} cycle', 'FAA NASR via OurAirports, ' + label + ' cycle', s)
     if s2 != s:
-      open(fn, 'w').write(s2)
-  json.dump({'cycle': cycle, 'built': datetime.datetime.utcnow().isoformat() + 'Z'}, open(STAMP, 'w'))
+      open(fn, 'w', encoding='utf-8').write(s2)
+  json.dump({'cycle': cycle, 'built': datetime.datetime.utcnow().isoformat() + 'Z'}, open(STAMP, 'w', encoding='utf-8'))
   print('assembling')
   subprocess.check_call([sys.executable, 'assemble_pwa.py'])
   print('done: dataset on NASR cycle', cycle)

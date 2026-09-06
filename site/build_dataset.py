@@ -95,7 +95,7 @@ with open('airports.csv', newline='', encoding='utf-8') as f:
 
 out.sort(key=lambda x: x['c'])
 blob = json.dumps(out, separators=(',', ':'))
-with open('airports_us.json', 'w') as f:
+with open('airports_us.json', 'w', encoding='utf-8') as f:
     f.write(blob)
 print('airports kept:', len(out))
 print('json bytes:', len(blob))

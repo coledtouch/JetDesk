@@ -1,13 +1,17 @@
-import hashlib, json, os, re
+import hashlib, json, os, re, sys
+# Every text file is read and written as UTF-8 regardless of the platform default (Windows uses cp1252, which cannot
+# encode the minus sign, the multiplication sign or the middle dot used throughout the pages).
+try: sys.stdout.reconfigure(encoding='utf-8')
+except Exception: pass
 import legal
 import content
 import airports
-open('lib/shell.gen.js', 'w').write(legal.shell_js())
+open('lib/shell.gen.js', 'w', encoding='utf-8').write(legal.shell_js())
 
-head = open('app_head.html').read()
-app_js = open('app.js').read()
-pwa_js = open('pwa.js').read()
-data = open('airports_us.json').read().replace('</', '<\\/')
+head = open('app_head.html', encoding='utf-8').read()
+app_js = open('app.js', encoding='utf-8').read()
+pwa_js = open('pwa.js', encoding='utf-8').read()
+data = open('airports_us.json', encoding='utf-8').read().replace('</', '<\\/')
 
 # strip the Google Fonts link (fonts are self-hosted for offline use)
 head = re.sub(r'<link rel="stylesheet" href="https://fonts\.googleapis\.com[^>]*>\s*', '', head)
@@ -18,7 +22,7 @@ title = m.group(1)
 head = head.replace(m.group(0), '').strip()
 
 # local fonts css -> absolute /fonts/ paths, inlined
-fonts_css = open('dist/fonts/fonts.css').read()
+fonts_css = open('dist/fonts/fonts.css', encoding='utf-8').read()
 fonts_css = re.sub(r'url\(([0-9a-f]{10}\.woff2)\)', r'url(/fonts/\1)', fonts_css)
 
 pwa_css = """
@@ -236,7 +240,7 @@ os.makedirs('dist/data', exist_ok=True)
 for old in os.listdir('dist/data'):
   os.remove(os.path.join('dist/data', old))
 data_path = '/data/airports.' + data_hash + '.json'
-open('dist' + data_path, 'w').write(open('airports_us.json').read())
+open('dist' + data_path, 'w', encoding='utf-8').write(open('airports_us.json', encoding='utf-8').read())
 app_js_safe = app_js.replace('</script', '<\\/script')
 # The app runs at once (the landing page is real HTML); the dataset arrives afterwards through window.__jdSetAirports,
 # from the network, else from the service worker cache, else as a visible failure state. A slow or failed dataset can
@@ -357,22 +361,22 @@ index = f"""<!doctype html>
 </body>
 </html>
 """
-open('dist/index.html', 'w').write(index)
+open('dist/index.html', 'w', encoding='utf-8').write(index)
 
 # ---- legal pages (standalone /terms/ and /privacy/) ----
 _pages = dict(legal.build_pages())
 _pages.update(content.build_pages())
-open('dist/offline.html', 'w').write(_offline_html)
-open('dist/404.html', 'w').write(legal.not_found_page())
-_ap_pages, _ap_sitemap, _ap_count = airports.build(json.loads(open('airports_us.json').read()))
+open('dist/offline.html', 'w', encoding='utf-8').write(_offline_html)
+open('dist/404.html', 'w', encoding='utf-8').write(legal.not_found_page())
+_ap_pages, _ap_sitemap, _ap_count = airports.build(json.loads(open('airports_us.json', encoding='utf-8').read()))
 _pages.update(_ap_pages)
 os.makedirs('dist/notes', exist_ok=True)
-open('dist/notes/feed.xml', 'w').write(content.rss())
-open('dist/sitemap-airports.xml', 'w').write(_ap_sitemap)
+open('dist/notes/feed.xml', 'w', encoding='utf-8').write(content.rss())
+open('dist/sitemap-airports.xml', 'w', encoding='utf-8').write(_ap_sitemap)
 print('airport pages:', _ap_count)
 for _slug, _html in _pages.items():
   os.makedirs('dist/' + _slug, exist_ok=True)
-  open('dist/' + _slug + '/index.html', 'w').write(_html)
+  open('dist/' + _slug + '/index.html', 'w', encoding='utf-8').write(_html)
 
 # ---- manifest ----
 manifest = {
@@ -395,7 +399,7 @@ manifest = {
     {"src": icon_m512, "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
-open('dist/manifest.webmanifest', 'w').write(json.dumps(manifest, indent=2))
+open('dist/manifest.webmanifest', 'w', encoding='utf-8').write(json.dumps(manifest, indent=2))
 
 # ---- service worker ----
 core = ['/', '/offline', '/manifest.webmanifest', '/favicon.ico', data_path]
@@ -404,10 +408,10 @@ core += ['/fonts/' + f for f in sorted(os.listdir('dist/fonts')) if f.endswith('
 if os.path.isdir('dist/img'):
   core += ['/img/' + f for f in sorted(os.listdir('dist/img')) if f.lower().endswith('.webp')]
 sw = SW_TEMPLATE % (app_v, json.dumps(core), icon_192, icon_badge)
-open('dist/sw.js', 'w').write(sw)
+open('dist/sw.js', 'w', encoding='utf-8').write(sw)
 
 # ---- headers ----
-open('dist/_headers', 'w').write("""/*
+open('dist/_headers', 'w', encoding='utf-8').write("""/*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
@@ -454,7 +458,7 @@ open('dist/_headers', 'w').write("""/*
   Cache-Control: no-cache
 """)
 
-open('dist/robots.txt', 'w').write("""User-agent: *
+open('dist/robots.txt', 'w', encoding='utf-8').write("""User-agent: *
 Allow: /
 Sitemap: https://www.jetdesk.ai/sitemap.xml
 """)
@@ -464,13 +468,13 @@ import datetime as _dt
 _today = _dt.date.today().isoformat()  # home: this build
 _eff = _dt.datetime.strptime(legal.EFFECTIVE, '%B %d, %Y').date().isoformat()  # terms/privacy: effective date
 _notes_latest = max(a['iso'] for a in content.ARTICLES)
-open('dist/sitemap.xml', 'w').write("""<?xml version="1.0" encoding="UTF-8"?>
+open('dist/sitemap.xml', 'w', encoding='utf-8').write("""<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>https://www.jetdesk.ai/sitemap-pages.xml</loc><lastmod>%s</lastmod></sitemap>
   <sitemap><loc>https://www.jetdesk.ai/sitemap-airports.xml</loc><lastmod>%s</lastmod></sitemap>
 </sitemapindex>
 """ % (_today, _lm))
-open('dist/sitemap-pages.xml', 'w').write("""<?xml version="1.0" encoding="UTF-8"?>
+open('dist/sitemap-pages.xml', 'w', encoding='utf-8').write("""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.jetdesk.ai/</loc><lastmod>%s</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://www.jetdesk.ai/airports/</loc><lastmod>%s</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>

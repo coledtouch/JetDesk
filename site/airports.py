@@ -66,7 +66,7 @@ def cycle_label():
 
 def sitemap_lastmod():
   try:
-    return json.load(open('dataset_cycle.json')).get('cycle', '2026-09-01')
+    return json.load(open('dataset_cycle.json', encoding='utf-8')).get('cycle', '2026-09-01')
   except Exception:
     return '2026-09-01'
 
