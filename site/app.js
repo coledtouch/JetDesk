@@ -1036,14 +1036,15 @@ function effectiveTheme() {
   return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
 }
 function heroSet() { return effectiveTheme() === 'light' ? HERO.day : HERO.night; }
+function heroSrcset(h) { return h.small + ' 800w, ' + h.full + ' 1600w'; }
 function heroPictureHTML() {
   var h = heroSet();
-  return '<picture class="hero-media" aria-hidden="true"><source id="heroSrc" media="(max-width:640px)" srcset="' + h.small + '"><img id="heroImg" class="heroart" src="' + h.full + '" alt="" width="1600" height="900" fetchpriority="high" decoding="async"></picture>';
+  return '<picture class="hero-media" aria-hidden="true"><source id="heroSrc" media="(max-width:859px)" srcset="' + heroSrcset(h) + '" sizes="115vw"><img id="heroImg" class="heroart" src="' + h.full + '" alt="" width="1600" height="900" fetchpriority="high" decoding="async"></picture>';
 }
 function syncHero() {
   var h = heroSet(), img = $('heroImg'), src = $('heroSrc');
   document.documentElement.setAttribute('data-hero', effectiveTheme() === 'light' ? 'day' : 'night');
-  if (src && src.getAttribute('srcset') !== h.small) src.setAttribute('srcset', h.small);
+  if (src && src.getAttribute('srcset') !== heroSrcset(h)) src.setAttribute('srcset', heroSrcset(h));
   if (img && img.getAttribute('src') !== h.full) img.setAttribute('src', h.full);
 }
 if (window.matchMedia) {

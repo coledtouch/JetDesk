@@ -301,7 +301,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .landing{max-width:1100px;margin:0 auto}
 .hero{padding:34px 24px 28px;position:relative;overflow:hidden;isolation:isolate;background:#070B14;border:1px solid #1E2A40;border-radius:24px}
 .hero-media{position:absolute;inset:0;z-index:0}
-.heroart{width:100%;height:100%;object-fit:cover;object-position:38% center;opacity:.86}
+.heroart{width:100%;height:100%;object-fit:cover;object-position:38% 45%;opacity:.86}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(7,11,20,.50) 0%,rgba(7,11,20,.30) 40%,rgba(7,11,20,.34) 68%,rgba(7,11,20,.72) 100%),linear-gradient(0deg,rgba(7,11,20,.86),rgba(7,11,20,.22) 48%,transparent 100%)}
 .hero .eyebrow,.hero .herotitle,.hero .herosub,.hero .hero-proof,.hero .micro,.hero .linkbtn{text-shadow:0 1px 3px rgba(7,11,20,.9),0 10px 34px rgba(7,11,20,.7)}
 .herowrap{position:relative;z-index:2;display:grid;grid-template-columns:1fr;gap:28px;align-items:center}
@@ -317,7 +317,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 /* Day hero: pearl surfaces, navy copy, a soft light veil instead of a dark band; the photograph stays clear.
    Same composition as Night: the aircraft sits on the left behind the copy, nose to the right. */
 :root[data-hero="day"] .hero{background:#EEF2F7;border-color:#C5CFDB}
-:root[data-hero="day"] .heroart{opacity:1;object-position:38% 45%}
+:root[data-hero="day"] .heroart{opacity:1}   /* same framing as Night; only the veil differs */
 :root[data-hero="day"] .hero::after{background:linear-gradient(90deg,rgba(244,246,250,.86) 0%,rgba(244,246,250,.66) 40%,rgba(244,246,250,.30) 64%,rgba(244,246,250,.10) 100%),linear-gradient(0deg,rgba(238,242,247,.86),rgba(238,242,247,.12) 40%,transparent 100%)}
 :root[data-hero="day"] .hero .eyebrow{color:#0B5FCC}
 :root[data-hero="day"] .hero .herotitle{color:#0F172A}
@@ -341,8 +341,18 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .hero .phone .pverdict{background:rgba(15,42,30,.62)}
 .hero-proof{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;color:#A7B2C3;font-size:12px;font-weight:700}
 .hero-proof span::before{content:"✓" / "";color:#4CC9FF;margin-right:6px}
-@media (max-width:559px){.panel#tab-welcome{padding:10px 12px 8px}.hero{padding:26px 18px 22px;border-radius:20px}.heroart{object-position:16% 34%;opacity:.84}.hero::after{background:linear-gradient(180deg,rgba(7,11,20,.52) 0%,rgba(7,11,20,.64) 40%,rgba(7,11,20,.88) 68%,#070B14 84%)}.hero .btnrow .btn{width:100%}.hero .phone{margin-top:0}.strip{padding-left:4px;padding-right:4px}
-:root[data-hero="day"] .heroart{opacity:1;object-position:36% 40%}:root[data-hero="day"] .hero::after{background:linear-gradient(180deg,rgba(244,246,250,.60) 0%,rgba(244,246,250,.74) 42%,rgba(238,242,247,.90) 72%,#EEF2F7 100%)}
+/* One column: the hero photo is a band at the top, kept at the frame's own shape (only 10 percent trimmed
+   off the sides) so the whole aircraft is in view, and masked into the hero background at its lower edge.
+   Covering the full 900 px column meant showing about a quarter of the frame, stretched well past the
+   file's pixels, which is what made it a blurry close-up of the propeller. */
+@media (max-width:859px){
+  .hero-media{inset:0 0 auto 0;height:auto;aspect-ratio:16/10;
+    -webkit-mask-image:linear-gradient(180deg,#000 0 56%,rgba(0,0,0,.5) 80%,transparent 100%);
+    mask-image:linear-gradient(180deg,#000 0 56%,rgba(0,0,0,.5) 80%,transparent 100%)}
+  .heroart{object-position:20% 50%}
+}
+@media (max-width:559px){.panel#tab-welcome{padding:10px 12px 8px}.hero{padding:26px 18px 22px;border-radius:20px}.heroart{opacity:.96}.hero::after{background:linear-gradient(180deg,rgba(7,11,20,.26) 0%,rgba(7,11,20,.40) 16%,rgba(7,11,20,.80) 31%,#070B14 46%)}.hero .btnrow .btn{width:100%}.hero .phone{margin-top:0}.strip{padding-left:4px;padding-right:4px}
+:root[data-hero="day"] .heroart{opacity:1}:root[data-hero="day"] .hero::after{background:linear-gradient(180deg,rgba(244,246,250,.50) 0%,rgba(244,246,250,.66) 16%,rgba(238,242,247,.92) 32%,#EEF2F7 46%)}
 .hero .hero-proof{margin-top:10px}.hero-jump{margin-top:10px}.hero .herosub{font-size:14.5px}.phone .pverdict{padding:12px 10px}.phone .pverdict .n{font-size:38px}}
 @media (max-width:359px){.hero{padding:22px 14px 20px}.herotitle{font-size:31px}.herosub{font-size:14px}.phone{padding:10px;border-radius:26px;gap:8px}.phone .pcard{padding:10px}.pfield{padding:7px 8px}.pfield .v{font-size:12px}.phone .pverdict .n{font-size:36px}.hero .phone .row{gap:6px}}
 .phone{background:var(--card);border:1px solid var(--line2);border-radius:36px;padding:14px;box-shadow:0 30px 70px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--acc) 20%,transparent);max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
@@ -579,8 +589,8 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 <section id="tab-welcome" class="panel on" aria-label="JetDesk overview" tabindex="-1">
 <div class="landing">
 <section class="hero">
-  <picture class="hero-media" aria-hidden="true"><source id="heroSrc" media="(max-width:640px)" srcset="__IMG_HERO_NIGHT_800__"><img id="heroImg" class="heroart" src="__IMG_HERO_NIGHT__" alt="" width="1600" height="900" fetchpriority="high" decoding="async"></picture>
-  <script>(function(){if(document.documentElement.getAttribute('data-hero')!=='day')return;var s=document.getElementById('heroSrc'),i=document.getElementById('heroImg');if(s)s.setAttribute('srcset','__IMG_HERO_DAY_800__');if(i)i.setAttribute('src','__IMG_HERO_DAY__')})();</script>
+  <picture class="hero-media" aria-hidden="true"><source id="heroSrc" media="(max-width:859px)" srcset="__IMG_HERO_NIGHT_800__ 800w, __IMG_HERO_NIGHT__ 1600w" sizes="115vw"><img id="heroImg" class="heroart" src="__IMG_HERO_NIGHT__" alt="" width="1600" height="900" fetchpriority="high" decoding="async"></picture>
+  <script>(function(){if(document.documentElement.getAttribute('data-hero')!=='day')return;var s=document.getElementById('heroSrc'),i=document.getElementById('heroImg');if(s)s.setAttribute('srcset','__IMG_HERO_DAY_800__ 800w, __IMG_HERO_DAY__ 1600w');if(i)i.setAttribute('src','__IMG_HERO_DAY__')})();</script>
   <div class="herowrap">
     <div class="herocopy">
       <div class="eyebrow">For pilots who manage the airplane</div>
