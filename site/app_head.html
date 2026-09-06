@@ -315,11 +315,10 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .hero .btn:not(.primary){color:#E6EAF2;background:rgba(11,18,32,.78);border-color:#2A3A55}
 .hero .phone{--card:#0B1220;--card2:#121C2E;--line:#1E2A40;--line2:#2A3A55;--ink:#E6EAF2;--ink2:#A7B2C3;--ink3:#8492A6;--acc:#4CC9FF;--acc2:#7CC4FF;--acc-soft:#0E2536;--good:#2FD27D;--good-soft:#0F2A1E;--bad:#FF5A5F;--good-ink:#2FD27D;--bad-ink:#FF5A5F;color:var(--ink)}
 /* Day hero: pearl surfaces, navy copy, a soft light veil instead of a dark band; the photograph stays clear.
-   On wide screens the image is mirrored so the aircraft sits behind the glass calculator, away from the copy. */
+   Same composition as Night: the aircraft sits on the left behind the copy, nose to the right. */
 :root[data-hero="day"] .hero{background:#EEF2F7;border-color:#C5CFDB}
-:root[data-hero="day"] .heroart{opacity:1;object-position:62% 45%}
-@media (min-width:860px){:root[data-hero="day"] .heroart{transform:scaleX(-1);object-position:38% 45%}}
-:root[data-hero="day"] .hero::after{background:linear-gradient(90deg,rgba(244,246,250,.88) 0%,rgba(244,246,250,.70) 34%,rgba(244,246,250,.22) 56%,rgba(244,246,250,0) 76%),linear-gradient(0deg,rgba(238,242,247,.86),rgba(238,242,247,.10) 36%,transparent 100%)}
+:root[data-hero="day"] .heroart{opacity:1;object-position:38% 45%}
+:root[data-hero="day"] .hero::after{background:linear-gradient(90deg,rgba(244,246,250,.86) 0%,rgba(244,246,250,.66) 40%,rgba(244,246,250,.30) 64%,rgba(244,246,250,.10) 100%),linear-gradient(0deg,rgba(238,242,247,.86),rgba(238,242,247,.12) 40%,transparent 100%)}
 :root[data-hero="day"] .hero .eyebrow{color:#0B5FCC}
 :root[data-hero="day"] .hero .herotitle{color:#0F172A}
 :root[data-hero="day"] .hero .herotitle .ion{color:#0E7CFF}
