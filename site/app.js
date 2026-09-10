@@ -1826,7 +1826,7 @@ function openApt(code, noFetch) {
   } else {
     h += '<div class="tiny muted">No repair services on the FAA file for this field.</div>';
   }
-  h += '<div class="micro muted" style="margin-top:8px">FAA NASR via OurAirports, Aug 2026 cycle. Crew cars and ramp fees are FBO-level; track those below.</div></div>';
+  h += '<div class="micro muted" style="margin-top:8px">FAA NASR via OurAirports, Sep 2026 cycle. Crew cars and ramp fees are FBO-level; track those below.</div></div>';
 
   /* FBOs and crew cars */
   var fboList = (S.fbos[a.c] || []);
