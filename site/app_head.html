@@ -458,7 +458,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .capmore-grid{display:grid;grid-template-columns:1fr;gap:14px}
 @media (min-width:700px){.capmore-grid{grid-template-columns:repeat(3,1fr);gap:20px}}
 .capmore .feat .ft{font-size:15px;font-weight:800;margin:0}
-.protag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;vertical-align:middle;color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);border:1px solid color-mix(in srgb,var(--acc) 38%,transparent)}
+.protag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;vertical-align:middle;color:var(--acc2);background:var(--acc-soft);border:1px solid color-mix(in srgb,var(--acc2) 35%,transparent)}
 .capmore .feat .fd{font-size:13.5px;line-height:1.5;margin-top:3px}
 .landing section.anchor{margin-top:10px}
 .plans.two{grid-template-columns:1fr;gap:12px;align-items:stretch}
@@ -486,11 +486,11 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 <div id="live" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 <div id="liveAlert" role="alert" aria-atomic="true" class="sr-only"></div>
 <header class="app">
-  <a class="brand" href="/" aria-label="JetDesk.AI home">
+  <a class="brand" href="/">
     <svg class="mark" viewBox="0 0 72 72" fill="none" aria-hidden="true"><rect x="2" y="2" width="68" height="68" rx="18" fill="var(--card)" stroke="var(--line2)" stroke-width="2"/><path d="M14 46 L36 14 L58 46 L48 46 L36 28 L24 46 Z" fill="var(--acc)"/><path d="M22 54 H50" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.55"/><path d="M30 60 H42" stroke="var(--acc)" stroke-width="4" stroke-linecap="round" opacity="0.30"/></svg>
     <div style="min-width:0">
-      <div class="wordmark">Jet<span class="thin">Desk</span><span class="tld">.AI</span></div>
-      <div class="sub" id="subline">TRIP COST · FUEL · RUNWAYS</div>
+      <div class="wordmark">Jet<span class="thin">Desk</span><span class="tld">.AI</span><span class="sr-only"> home</span></div>
+      <div class="sub" id="subline" aria-hidden="true">TRIP COST · FUEL · RUNWAYS</div>
     </div>
   </a>
   <nav class="hnav" id="hnav" aria-label="Site"><a href="#features" data-hnav="features">Features</a><a href="#pricing" data-hnav="pricing">Pricing</a></nav>
