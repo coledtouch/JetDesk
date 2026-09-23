@@ -35,11 +35,17 @@ svc = {}
 try:
     with open('/tmp/APT_BASE.csv', newline='', encoding='utf-8-sig') as f:
         for r in csv.DictReader(f):
+            own = (r.get('OWNERSHIP_TYPE_CODE') or '').strip().upper()
+            use = (r.get('FACILITY_USE_CODE') or '').strip().upper()
             rec = {
                 'fu': (r.get('FUEL_TYPES') or '').strip(),
                 'ma': (r.get('AIRFRAME_REPAIR_SER_CODE') or '').strip(),
                 'mp': (r.get('PWR_PLANT_REPAIR_SER') or '').strip(),
                 'fee': 1 if (r.get('LNDG_FEE_FLAG') or '').strip() == 'Y' else 0,
+                # MA Air Force, MN Navy, MR Army, CG Coast Guard. PR facility use is private.
+                'mil': 1 if own in ('MA', 'MN', 'MR', 'CG') else 0,
+                'pvt': 1 if use == 'PR' else 0,
+                'ju': 1 if (r.get('JOINT_USE_FLAG') or '').strip().upper() == 'Y' else 0,
             }
             if r.get('ICAO_ID'):
                 svc[r['ICAO_ID'].strip()] = rec
@@ -49,6 +55,8 @@ except FileNotFoundError:
     print('WARNING: NASR APT_BASE.csv not found; services omitted')
 
 MX = {'MAJOR': 'M', 'MINOR': 'm'}
+# Fallback for fields with no NASR row: the FAA name usually says so outright.
+MIL_NAME = re.compile(r'\b(AFB|AAF|ARB|ANGB|NAS|NAF|NS|MCAS|MCAF|CGAS|AIR FORCE|ARMY|NAVAL|MARINE CORPS|COAST GUARD|JOINT BASE)\b', re.I)
 
 out = []
 with open('airports.csv', newline='', encoding='utf-8') as f:
@@ -86,11 +94,20 @@ with open('airports.csv', newline='', encoding='utf-8') as f:
         if s:
             if s['fu']:
                 rec['fu'] = s['fu']
-            mx = MX.get(s['ma'], '') + MX.get(s['mp'], '')
             if s['ma'] or s['mp']:
                 rec['mx'] = (MX.get(s['ma']) or '-') + (MX.get(s['mp']) or '-')
             if s['fee']:
                 rec['fee'] = 1
+            # Access flags: a field you cannot simply fly into is never a recommended stop.
+            if s['mil']:
+                rec['mil'] = 1
+            if s['pvt'] and not s['mil']:
+                rec['pvt'] = 1
+            if s['ju']:
+                rec['ju'] = 1
+        elif MIL_NAME.search(a['name'] or ''):
+            # No NASR row matched, but the FAA name says what it is.
+            rec['mil'] = 1
         out.append(rec)
 
 out.sort(key=lambda x: x['c'])

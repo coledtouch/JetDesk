@@ -44,6 +44,8 @@ var DEF = {
   notes: {},
   fs: { aptA: 'KHPN', aptB: 'KBDR', priceA: '', priceB: '', gal: 120, detour: 15, ramp: 0 },
   q: [],
+  tsig: {},
+  owner: null,
   fbos: {},
   browse: false
 };
@@ -59,10 +61,15 @@ function loadS() {
     if (S.settings[k] === undefined) S.settings[k] = DEF.settings[k];
   });
   ensureProfiles();
-  ['trips', 'fuelLog', 'notes', 'fs', 'q', 'fbos'].forEach(function (k) {
+  ['trips', 'fuelLog', 'notes', 'fs', 'q', 'fbos', 'tsig'].forEach(function (k) {
     if (S[k] === undefined) S[k] = JSON.parse(JSON.stringify(DEF[k]));
   });
   if (S.activeTrip === undefined) S.activeTrip = S.trips.length ? S.trips[0].id : null;
+  /* An op marked in flight when the tab closed is not in flight now. */
+  S.q.forEach(function (o) { delete o.sending; });
+  /* Anything queued by an older build is a whole-array trips_set; give it an identity so the
+     new queue can reason about it. */
+  S.q.forEach(function (o) { if (o.op === 'trips_set' && !Array.isArray(o.trips)) o.trips = []; });
 }
 /* ---------- aircraft presets and profiles ----------
    Book numbers are published sea-level, ISA, max-weight, 50 ft obstacle figures rounded for planning.
@@ -111,7 +118,21 @@ function applyPreset(name) {
 function profileLabel(p) { return (p.tail ? p.tail + ' · ' : '') + (p.acType || 'Airplane'); }
 
 function save() {
-  try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch (e) { /* in-memory only */ }
+  try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch (e) { saveFailed(e); }
+  if (typeof AUTH !== 'undefined' && AUTH.tok && (AUTH.offline || (S.q && S.q.length))) renderOfflineBar();
+}
+/* localStorage can be full or blocked. Say so once rather than dropping edits in silence. */
+var saveWarned = false;
+function saveFailed(e) {
+  if (saveWarned) return;
+  saveWarned = true;
+  try {
+    var quota = e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014);
+    if (typeof showToast === 'function') {
+      showToast(quota ? 'This device is out of storage, so changes are not being saved here. Sign in to keep them in your account.'
+                      : 'This browser is blocking local storage, so changes are not being saved on this device.');
+    }
+  } catch (e2) {}
 }
 loadS();
 
@@ -168,6 +189,19 @@ var TIER = [
   { cls: 'warn', word: 'WORKABLE' },
   { cls: 'bad',  word: 'TIGHT' }
 ];
+/* Fields a civil pilot cannot simply fly into: military ownership, or private facility use
+   in the FAA file. They stay searchable, but they are never recommended or ranked. */
+function isRestricted(a) { return !!(a && (a.mil || a.pvt)); }
+function restrictedNote(a) {
+  if (!a || !isRestricted(a)) return '';
+  return a.mil
+    ? 'Military field. Civil use needs prior permission and there is no FBO.'
+    : 'Private-use field in the FAA file. Landing needs the owner\'s prior permission.';
+}
+function restrictedPill(a) {
+  if (!a || !isRestricted(a)) return '';
+  return '<span class="pill bad" title="' + esc(restrictedNote(a)) + '">' + (a.mil ? 'MILITARY' : 'PRIVATE') + '</span>';
+}
 function aptTier(a) {
   var t = 2;
   (a.r || []).forEach(function (r) { t = Math.min(t, rTier(r)); });
@@ -337,7 +371,7 @@ function nearestList(fix, filter, n) {
   return out.slice(0, n || 15);
 }
 function nearestCode(fix) {
-  var l = nearestList(fix, 'all', 1);
+  var l = nearestList(fix, 'all', 8).filter(function (p) { return !isRestricted(p[1]); });
   return l.length ? l[0][1].c : null;
 }
 function renderNear() {
@@ -363,6 +397,7 @@ function renderNear() {
         '<span class="n2">' + (here ? '<span class="pill acc">You are here</span> ' : '') + esc((a.m || '') + ', ' + a.st) +
         (br ? ' · ' + fmtNum(br.l) + '&times;' + fmtNum(br.w) : '') +
         (a.fu && !hasJetA(a) ? ' · <span style="color:var(--bad)">no Jet A</span>' : '') +
+        (isRestricted(a) ? ' · <span style="color:var(--bad)">' + (a.mil ? 'military' : 'private, PPR') + '</span>' : '') +
         ' <span class="wxmini" data-nwx="' + esc(a.c) + '" style="margin:0"></span></span></span>' +
       '<span class="rw">' + fmtNm(d) + ' nm<br>brg ' + ('00' + brg).slice(-3) + '&deg;T</span>' +
     '</button>';
@@ -382,12 +417,61 @@ function renderNear() {
 
 /* ---------- accounts + cloud sync (/api/me, /api/data) ---------- */
 var BRAND = 'JetDesk';
-var AUTH = { tok: null, me: null, loading: false };
+var AUTH = { tok: null, me: null, loading: false, cached: false, offline: false };
 try { AUTH.tok = localStorage.getItem('jd_tok'); } catch (e) {}
+/* The signed-in identity is cached next to the token so a cold start with no network
+   still knows who you are. It is only ever trusted for the token it was issued against,
+   and a 401 from the server throws it away. */
+function cacheMe(me) {
+  if (!me || !AUTH.tok) return;
+  try { localStorage.setItem('jd_me', JSON.stringify({ t: AUTH.tok, at: Date.now(), me: me })); } catch (e) {}
+}
+function readCachedMe() {
+  if (!AUTH.tok) return null;
+  try {
+    var c = JSON.parse(localStorage.getItem('jd_me') || 'null');
+    if (c && c.t === AUTH.tok && c.me && c.me.user) return c.me;
+  } catch (e) {}
+  return null;
+}
+function clearCachedMe() { try { localStorage.removeItem('jd_me'); } catch (e) {} }
+function setMe(me, fromNetwork) {
+  var wasPro = isProUser();
+  AUTH.me = me;
+  if (me && fromNetwork !== false) { AUTH.cached = false; AUTH.offline = false; cacheMe(me); }
+  if (me && me.op && me.op.id && typeof claimOwner === 'function') claimOwner(me.op.id);
+  if (me && !wasPro && isProUser() && typeof unblockQ === 'function') unblockQ();
+}
 function setTok(t) {
   AUTH.tok = t;
   try { if (t) localStorage.setItem('jd_tok', t); else localStorage.removeItem('jd_tok'); } catch (e) {}
+  if (!t) clearCachedMe();
 }
+function netUp() { return navigator.onLine !== false; }
+function setOffline(v) {
+  v = !!v;
+  if (AUTH.offline === v) return;
+  AUTH.offline = v;
+  renderOfflineBar();
+}
+/* One honest line about what this device is holding: offline, or edits the plan refused. */
+function renderSyncBar() {
+  var el = $('offlineBar');
+  if (!el) return;
+  var pend = (S.q && S.q.length) || 0;
+  var held = (S.q || []).filter(function (o) { return o.blocked; }).length;
+  var msg = '';
+  if (AUTH.tok && AUTH.offline) {
+    msg = 'Offline. Showing your saved copy' + (pend ? ', and ' + pend + ' change' + (pend === 1 ? '' : 's') + ' will sync when you reconnect' : '') + '.';
+  } else if (AUTH.tok && held) {
+    msg = held + ' change' + (held === 1 ? ' is' : 's are') + ' saved on this device only. Go Pro to keep ' + (held === 1 ? 'it' : 'them') + ' in your account.';
+  }
+  el.hidden = !msg;
+  if (!msg) return;
+  el.innerHTML = '<span class="offdot" aria-hidden="true"></span><span>' + esc(msg) + '</span>' +
+    (!AUTH.offline && held ? ' <button class="btn primary small" data-gopro="1" style="margin-left:auto">Go Pro</button>' : '');
+}
+function renderOfflineBar() { renderSyncBar(); }
 function loggedIn() { return !!(AUTH.tok && AUTH.me); }
 function isProUser() { return !!(AUTH.me && AUTH.me.pro); }
 function canEdit() { return !(loggedIn() && AUTH.me.op && AUTH.me.op.can_edit === false); }
@@ -400,14 +484,15 @@ function api(path, opts) {
   return fetch(path, { method: opts.method || (body ? 'POST' : 'GET'), headers: h, body: body })
     .then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
+        setOffline(false);
         if (r.status === 401 && AUTH.tok && path.indexOf('/api/auth/') === -1) {
-          setTok(null); AUTH.me = null; RP.configured = false; renderGate();
+          setTok(null); AUTH.me = null; AUTH.cached = false; RP.configured = false; renderGate();
         }
         if (r.status === 403 && j && j.code === 'verify') promptVerify(j.error);
         return { ok: r.ok, status: r.status, data: j };
       });
     })
-    .catch(function () { return { ok: false, status: 0, data: {} }; });
+    .catch(function () { setOffline(true); return { ok: false, status: 0, data: {} }; });
 }
 function applyProfile() {
   if (!AUTH.me || !AUTH.me.user) return;
@@ -419,7 +504,9 @@ function applyProfile() {
 function loadMe() {
   if (!AUTH.tok || !wxAvailable()) return Promise.resolve(null);
   return api('/api/me').then(function (r) {
-    if (r.ok) { AUTH.me = r.data; applyProfile(); return r.data; }
+    if (r.ok) { setMe(r.data, true); applyProfile(); return r.data; }
+    /* A network failure is not a sign-out. Keep whoever the cached copy says we are. */
+    if (r.status === 0 && AUTH.me) { AUTH.cached = true; setOffline(true); }
     return null;
   });
 }
@@ -435,8 +522,48 @@ function pricesFetch(force) {
     return true;
   });
 }
+/* The workspace this device's local copy belongs to. Signing into a different account, or
+   switching operations, must never upload the previous one's trips into the new workspace. */
+function claimOwner(opId) {
+  if (!opId) return;
+  if (S.owner && S.owner !== opId) {
+    S.trips = []; S.activeTrip = null; S.notes = {}; S.fuelLog = {}; S.fbos = {}; S.q = []; S.tsig = {};
+  }
+  if (S.owner !== opId) { S.owner = opId; save(); }
+}
+/* A canonical shape for change detection, normalised the way the server stores a trip so a
+   round trip through the API does not look like a fresh local edit. */
+function tripSig(t) {
+  return JSON.stringify({
+    n: String(t.name || 'Trip'), d: t.date || '', p: t.pax || 0, b: t.bags || 0,
+    l: (t.legs || []).map(function (l) {
+      return { f: l.from || '', t: l.to || '', a: l.alt || '', dep: Math.round(l.dep || 0), act: l.act || null };
+    }),
+  });
+}
+function opKey(o) {
+  if (o.op === 'trip_set' || o.op === 'trip_del') return 'trip:' + o.id;
+  if (o.op === 'note_set') return 'note:' + o.code;
+  return null;   /* price and FBO entries are distinct events, never collapsed into one another */
+}
+/* Supersede an earlier queued op for the same subject, but never one already on the wire. */
+function enqueue(o) {
+  var k = opKey(o);
+  if (k) S.q = S.q.filter(function (x) { return x.sending || opKey(x) !== k; });
+  S.q.push(o);
+}
+function dropOp(o) { var i = S.q.indexOf(o); if (i >= 0) S.q.splice(i, 1); }
+function pendingTrips() {
+  var m = {};
+  (S.q || []).forEach(function (o) {
+    if (o.op === 'trip_set' || o.op === 'trip_del') m[o.id] = o.op;
+    else if (o.op === 'trips_set') m['*'] = 1;      /* an op queued by an older build */
+  });
+  return m;
+}
 function mergeShared(remoteFull) {
   if (!remoteFull) return;
+  claimOwner(remoteFull.op_id);
   [['fuelLog', 'prices'], ['fbos', 'fbos']].forEach(function (pair) {
     var localKey = pair[0], remote = remoteFull[pair[1]];
     if (!remote || typeof remote !== 'object') return;
@@ -449,29 +576,39 @@ function mergeShared(remoteFull) {
     Object.keys(remote).forEach(function (c) { S[localKey][c] = remote[c].slice(); });
     Object.keys(pend).forEach(function (c) { S[localKey][c] = (S[localKey][c] || []).concat(pend[c]); });
   });
-  /* trips: the cloud copy wins once it has anything; otherwise push what this phone has */
+  /* Trips merge by id. A trip with an edit still in the queue keeps the local copy: the cloud
+     answer is older than what the pilot just typed. A trip the server has never seen is kept
+     and queued rather than deleted. */
   if (Array.isArray(remoteFull.trips)) {
-    var hasPendingTrips = S.q.some(function (o) { return o.op === 'trips_set'; });
-    if (remoteFull.trips.length && !hasPendingTrips) {
-      /* keep local trip objects alive (open editors hold references); refresh their contents from the cloud copy */
-      var byId = {};
-      S.trips.forEach(function (t) { byId[t.id] = t; });
-      S.trips = remoteFull.trips.map(function (rt) {
-        var lt = byId[rt.id];
-        if (!lt) return rt;
-        Object.keys(rt).forEach(function (k) { lt[k] = rt[k]; });
-        return lt;
-      });
-      if (!S.trips.some(function (t) { return t.id === S.activeTrip; })) S.activeTrip = S.trips.length ? S.trips[0].id : null;
-    } else if (!remoteFull.trips.length && S.trips.length && !hasPendingTrips) {
-      queueTrips();
-    }
+    var pend = pendingTrips();
+    var byId = {}; S.trips.forEach(function (t) { byId[t.id] = t; });
+    var out = [], seen = {};
+    S.tsig = S.tsig || {};
+    remoteFull.trips.forEach(function (rt) {
+      seen[rt.id] = 1;
+      if (pend['*']) { out.push(byId[rt.id] || rt); return; }
+      if (pend[rt.id] === 'trip_del') return;
+      if (pend[rt.id] === 'trip_set') { out.push(byId[rt.id] || rt); return; }
+      var lt = byId[rt.id];
+      if (!lt) { out.push(rt); S.tsig[rt.id] = tripSig(rt); return; }
+      Object.keys(rt).forEach(function (k) { lt[k] = rt[k]; });
+      ['date', 'pax', 'bags'].forEach(function (k) { if (!(k in rt)) delete lt[k]; });
+      out.push(lt); S.tsig[lt.id] = tripSig(lt);
+    });
+    S.trips.forEach(function (t) {
+      if (seen[t.id] || pend[t.id] === 'trip_del') return;
+      out.push(t);
+      if (!pend[t.id] && !pend['*']) { enqueue({ op: 'trip_set', id: t.id, trip: t }); scheduleFlush(); }
+    });
+    S.trips = out;
+    Object.keys(S.tsig).forEach(function (id) { if (!S.trips.some(function (t) { return t.id === id; })) delete S.tsig[id]; });
+    if (!S.trips.some(function (t) { return t.id === S.activeTrip; })) S.activeTrip = S.trips.length ? S.trips[0].id : null;
   }
   if (remoteFull.notes && typeof remoteFull.notes === 'object') {
     var localNotes = S.notes || {};
     Object.keys(localNotes).forEach(function (c) {
       if (localNotes[c] && !remoteFull.notes[c] && !S.q.some(function (o) { return o.op === 'note_set' && o.code === c; })) {
-        S.q.push({ op: 'note_set', code: c, text: localNotes[c] });
+        enqueue({ op: 'note_set', code: c, text: localNotes[c] });
       }
     });
     S.notes = Object.assign({}, localNotes, remoteFull.notes);
@@ -479,45 +616,81 @@ function mergeShared(remoteFull) {
   save();
 }
 var tripsT;
-function queueTrips() {
-  S.q = S.q.filter(function (o) { return o.op !== 'trips_set'; });
-  S.q.push({ op: 'trips_set', trips: S.trips });
-  save();
+function scheduleFlush() {
   clearTimeout(tripsT);
   tripsT = setTimeout(function () { flushQ(); }, 800);
+}
+/* Queue only the trips that actually changed, one op each, so a rejected or conflicting trip
+   cannot take the rest of the list down with it. */
+function queueTrips() {
+  S.tsig = S.tsig || {};
+  var now = {};
+  S.trips.forEach(function (t) { now[t.id] = tripSig(t); });
+  Object.keys(now).forEach(function (id) {
+    if (S.tsig[id] === now[id]) return;
+    var t = S.trips.find(function (x) { return x.id === id; });
+    if (t) { enqueue({ op: 'trip_set', id: id, trip: t }); S.tsig[id] = now[id]; }
+  });
+  Object.keys(S.tsig).forEach(function (id) {
+    if (now[id] !== undefined) return;
+    enqueue({ op: 'trip_del', id: id });
+    delete S.tsig[id];
+  });
+  save();
+  renderSyncBar();
+  scheduleFlush();
 }
 function queueNote(code, text) {
-  S.q = S.q.filter(function (o) { return !(o.op === 'note_set' && o.code === code); });
-  S.q.push({ op: 'note_set', code: code, text: text });
+  enqueue({ op: 'note_set', code: code, text: text });
   save();
-  clearTimeout(tripsT);
-  tripsT = setTimeout(function () { flushQ(); }, 800);
+  renderSyncBar();
+  scheduleFlush();
 }
+function nextOp() { return (S.q || []).find(function (o) { return !o.blocked; }) || null; }
+function blockedOps() { return (S.q || []).filter(function (o) { return o.blocked; }); }
 function flushQ(done) {
   if (RP.flushing || !S.q.length || !loggedIn() || !wxAvailable()) { if (done) done(false); return; }
   RP.flushing = true;
-  var finish = function (ok) { RP.flushing = false; if (done) done(ok); };
+  var finish = function (ok) { RP.flushing = false; renderSyncBar(); if (done) done(ok); };
   var step = function () {
-    if (!S.q.length) { announce('Saved to your account'); finish(true); return; }
-    var op = S.q[0];
+    var op = nextOp();
+    if (!op) { if (!S.q.length) announce('Saved to your account'); finish(!S.q.length); return; }
+    op.sending = 1;
     var body = {};
-    Object.keys(op).forEach(function (k) { if (k !== 'lid') body[k] = op[k]; });
+    Object.keys(op).forEach(function (k) { if (k !== 'lid' && k !== 'sending' && k !== 'blocked') body[k] = op[k]; });
     api('/api/data', { body: body }).then(function (r) {
-      if (r.status === 402) { S.q.shift(); RP.proNeeded = true; save(); showToast(r.data.error || 'That needs Pro.'); step(); return; }
-      if (r.status === 401) { finish(false); return; }
-      if (!r.ok) { finish(false); return; }
+      delete op.sending;
+      if (r.status === 402) {
+        /* The plan will not take this one. Keep it on the device and stop retrying it, rather
+           than dropping the pilot's work on the floor. */
+        op.blocked = 'pro'; RP.proNeeded = true; save();
+        showToast(r.data.error || 'That needs Pro.');
+        step(); return;
+      }
+      if (r.status === 400 || r.status === 413) {
+        /* The server will never accept this shape. Dropping it is the only way out of the queue. */
+        dropOp(op); save(); step(); return;
+      }
+      if (r.status === 401 || !r.ok) { save(); finish(false); return; }
+      dropOp(op);
       if (op.lid) {
         var lk = op.op.indexOf('fbo') === 0 ? 'fbos' : 'fuelLog';
         var l = S[lk][op.code] || [];
         S[lk][op.code] = l.filter(function (e) { return e.id !== op.lid; });
       }
-      S.q.shift();
       mergeShared(r.data);
       save();
       step();
     });
   };
   step();
+}
+/* Going Pro releases anything the free plan refused. */
+function unblockQ() {
+  var b = blockedOps();
+  if (!b.length || !isProUser()) return;
+  b.forEach(function (o) { delete o.blocked; });
+  save(); flushQ(function () { renderAll(); });
 }
 
 /* ---------- toast + modal ---------- */
@@ -595,6 +768,19 @@ function openModal(html, kind) {
     if (f) f.focus();
   }, 0);
 }
+/* Never let a sign-out quietly take unsynced work with it. */
+function confirmSignOut(n, proceed) {
+  openModal(
+    '<div class="lab" style="margin-bottom:6px">Sign out with unsaved changes?</div>' +
+    '<div style="font-size:14px;margin-bottom:10px">' + n + ' change' + (n === 1 ? '' : 's') +
+    ' on this device ' + (n === 1 ? 'has' : 'have') + ' not reached your account yet. Signing out clears this device, so ' +
+    (n === 1 ? 'it' : 'they') + ' would be lost.</div>' +
+    '<div class="btnrow"><button class="btn" id="soStay">Stay signed in</button>' +
+    '<button class="btn danger" id="soGo">Sign out anyway</button></div>', 'signout');
+  var stay = $('soStay'), go = $('soGo');
+  if (stay) stay.addEventListener('click', closeModal);
+  if (go) go.addEventListener('click', function () { closeModal(); proceed(); });
+}
 function closeModal() {
   if (MODAL.kind === 'auth') AUTH_DRAFT.password = '';   /* leaving the account form drops the password; name and email stay for this page load */
   MODAL.kind = null;
@@ -641,7 +827,7 @@ function renderMarket() {
   var slot = $('mkSlot'); if (!slot) return;
   if (!isProUser()) {
     slot.innerHTML = '<h2 class="sec">Market reference <span class="pill acc">Pro</span></h2>' +
-      '<div class="card">' + upsellHTML('Official Jet A spot and live crude, so you know when the whole market moves.') + '</div>';
+      '<div class="card">' + upsellHTML('Gulf Coast jet fuel wholesale spot and live crude, so you know when the whole market moves.') + '</div>';
     return;
   }
   marketFetch().then(function (d) {
@@ -770,6 +956,7 @@ function loadTripWinds() {
 var WXTTL = 5 * 60 * 1000;
 var wxCache = {}; // code -> {at, metar, taf}
 function wxAvailable() { return location.protocol === 'http:' || location.protocol === 'https:'; }
+var WX_ERR = null;
 function wxFetch(codes, force) {
   if (!wxAvailable()) return Promise.resolve(null);
   var now = Date.now();
@@ -780,15 +967,20 @@ function wxFetch(codes, force) {
   if (!need.length) return Promise.resolve(wxCache);
   var ctrl = ('AbortController' in window) ? new AbortController() : null;
   var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 9000) : null;
+  WX_ERR = null;
   return fetch('/api/wx?ids=' + need.join(','), ctrl ? { signal: ctrl.signal } : {})
-    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
     .then(function (d) {
       need.forEach(function (c) { wxCache[c] = { at: now, metar: null, taf: null }; });
       (d.metar || []).forEach(function (m) { if (wxCache[m.icaoId]) wxCache[m.icaoId].metar = m; });
       (d.taf || []).forEach(function (t) { if (wxCache[t.icaoId]) wxCache[t.icaoId].taf = t; });
       return wxCache;
     })
-    .catch(function () { return null; })
+    .catch(function (e) {
+      WX_ERR = (!netUp() || (e && e.name === 'AbortError')) ? 'offline' : 'server';
+      if (WX_ERR === 'offline') setOffline(true);
+      return null;
+    })
     .finally(function () { if (timer) clearTimeout(timer); });
 }
 function wxCat(m) {
@@ -841,43 +1033,69 @@ function densityAlt(a, m) {
 function perfEstimate(a, daFt, hw) {
   var st = S.settings;
   var da = Math.max(0, daFt == null ? (a.e || 0) : daFt);
+  var capped = false;
   var to = num(st.toSL, 2438) * (1 + 0.08 * da / 1000);
   var ldg = num(st.ldgSL, 2110) * (1 + 0.05 * da / 1000);
   if (hw != null && isFinite(hw)) {
-    var wf = hw >= 0 ? (1 - 0.10 * Math.min(hw, 27) / 9) : (1 + 0.10 * Math.min(-hw, 10) / 2);
+    var wf = hw >= 0 ? (1 - 0.10 * Math.min(hw, 27) / 9) : (1 + 0.10 * Math.min(-hw, 20) / 2);
     to *= wf; ldg *= wf;
+    capped = (hw >= 0 && hw > 27) || (hw < 0 && -hw > 20);
   }
   var req = Math.max(to, ldg);
-  return { da: Math.round(da), to: Math.round(to), ldg: Math.round(ldg), req: Math.round(req), margin: Math.round(req * 1.5), hw: hw };
+  return { da: Math.round(da), to: Math.round(to), ldg: Math.round(ldg), req: Math.round(req), margin: Math.round(req * 1.5), hw: hw, capped: capped };
 }
-function perfHTML(a, est, label) {
+/* Both ends of a runway with their magnetic headings. */
+function runwayEnds(r) {
+  var ends = String(r.id || '').split('/');
+  var h0 = (r.h != null) ? r.h : identHdg(ends[0]);
+  if (h0 == null || !ends[0]) return [];
+  var out = [{ e: ends[0], h: h0, approx: r.h == null }];
+  if (ends[1]) out.push({ e: ends[1], h: (h0 + 180) % 360 || 360, approx: r.h == null });
+  return out;
+}
+function windComp(m, hdg) {
+  if (!m || m.wdir == null || m.wdir === 'VRB' || !m.wspd) return null;
+  return m.wspd * Math.cos((m.wdir - hdg) * Math.PI / 180);
+}
+/* The end a pilot would actually use: the one with the most headwind. */
+function favouredEnd(r, m) {
+  var ends = runwayEnds(r), best = null;
+  ends.forEach(function (c) {
+    var hw = windComp(m, c.h);
+    if (!best || (hw != null && best.hw != null && hw > best.hw)) best = { e: c.e, h: c.h, approx: c.approx, hw: hw };
+  });
+  return best;
+}
+/* Each runway is scored against the wind down that runway, not the best wind on the field:
+   a 12 kt headwind on 34 is a 12 kt tailwind on 16, and the numbers have to say so. */
+function perfHTML(a, da, m, label) {
+  var base = perfEstimate(a, da, null);
+  var anyWind = !!(m && m.wdir != null && m.wdir !== 'VRB' && m.wspd);
   var rows = (a.r || []).map(function (r) {
+    var pick = favouredEnd(r, m);
+    var hw = pick ? pick.hw : null;
+    var est = perfEstimate(a, da, hw);
     var ratio = r.l / est.req;
     var cls = ratio >= 1.5 ? 'good' : (ratio >= 1.2 ? 'warn' : 'bad');
     var word = ratio >= 1.5 ? '50% margin' : (ratio >= 1.2 ? 'thin margin' : (ratio >= 1 ? 'no margin' : 'too short'));
-    return '<div class="rwrow"><span class="dot ' + cls + '"></span><span class="rid">' + esc(r.id) + '</span>' +
-      '<span class="dims">' + fmtNum(r.l) + ' ft avail <span class="x">·</span> ' + word + '</span>' +
+    var wind = '';
+    if (hw != null && Math.abs(hw) >= 1) {
+      wind = ' <span class="x">·</span> ' + (hw > 0
+        ? Math.round(hw) + ' kt head on ' + esc(pick.e)
+        : '<span style="color:var(--bad)">' + Math.round(-hw) + ' kt tail</span>') +
+        (est.capped ? ' <span class="muted">(past the rule of thumb, open the POH)</span>' : '');
+    }
+    return '<div class="rwrow"><span class="dot ' + cls + '"></span><span class="rid">' + esc(r.id) +
+      (pick && pick.approx ? '<span class="muted">≈</span>' : '') + '</span>' +
+      '<span class="dims">' + fmtNum(r.l) + ' ft avail <span class="x">·</span> needs ' + fmtNum(est.req) + ' ft <span class="x">·</span> ' + word + wind + '</span>' +
       '<span class="micro muted mono">' + (ratio >= 10 ? '10x' : ratio.toFixed(1) + 'x') + '</span></div>';
   }).join('');
   return '<div class="lab" style="margin:10px 0 4px">' + label + '</div>' +
-    '<div class="tiny" style="margin-bottom:4px">Takeoff needs about <b class="mono">' + fmtNum(est.to) + ' ft</b>, landing <b class="mono">' + fmtNum(est.ldg) + ' ft</b>' +
-    ' <span class="muted">(' + fmtNum(est.margin) + ' ft with a 50% margin, DA ' + fmtNum(est.da) + ' ft' + (est.hw != null ? ', ' + (est.hw >= 0 ? Math.round(est.hw) + ' kt head' : Math.round(-est.hw) + ' kt tail') : ', no wind') + ')</span></div>' +
+    '<div class="tiny" style="margin-bottom:4px">In still air, takeoff needs about <b class="mono">' + fmtNum(base.to) + ' ft</b>, landing <b class="mono">' + fmtNum(base.ldg) + ' ft</b>' +
+    ' <span class="muted">(' + fmtNum(base.margin) + ' ft with a 50% margin, DA ' + fmtNum(base.da) + ' ft)</span>' +
+    (anyWind ? '<br><span class="muted">Each runway below is corrected for the wind down that runway.</span>' : '') + '</div>' +
     rows +
     '<div class="micro muted" style="margin-top:6px">Rule-of-thumb estimate from your ' + esc(S.settings.acType || 'airplane') + ' book numbers (' + fmtNum(S.settings.toSL) + ' / ' + fmtNum(S.settings.ldgSL) + ' ft at sea level). Not a POH calculation.</div>';
-}
-function bestHeadwind(a, m) {
-  if (!m || m.wdir == null || m.wdir === 'VRB' || !m.wspd) return 0;
-  var best = null;
-  (a.r || []).forEach(function (r) {
-    var ends = String(r.id).split('/');
-    var h0 = (r.h != null) ? r.h : identHdg(ends[0]);
-    if (h0 == null) return;
-    [{ h: h0 }, { h: (h0 + 180) % 360 }].forEach(function (c) {
-      var hw = m.wspd * Math.cos((m.wdir - c.h) * Math.PI / 180);
-      if (best == null || hw > best) best = hw;
-    });
-  });
-  return best == null ? 0 : best;
 }
 function rwWindBlock(a, m) {
   var head = '<div class="lab" style="margin:10px 0 4px">Runway winds now</div>';
@@ -962,7 +1180,20 @@ function loadAptWx(a, force) {
     if (curDetail !== a) return;
     var d = map && map[a.c];
     var s = $('wxSlot'); if (!s) return;
-    if (!d || !d.metar) { s.innerHTML = ''; announce('No current weather report for ' + a.c); return; }
+    if (!d || !d.metar) {
+      /* Say which of the three it is: no signal, our service down, or a field that simply
+         does not report. Blank space reads as "this airport has no weather", which is a lie. */
+      var why = WX_ERR === 'offline'
+        ? 'No signal, so no current weather. The app will pick it up when you reconnect.'
+        : (WX_ERR === 'server'
+          ? 'Could not reach the weather service just now. <button class="btn small ghost" id="wxRetry">Try again</button>'
+          : esc(a.c) + ' does not publish a METAR. Check the nearest reporting field.');
+      s.innerHTML = '<div class="card"><div class="tiny muted">' + why + '</div></div>';
+      var rt = $('wxRetry');
+      if (rt) rt.addEventListener('click', function () { loadAptWx(a, true); });
+      announce(WX_ERR ? 'Weather unavailable for ' + a.c : 'No current weather report for ' + a.c);
+      return;
+    }
     var m = d.metar, cat = wxCat(m);
     announce('Weather loaded for ' + a.c + ': ' + cat.k + (force ? ', refreshed' : ''));
     var h = '<div class="card">' +
@@ -998,7 +1229,7 @@ function loadAptWx(a, force) {
     var ps = $('perfSlot');
     if (ps && isProUser()) {
       var da = densityAlt(a, m);
-      ps.innerHTML = perfHTML(a, perfEstimate(a, da, bestHeadwind(a, m)), 'Runway math for your airplane, right now');
+      ps.innerHTML = perfHTML(a, da, m, 'Runway math for your airplane, right now');
     }
     var tb = $('wxTafBtn');
     if (tb) tb.addEventListener('click', function () {
@@ -1017,8 +1248,15 @@ function loadTripWx() {
       var d = map[s.dataset.wxfor];
       if (!d || !d.metar) return;
       var cat = wxCat(d.metar);
+      /* The airport page states the observation age; a leg card showing a bare category with
+         no age can be read as current when it is two hours old. */
+      var mins = d.metar.obsTime ? Math.max(0, Math.round((Date.now() / 1000 - d.metar.obsTime) / 60)) : null;
+      var ageTxt = mins == null ? '' : (mins < 60 ? mins + 'm' : Math.round(mins / 60) + 'h');
+      var stale = mins != null && mins > 90;
       s.innerHTML = '<span class="pill ' + cat.cls + '">' + cat.k + '</span>' +
-        '<span class="mono">' + esc(wxWind(d.metar)) + ' ' + esc(wxVis(d.metar)) + '</span>';
+        '<span class="mono">' + esc(wxWind(d.metar)) + ' ' + esc(wxVis(d.metar)) + '</span>' +
+        (ageTxt ? '<span class="mono' + (stale ? '' : ' muted') + '"' + (stale ? ' style="color:var(--warn)"' : '') +
+          ' title="Observation age">' + ageTxt + '</span>' : '');
     });
   });
 }
@@ -1373,7 +1611,7 @@ function sampleTrip() {
   var home = lookup(S.settings.homeBase) || lookup('KPVD');
   var best = null, bd = 1e9;
   AP.forEach(function (a) {
-    if (a === home || !a.sch || !hasJetA(a)) return;
+    if (a === home || !a.sch || !hasJetA(a) || isRestricted(a)) return;
     var d = hav(home, a);
     if (d < 70 || d > 220) return;
     var score = Math.abs(d - 130) - (a.t === 'M' ? 40 : 0);
@@ -1711,6 +1949,7 @@ function wireSuggest(input, sugBox, onPick) {
 
 /* ================= AIRPORTS TAB ================= */
 var curDetail = null;
+var APT_DEFERRED = false;
 $('aptSearch').addEventListener('input', function () {
   if (GEO.mode) { GEO.mode = false; $('nearFilters').style.display = 'none'; $('nearStatus').textContent = ''; }
   if (!AP_READY) { $('aptResults').innerHTML = this.value.trim().length >= 2 ? dataStatusHTML() : ''; return; }
@@ -1721,6 +1960,7 @@ $('aptSearch').addEventListener('input', function () {
       '<span class="dot ' + TIER[tier].cls + '"></span>' +
       '<span class="code">' + esc(a.c) + '</span>' +
       '<span class="nm"><span class="n1">' + esc(a.n) + '</span><span class="n2">' + esc((a.m || '') + ', ' + a.st) + '</span></span>' +
+      restrictedPill(a) +
       (br ? '<span class="rw">' + fmtNum(br.l) + '&times;' + fmtNum(br.w) + '</span>' : '') +
     '</button>';
   }).join('') || (this.value.trim().length >= 2 ? '<div class="empty">Nothing matches. Paved 2,500 ft+ US fields only.</div>' : '');
@@ -1763,6 +2003,19 @@ $('nearFilters').addEventListener('click', function (e) {
 var altRadius = 40;
 function openApt(code, noFetch) {
   var a = lookup(code); if (!a) return;
+  /* A background price refresh must not rebuild the page out from under someone typing a note.
+     Rebuild it when they leave the field instead. */
+  var focused = document.activeElement;
+  if (focused && focused.id === 'aptNote' && curDetail && curDetail.c === code) {
+    if (!APT_DEFERRED) {
+      APT_DEFERRED = true;
+      focused.addEventListener('blur', function () {
+        APT_DEFERRED = false;
+        if (curDetail && curDetail.c === code) openApt(code, true);
+      }, { once: true });
+    }
+    return;
+  }
   curDetail = a;
   $('aptSearchView').style.display = 'none';
   var v = $('aptDetailView');
@@ -1788,6 +2041,7 @@ function openApt(code, noFetch) {
         })() + '</div>' +
         '<span class="pill ' + tw.cls + '">' + tw.word + '</span>' +
       '</div>' +
+      (isRestricted(a) ? '<div class="tiny" style="margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--bad-soft);color:var(--ink)"><b>' + (a.mil ? 'Military field.' : 'Private-use field.') + '</b> ' + esc(restrictedNote(a).replace(/^[^.]+\. /, '')) + (a.ju ? ' The FAA file marks it joint use.' : '') + '</div>' : '') +
       linkRow(a) +
     '</div>' +
     '<div id="wxSlot"></div><div id="notamSlot"></div>';
@@ -1805,8 +2059,8 @@ function openApt(code, noFetch) {
   }).join('');
   h += '<div class="micro muted" style="margin-top:8px">Wide open: 5,000 &times; 100 ft or better. Workable: 4,000 &times; 75. Under that, be on your game.</div>';
   h += '<div id="perfSlot">' + (isProUser()
-    ? perfHTML(a, perfEstimate(a, null, null), 'Runway math for your airplane (field elevation, ISA, no wind)')
-    : '<div style="margin-top:10px">' + upsellHTML('Takeoff and landing distance for your airplane on each runway, corrected for today\'s density altitude and wind.') + '</div>') + '</div></div>';
+    ? perfHTML(a, null, null, 'Runway math for your airplane (field elevation, ISA, no wind)')
+    : '<div style="margin-top:10px">' + upsellHTML('Takeoff and landing distance for your airplane on each runway, corrected for today\'s density altitude and the wind down that runway.') + '</div>') + '</div></div>';
 
   /* services and fees (FAA NASR) */
   h += '<h2 class="sec">Services and fees</h2><div class="card">';
@@ -1826,7 +2080,7 @@ function openApt(code, noFetch) {
   } else {
     h += '<div class="tiny muted">No repair services on the FAA file for this field.</div>';
   }
-  h += '<div class="micro muted" style="margin-top:8px">FAA NASR via OurAirports, Sep 2026 cycle. Crew cars and ramp fees are FBO-level; track those below.</div></div>';
+  h += '<div class="micro muted" style="margin-top:8px">FAA NASR via OurAirports, __NASR_CYCLE__ cycle. Crew cars and ramp fees are FBO-level; track those below.</div></div>';
 
   /* FBOs and crew cars */
   var fboList = (S.fbos[a.c] || []);
@@ -2261,6 +2515,12 @@ function crossTrack(A, B, C) {
   var sign = Math.cos(t13 - t12) < 0 ? -1 : 1;
   return { xt: Math.abs(xt) * R, at: d12 > 0 ? sign * at / d12 : 0 };
 }
+function daysOld(date) {
+  if (!date) return null;
+  var t = Date.parse(String(date) + 'T12:00:00Z');
+  if (!isFinite(t)) return null;
+  return Math.max(0, Math.round((Date.now() - t) / 86400000));
+}
 function routeStops(A, B, corridor) {
   var st = S.settings, gal = num(S.fs.gal, 0) || 100;
   var pDestRec = latestPrice(B.c);
@@ -2269,7 +2529,7 @@ function routeStops(A, B, corridor) {
   var direct = hav(A, B);
   var out = [];
   AP.forEach(function (C) {
-    if (C === A || C === B || !hasJetA(C) || aptTier(C) > 1) return;
+    if (C === A || C === B || !hasJetA(C) || aptTier(C) > 1 || isRestricted(C)) return;
     var ct = crossTrack(A, B, C);
     if (ct.xt > corridor || ct.at < -0.05 || ct.at > 1.05) return;
     var detourNm = hav(A, C) + hav(C, B) - direct;
@@ -2279,7 +2539,7 @@ function routeStops(A, B, corridor) {
     if (price == null && COMM.prices[C.c]) { price = COMM.prices[C.c].median; src = 'community'; rec = { date: COMM.prices[C.c].latest }; }
     var extraBurn = num(st.stopGal, 15) + detourMin / 60 * num(st.gph, 40);
     var net = price != null ? gal * (pDest - price) - extraBurn * price : null;
-    out.push({ a: C, xt: ct.xt, detourNm: detourNm, detourMin: detourMin, price: price, src: src, date: rec ? rec.date : null, net: net, extraBurn: extraBurn });
+    out.push({ a: C, xt: ct.xt, detourNm: detourNm, detourMin: detourMin, price: price, src: src, date: rec ? rec.date : null, net: net, extraBurn: extraBurn, age: rec ? daysOld(rec.date) : null });
   });
   out.sort(function (x, y) {
     if (x.net != null && y.net != null) return y.net - x.net;
@@ -2309,18 +2569,20 @@ function renderRouteStops() {
     (r.pDestKnown ? 'logged at $' + r.pDest.toFixed(2) : 'assumed $' + r.pDest.toFixed(2) + ' (planning price; log the real one on its airport page)') + '</div>';
   h += r.list.map(function (x) {
     var netTxt = x.net == null ? '<span class="pill dim">no price yet</span>'
-      : '<span class="pill ' + (x.net > 0 ? 'good' : 'bad') + '">' + (x.net > 0 ? '+' : '&#8722;') + fmtMoney(Math.abs(x.net)) + '</span>';
+      : '<span class="pill ' + (x.net > 0 ? 'good' : 'bad') + '">' + (x.net > 0 ? '+' : '&#8722;') + fmtMoney(Math.abs(x.net)) + '</span>' +
+        (x.age != null && x.age > 14 ? ' <span class="pill warn">STALE</span>' : '');
     return '<div class="rfrow">' +
       '<div class="spread"><div style="min-width:0"><b class="mono">' + esc(x.a.c) + '</b> <span class="tiny muted">' + esc(x.a.n.replace(/ Airport$/, '')) + ', ' + esc(x.a.st) + '</span></div>' + netTxt + '</div>' +
       '<div class="micro muted mono" style="margin-top:2px">' + fmtNm(x.xt) + ' nm off route · +' + fmtMin(x.detourMin + num(S.settings.groundStopMin, 25)) + ' with the stop' +
-        (x.price != null ? ' · $' + x.price.toFixed(2) + ' ' + esc(x.date || '') + (x.src === 'community' ? ' (community median)' : '') : '') + (x.a.fee ? ' · landing fee' : '') + '</div>' +
+        (x.price != null ? ' · $' + x.price.toFixed(2) + ' ' + esc(x.date || '') + (x.src === 'community' ? ' (community median)' : '') : '') + (x.a.fee ? ' · landing fee' : '') +
+        (x.age != null && x.age > 14 ? ' · <span style="color:var(--warn)">price ' + x.age + ' days old</span>' : '') + '</div>' +
       '<div class="btnrow" style="margin-top:6px">' +
         '<button class="btn small" data-rfuse="' + esc(x.a.c) + '" data-rfmin="' + Math.round(x.detourMin) + '">Use in calculator</button>' +
         '<button class="btn small ghost" data-openapt="' + esc(x.a.c) + '">Open airport</button>' +
       '</div>' +
     '</div>';
   }).join('');
-  h += '<div class="micro muted" style="margin-top:8px">Net = price gap &times; gallons, minus the extra burn for the stop cycle and detour at the stop\'s price. Ramp fees are not included; tap Use and add one.</div>';
+  h += '<div class="micro muted" style="margin-top:8px">Net = price gap &times; gallons, minus the extra burn for the stop cycle and detour at the stop\'s price. Ramp fees are not included; tap Use and add one. A price older than 14 days is marked stale and still ranked at face value, so check it before you commit.</div>';
   out.innerHTML = h;
   out.querySelectorAll('[data-rfuse]').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -2496,7 +2758,7 @@ function closeSheet() {
   if (readSheetInto(st)) {
     saveActiveProfile();
     if (loggedIn() && AUTH.me.user && (st.tail !== AUTH.me.user.tail || st.homeBase !== AUTH.me.user.home_base)) {
-      api('/api/me', { body: { tail: st.tail, home_base: st.homeBase } }).then(function (r) { if (r.ok) AUTH.me = r.data; });
+      api('/api/me', { body: { tail: st.tail, home_base: st.homeBase } }).then(function (r) { if (r.ok) setMe(r.data, true); });
     }
   }
   save();
@@ -2520,6 +2782,7 @@ document.addEventListener('keydown', function (e) {
 /* ---------- boot ---------- */
 function renderAll() {
   renderSub();
+  renderSyncBar();
   renderTrip();
   renderFuel();
   if (curTab === 'account') renderAccount();
@@ -2669,7 +2932,7 @@ function openAuth(mode) {
       }
       AUTH_DRAFT = { name: '', email: '', password: '' };
       MODAL.kind = null;
-      setTok(r.data.token); AUTH.me = r.data.me; applyProfile();
+      setTok(r.data.token); setMe(r.data.me, true); applyProfile();
       S.browse = true; save();
       closeModal();
       showToast(reg ? 'Welcome to ' + BRAND + '. Your Pro trial is running.' : 'Signed in.');
@@ -2684,7 +2947,7 @@ function openAuth(mode) {
 }
 
 function finishSignIn(r, msg) {
-  setTok(r.data.token); AUTH.me = r.data.me; applyProfile();
+  setTok(r.data.token); setMe(r.data.me, true); applyProfile();
   S.browse = true; save();
   closeModal();
   showToast(msg || 'Signed in.');
@@ -2749,7 +3012,7 @@ function openVerify() {
   $('vfGo').addEventListener('click', function () {
     api('/api/auth/verify', { body: { code: $('vfCode').value } }).then(function (r) {
       if (!r.ok) { $('vfErr').textContent = r.data.error || 'Could not verify.'; return; }
-      AUTH.me = r.data.me; closeModal(); showToast('Email verified.'); renderAccount();
+      setMe(r.data.me, true); closeModal(); showToast('Email verified.'); renderAccount();
     });
   });
   $('vfResend').addEventListener('click', function () {
@@ -2986,7 +3249,7 @@ function renderAccount() {
   on('emConfirm', function () {
     api('/api/auth/email', { body: { code: $('emCode').value } }).then(function (r) {
       if (!r.ok) { showToast(r.data.error || 'Could not confirm.'); return; }
-      AUTH.me = r.data.me; showToast('Email updated.'); renderAccount();
+      setMe(r.data.me, true); showToast('Email updated.'); renderAccount();
     });
   });
   on('sesOut', function () {
@@ -3010,7 +3273,7 @@ function renderAccount() {
     if (op.is_owner) body.op_name = $('acOp').value;
     api('/api/me', { body: body }).then(function (r) {
       if (!r.ok) { showToast(r.data.error || 'Could not save.'); return; }
-      AUTH.me = r.data; S.settings.tail = body.tail.toUpperCase(); S.settings.homeBase = body.home_base.toUpperCase(); save();
+      setMe(r.data, true); S.settings.tail = body.tail.toUpperCase(); S.settings.homeBase = body.home_base.toUpperCase(); save();
       renderSub(); showToast('Profile saved.'); renderAccount();
     });
   });
@@ -3030,13 +3293,13 @@ function renderAccount() {
   on('invGo', function () {
     api('/api/ops/invite', { body: { email: $('invEmail').value, role: $('invRole') ? $('invRole').value : 'member' } }).then(function (r) {
       if (!r.ok) { showToast(r.data.error || 'Could not invite.'); return; }
-      AUTH.me = r.data; showToast('Invited.'); renderAccount();
+      setMe(r.data, true); showToast('Invited.'); renderAccount();
     });
   });
   v.querySelectorAll('[data-rm]').forEach(function (b) {
     b.addEventListener('click', function () {
       api('/api/ops/invite', { body: { email: b.dataset.rm, remove: true } }).then(function (r) {
-        if (r.ok) { AUTH.me = r.data; renderAccount(); } else showToast(r.data.error || 'Could not remove.');
+        if (r.ok) { setMe(r.data, true); renderAccount(); } else showToast(r.data.error || 'Could not remove.');
       });
     });
   });
@@ -3050,7 +3313,7 @@ function renderAccount() {
   });
   on('shareTog', function () {
     api('/api/ops/settings', { body: { share_prices: !op.share_prices } }).then(function (r) {
-      if (r.ok) { AUTH.me = r.data; renderAccount(); showToast(r.data.op && r.data.op.share_prices ? 'Sharing prices with the community.' : 'Community sharing is off.'); }
+      if (r.ok) { setMe(r.data, true); renderAccount(); showToast(r.data.op && r.data.op.share_prices ? 'Sharing prices with the community.' : 'Community sharing is off.'); }
       else showToast(r.data.error || 'Could not change that.');
     });
   });
@@ -3058,7 +3321,7 @@ function renderAccount() {
   v.querySelectorAll('[data-opsw]').forEach(function (b) {
     b.addEventListener('click', function () {
       api('/api/ops/switch', { body: { op_id: b.dataset.opsw } }).then(function (r) {
-        if (r.ok) { AUTH.me = r.data; RP.configured = null; pricesFetch(true).then(function () { renderAll(); renderAccount(); }); }
+        if (r.ok) { setMe(r.data, true); RP.configured = null; pricesFetch(true).then(function () { renderAll(); renderAccount(); }); }
       });
     });
   });
@@ -3095,11 +3358,26 @@ function renderAccount() {
     });
   });
   on('acOut', function () {
-    api('/api/auth/logout', { body: {} }).then(function () {
-      setTok(null); AUTH.me = null; RP.configured = false;
-      S.trips = []; S.activeTrip = null; S.fuelLog = {}; S.fbos = {}; S.notes = {}; S.q = []; S.browse = false; save();
-      showToast('Signed out.'); renderGate();
-    });
+    var wipe = function () {
+      api('/api/auth/logout', { body: {} }).then(function () {
+        setTok(null); AUTH.me = null; AUTH.cached = false; RP.configured = false;
+        S.trips = []; S.activeTrip = null; S.fuelLog = {}; S.fbos = {}; S.notes = {}; S.q = []; S.tsig = {};
+        S.owner = null; S.browse = false; save();
+        showToast('Signed out.'); renderSyncBar(); renderGate();
+      });
+    };
+    /* Signing out clears this device. Anything still queued would go with it, so land it first. */
+    if (S.q.length && loggedIn()) {
+      var held = S.q.filter(function (o) { return o.blocked; }).length;
+      if (held === S.q.length) { confirmSignOut(held, wipe); return; }
+      showToast('Saving your changes before signing out...');
+      flushQ(function (ok) {
+        if (ok && !S.q.length) { wipe(); return; }
+        confirmSignOut(S.q.length, wipe);
+      });
+      return;
+    }
+    wipe();
   });
   on('acDel', function () {
     var b = $('acDel');
@@ -3112,10 +3390,21 @@ function renderAccount() {
 }
 
 /* ---------- boot ---------- */
+window.addEventListener('offline', function () { setOffline(true); });
+window.addEventListener('online', function () {
+  setOffline(false);
+  if (!AUTH.tok) return;
+  loadMe().then(function () { renderGate(); renderAll(); flushQ(function () { renderAll(); }); });
+});
 applyTheme();
 renderSub();
 var bq = new URLSearchParams(location.search);
 if (AUTH.tok) {
+  /* Paint the signed-in app from the cached identity first: a cold start with no network
+     must not look like a signed-out visitor sitting on top of the user's own trips. */
+  var cachedMe = readCachedMe();
+  if (cachedMe) { AUTH.me = cachedMe; AUTH.cached = true; renderGate(); renderAll(); }
+  if (!netUp()) setOffline(true);
   loadMe().then(function (me) {
     if (!me) { if (!AUTH.tok) { renderGate(); return; } }
     renderGate();

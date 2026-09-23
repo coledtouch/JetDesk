@@ -53,14 +53,11 @@ def main():
   open('/tmp/APT_BASE.csv', 'wb').write(z.read(name))
   print('building airports_us.json')
   subprocess.check_call([sys.executable, 'build_dataset.py'])
-  # stamp the cycle into the app footer text and the dataset stamp file
+  # Stamp the cycle. Every page derives its label from this file at build time (the app shell
+  # and app.js carry a __NASR_CYCLE__ placeholder), so there is no source text to rewrite.
   label = datetime.date.fromisoformat(cycle).strftime('%b %Y')
-  for fn in ('app_head.html', 'app.js', 'airports.py', 'legal.py'):
-    s = open(fn, encoding='utf-8').read()
-    s2 = re.sub(r'FAA NASR via OurAirports, [A-Z][a-z]{2} \d{4} cycle', 'FAA NASR via OurAirports, ' + label + ' cycle', s)
-    if s2 != s:
-      open(fn, 'w', encoding='utf-8').write(s2)
-  json.dump({'cycle': cycle, 'built': datetime.datetime.utcnow().isoformat() + 'Z'}, open(STAMP, 'w', encoding='utf-8'))
+  json.dump({'cycle': cycle, 'built': datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')}, open(STAMP, 'w', encoding='utf-8'))
+  print('cycle label:', label)
   print('assembling')
   subprocess.check_call([sys.executable, 'assemble_pwa.py'])
   print('done: dataset on NASR cycle', cycle)

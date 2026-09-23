@@ -32,12 +32,15 @@ export async function onRequest({ request, env, next }) {
       return secure(Response.redirect(url.toString(), 301));
     }
   }
-  /* airport and state pages are lowercase: /airports/KHPN/ (or /airports/KHPN, /airports/MA/) is the same page,
-     so send it to the canonical path instead of letting it fall through to the 404 */
-  const apt = /^\/airports\/([A-Za-z0-9]{2,4})\/?$/.exec(url.pathname);
-  if (apt && apt[1] !== apt[1].toLowerCase()) {
-    url.pathname = '/airports/' + apt[1].toLowerCase() + '/';
-    return secure(Response.redirect(url.toString(), 301));
+  /* Every published path is lowercase. /AIRPORTS/KTEB/, /Notes/, /airports/MA/ and a missing trailing
+     slash are all the same page, so send them to the canonical path instead of a 404. */
+  const folded = /^\/(airports|notes)(\/[A-Za-z0-9-]{1,64})?\/?$/i.exec(url.pathname);
+  if (folded) {
+    const canonPath = '/' + folded[1].toLowerCase() + (folded[2] ? folded[2].toLowerCase() : '') + '/';
+    if (canonPath !== url.pathname) {
+      url.pathname = canonPath;
+      return secure(Response.redirect(url.toString(), 301));
+    }
   }
   return secure(await next());
 }

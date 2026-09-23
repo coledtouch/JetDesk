@@ -43,12 +43,32 @@ def longest(a):
 def paved(r):
   return str(r.get('s') or '').upper().startswith(('ASP', 'CON', 'PEM'))
 
+def restricted(a):
+  """Military or private-use in the FAA file: not a field a civil pilot can simply fly into."""
+  return bool(a.get('mil') or a.get('pvt'))
+
 def eligible(a):
   """Fields worth a page: anything medium or large, or a lit runway of 4,000 ft or more."""
   if a.get('t') in ('L', 'M'):
     return True
   lr = longest(a)
   return bool(lr and lr['l'] >= 4000 and any(r.get('lit') for r in a['r']))
+
+def usable(a):
+  """Eligible and open to civil traffic: the bar for recommending a field as an alternate or stop."""
+  return eligible(a) and not restricted(a)
+
+def access_note(a):
+  if a.get('mil'):
+    return ('Military airfield', 'This is a military airfield in the FAA file%s. It is listed here for reference and for '
+            'emergency planning. Civil use needs prior permission, there is no FBO, and no Jet A you can buy. '
+            'Do not plan it as a fuel stop or a routine alternate.'
+            % (' marked joint use' if a.get('ju') else ''))
+  if a.get('pvt'):
+    return ('Private-use airfield', 'The FAA file marks this field private use. It is listed here for reference. '
+            'Landing needs the owner\'s prior permission, and there may be no fuel or services. '
+            'Do not plan it as a fuel stop or a routine alternate.')
+  return None
 
 def density_altitude(elev_ft, oat_c):
   isa = 15 - 2 * (elev_ft / 1000.0)
@@ -102,28 +122,46 @@ def build(ap):
 def state_slug(st):
   return '/airports/' + st.lower() + '/'
 
+TITLE_MAX = 60   # Google shows about 60 characters of a title; longer ones get cut.
+
 def page_title(code, name, place):
-  """~50-65 characters: 'KHPN Runways, Elevation & Pilot Planning | JetDesk' with the airport name when it fits."""
-  base = '%s Runways, Elevation & Pilot Planning | JetDesk' % code
+  """At most 60 characters, with as much of the airport name as fits."""
   short = re.sub(r'\b(Regional|International|Municipal|County|Executive|Memorial)\b', lambda m: {'Regional': 'Rgnl', 'International': 'Intl', 'Municipal': 'Muni', 'County': 'Co', 'Executive': 'Exec', 'Memorial': 'Mem'}[m.group(1)], name)
   short = re.sub(r'\s*(Airport|Field|Airpark)$', '', short).strip()
-  with_name = '%s %s Runways & Pilot Planning | JetDesk' % (code, short)
-  return with_name if 45 <= len(with_name) <= 65 else base
+  cands = ['%s %s Runways & Pilot Planning | JetDesk' % (code, short),
+           '%s %s Runways & Planning | JetDesk' % (code, short),
+           '%s %s Runways | JetDesk' % (code, short),
+           '%s Runways, Elevation & Pilot Planning | JetDesk' % code,
+           '%s Runways & Pilot Planning | JetDesk' % code]
+  return next((c for c in cands if len(c) <= TITLE_MAX), cands[-1])
 
-def page_description(code, name, loc, rws, lr, elev):
-  """140-165 characters."""
+DESC_MAX = 158   # Google truncates around 160; stay inside it on every page.
+
+def page_description(code, name, loc, rws, lr, elev, restricted_kind=None):
+  """120 to 158 characters, so nothing is cut off in the result snippet."""
   where = (' in ' + loc) if loc else ''
   n = '%d runway%s' % (len(rws), '' if len(rws) == 1 else 's')
   rw = ('%s, longest %s ft' % (n, fmt(lr['l']))) if lr else n
-  tail_long = 'Density altitude, turboprop runway margins, nearby alternates and fuel-stop planning.'
-  tail_mid = 'Density altitude, turboprop runway margins, alternates and fuel-stop planning.'
-  tail_short = 'Density altitude, runway margins, alternates and fuel stops.'
-  cands = ['%s %s%s: %s, elevation %s ft. %s' % (code, name, where, rw, fmt(elev), t) for t in (tail_long, tail_mid, tail_short)]
-  cands += ['%s%s: %s, elevation %s ft. %s' % (code, where, rw, fmt(elev), t) for t in (tail_long, tail_mid, tail_short)]
-  cands += ['%s: %s, elevation %s ft. %s' % (code, rw, fmt(elev), t) for t in (tail_long, tail_mid, tail_short)]
-  d = next((c for c in cands if len(c) <= 165), cands[-1])
+  if restricted_kind == 'mil':
+    tails = ['Military field: runways, elevation and density altitude, for reference.',
+             'Military field: runways, elevation, density altitude.',
+             'Military field. Runways and density altitude.']
+  elif restricted_kind == 'pvt':
+    tails = ['Private-use field: runways, elevation and density altitude, for reference.',
+             'Private-use field: runways, elevation, density altitude.',
+             'Private-use field. Runways and density altitude.']
+  else:
+    tails = ['Density altitude, turboprop runway margins, alternates and fuel stops.',
+             'Density altitude, runway margins, alternates and fuel stops.',
+             'Density altitude, runway margins and fuel stops.']
+  cands = ['%s %s%s: %s, elevation %s ft. %s' % (code, name, where, rw, fmt(elev), t) for t in tails]
+  cands += ['%s%s: %s, elevation %s ft. %s' % (code, where, rw, fmt(elev), t) for t in tails]
+  cands += ['%s: %s, elevation %s ft. %s' % (code, rw, fmt(elev), t) for t in tails]
+  d = next((c for c in cands if len(c) <= DESC_MAX), cands[-1])
+  if len(d) > DESC_MAX:
+    d = d[:DESC_MAX - 1].rsplit(' ', 1)[0].rstrip(' ,;:') + '.'
   for extra in (' Free pilot planning from JetDesk.AI.', ' From JetDesk.AI.'):
-    if len(d) < 140 and len(d + extra) <= 165:
+    if len(d) < 120 and len(d + extra) <= DESC_MAX:
       d += extra
       break
   return d
@@ -156,14 +194,14 @@ def airport_page(a, big, by):
     else:
       margin_txt = 'On a 35°C afternoon the longest runway (%s, %s ft) is short of the 1.5x landing figure for a Meridian-class turboprop (%s ft). Treat this as a cool-morning field for heavier turboprops and run the POH numbers.' % (lr['id'], fmt(lr['l']), fmt(worst[4]))
   title = '%s %s' % (code, name)
-  desc = page_description(code, name, loc, rws, lr, elev)
+  desc = page_description(code, name, loc, rws, lr, elev, 'mil' if a.get('mil') else ('pvt' if a.get('pvt') else None))
   rw_rows = ''.join('<tr><td><b class="mono">%s</b></td><td class="mono">%s &times; %s ft</td><td>%s</td><td>%s</td></tr>' % (
     esc(r['id']), fmt(r['l']), fmt(r.get('w') or 0), esc(surface(r.get('s'))), 'lit' if r.get('lit') else 'unlit') for r in rws)
   da_rows = ''.join('<tr><td>%s</td><td class="mono">%s ft</td><td class="mono">%s ft</td><td class="mono">%s ft</td><td class="mono"><b>%s ft</b></td></tr>' % (
     esc(l), fmt(da), fmt(to), fmt(ldg), fmt(ldg15)) for (l, da, to, ldg, ldg15) in rows)
   near_rows = ''.join('<tr><td><a href="/airports/%s/"><b class="mono">%s</b></a><div class="tiny">%s</div></td><td class="mono">%s nm %s</td><td class="mono">%s ft</td></tr>' % (
-    b['c'].lower(), esc(b['c']), esc(b.get('n') or ''), fmt(d), compass(bearing(a, b)), fmt(longest(b)['l'])) for d, b in near if eligible(b))
-  ld = {"@context": "https://schema.org", "@type": "Airport", "name": name, "icaoCode": code if len(code) == 4 else None, "iataCode": None,
+    b['c'].lower(), esc(b['c']), esc(b.get('n') or ''), fmt(d), compass(bearing(a, b)), fmt(longest(b)['l'])) for d, b in near if usable(b))
+  ld = {"@context": "https://schema.org", "@type": "Airport", "name": name, "icaoCode": code if re.fullmatch(r'[A-Z]{4}', code or '') else None, "iataCode": None,
         "url": "https://www.jetdesk.ai/airports/%s/" % code.lower(),
         "geo": {"@type": "GeoCoordinates", "latitude": a['la'], "longitude": a['lo'], "elevation": "%d ft" % elev},
         "address": {"@type": "PostalAddress", "addressLocality": city, "addressRegion": st, "addressCountry": "US"}}
@@ -171,6 +209,23 @@ def airport_page(a, big, by):
   extra = '<script type="application/ld+json">%s</script><script type="application/ld+json">%s</script>' % (
     json.dumps(ld, separators=(',', ':')).replace('</', '<\\/'),
     breadcrumb_ld([('JetDesk.AI', 'https://www.jetdesk.ai/'), ('Airports', 'https://www.jetdesk.ai/airports/'), (stname, 'https://www.jetdesk.ai' + state_slug(st)), (code, 'https://www.jetdesk.ai/airports/%s/' % code.lower())]))
+  acc = access_note(a)
+  acc_html = ('<div class="callout safety" style="margin-top:14px"><b>%s.</b> %s</div>' % (esc(acc[0]), esc(acc[1]))) if acc else ''
+  # Section 3 and 4 are about buying fuel and diverting. Neither applies to a field you cannot use.
+  near_lead = ('Listed for reference only: %s is not a field to divert to or buy fuel at.' % esc(code)) if acc else (
+    'Useful as alternates, as fuel stops when the price at %s is high, or as the longer runway on a hot afternoon.' % esc(code))
+  if acc:
+    fuel_h2 = 'Fuel and services at %s' % esc(code)
+    fuel_p = ('There is no public FBO fuel to log at %s. JetDesk collects Jet A prices that pilots actually paid, at civil '
+              'fields, and its route finder leaves military and private-use fields out of every ranking. '
+              'Read <a href="/notes/fuel-stop-math/">what a fuel stop actually saves</a>.' % esc(code))
+  else:
+    fuel_h2 = 'Jet A prices and FBOs at %s' % esc(code)
+    fuel_p = ('No public API publishes FBO fuel prices, so JetDesk does not guess. Pilots and crews log the price they actually '
+              'paid at %s, the app flags a price stale after two weeks, and the route finder ranks every field within a corridor '
+              'of your route by net savings after the cost of the extra cycle. <a href="/?apt=%s">Log a price at %s</a> or read '
+              '<a href="/notes/fuel-stop-math/">what a fuel stop actually saves</a>.' % (esc(code), esc(code), esc(code)))
+  cta = ('<p><a class="cta" href="/?apt=%s">Open %s in JetDesk: live METAR, TAF, winds and runway verdict &#8594;</a></p>' % (esc(code), esc(code)))
   body = f"""
 <nav class="crumbs" aria-label="Breadcrumb"><a href="/">JetDesk</a> &rsaquo; <a href="/airports/">Airports</a> &rsaquo; <a href="{state_slug(st)}">{esc(stname)}</a></nav>
 <h1><span class="mono">{esc(code)}</span> · {esc(name)}</h1>
@@ -182,7 +237,8 @@ def airport_page(a, big, by):
   <div class="c"><div class="n">{'%.2f' % abs(a['la'])}{'N' if a['la'] >= 0 else 'S'}</div><div class="l">{'%.2f' % abs(a['lo'])}{'W' if a['lo'] < 0 else 'E'}</div></div>
 </div>
 <p class="lead">{esc(name)}{' serves ' + esc(city) + ', ' + esc(stname) if city else ''} at {fmt(elev)} ft elevation{(' with its longest runway, ' + esc(lr['id']) + ', at ' + fmt(lr['l']) + ' by ' + fmt(lr.get('w') or 0) + ' ft') if lr else ''}. The figures below are computed from FAA NASR runway data (via OurAirports) and the same rules of thumb JetDesk uses on the airport page in the app; the POH and current NOTAMs are the authority.</p>
-<p><a class="cta" href="/?apt={esc(code)}">Open {esc(code)} in JetDesk: live METAR, TAF, winds and runway verdict &#8594;</a></p>
+{acc_html}
+{cta}
 
 <h2><span class="num">01</span>Runways</h2>
 <div class="tablewrap"><table><thead><tr><th>Runway</th><th>Length &times; width</th><th>Surface</th><th>Lighting</th></tr></thead><tbody>{rw_rows or '<tr><td colspan="4">No runway data on file.</td></tr>'}</tbody></table></div>
@@ -193,21 +249,31 @@ def airport_page(a, big, by):
 <div class="callout safety"><b>Planning aid only.</b> {esc(margin_txt) if margin_txt else 'Verify takeoff and landing performance with your aircraft flight manual before every flight.'} The percentages are a generic rule of thumb applied to one reference airplane, not certified performance data for any specific aircraft, and the runway size categories describe the runway, not your airplane's suitability. Verify with the approved flight manual before every flight.</div>
 
 <h2><span class="num">03</span>Nearby fields with 5,000 ft or more</h2>
-<p>Useful as alternates, as fuel stops when the price at {esc(code)} is high, or as the longer runway on a hot afternoon.</p>
+<p>{near_lead}</p>
 <div class="tablewrap"><table><thead><tr><th>Airport</th><th>Distance</th><th>Longest runway</th></tr></thead><tbody>{near_rows or '<tr><td colspan="3">None within the dataset.</td></tr>'}</tbody></table></div>
 
-<h2><span class="num">04</span>Jet A prices and FBOs at {esc(code)}</h2>
-<p>No public API publishes FBO fuel prices, so JetDesk does not guess. Pilots and crews log the price they actually paid at {esc(code)}, the app flags a price stale after two weeks, and the route finder ranks every field within a corridor of your route by net savings after the cost of the extra cycle. <a href="/?apt={esc(code)}">Log a price at {esc(code)}</a> or read <a href="/notes/fuel-stop-math/">what a fuel stop actually saves</a>.</p>
+<h2><span class="num">04</span>{fuel_h2}</h2>
+<p>{fuel_p}</p>
 <p style="margin-top:26px"><a href="{state_slug(st)}">All {esc(stname)} airports</a> · <a href="/airports/">Airport directory</a> · <a href="/">Open JetDesk</a></p>
 """
   return legal_page('airports/' + code.lower(), title, desc, body, extra_head=extra, full_title=page_title(code, name, city or stname))
 
+def state_description(stname, n):
+  cands = ['%s airports for turboprop and light jet pilots: runways, elevation, density altitude margins and alternates for %d fields.' % (stname, n),
+           '%s airports for turboprop and light jet pilots: runways, elevation and density altitude for %d fields.' % (stname, n),
+           '%s airports: runways, elevation and density altitude margins for %d fields.' % (stname, n),
+           '%s airports: runways, elevation and density altitude, %d fields.' % (stname, n)]
+  d = next((c for c in cands if len(c) <= DESC_MAX), cands[-1])
+  if len(d) < 120 and len(d + ' From JetDesk.AI.') <= DESC_MAX:
+    d += ' From JetDesk.AI.'
+  return d
+
 def state_page(st, lst):
   stname = STATES.get(st, st)
   items = ''.join('<a href="/airports/%s/"><b>%s</b> %s%s · %s ft</a>' % (a['c'].lower(), esc(a['c']), esc(a.get('n') or ''), (' (' + esc(a['m']) + ')') if a.get('m') else '', fmt(longest(a)['l']) if longest(a) else '–') for a in lst)
-  body = '<nav class="crumbs" aria-label="Breadcrumb"><a href="/">JetDesk</a> &rsaquo; <a href="/airports/">Airports</a></nav><h1>%s airports for turboprops and light jets</h1><div class="effdate">%d FIELDS · LONGEST RUNWAY FIRST</div><p class="lead">Every %s airport with a lit runway of 4,000 ft or more, or medium and large status in the FAA file, with runways, elevation, density altitude margins and nearby alternates on each page.</p><div class="cols">%s</div><p style="margin-top:26px"><a href="/airports/">All states</a> · <a href="/">Open JetDesk</a></p>' % (esc(stname), len(lst), esc(stname), items)
+  body = '<nav class="crumbs" aria-label="Breadcrumb"><a href="/">JetDesk</a> &rsaquo; <a href="/airports/">Airports</a></nav><h1>%s airports for turboprops and light jets</h1><div class="effdate">%s · LONGEST RUNWAY FIRST</div><p class="lead">Every %s airport with a lit runway of 4,000 ft or more, or medium and large status in the FAA file, with runways, elevation, density altitude margins and nearby alternates on each page.</p><div class="cols">%s</div><p style="margin-top:26px"><a href="/airports/">All states</a> · <a href="/">Open JetDesk</a></p>' % (esc(stname), '%d FIELD%s' % (len(lst), '' if len(lst) == 1 else 'S'), esc(stname), items)
   extra = '<script type="application/ld+json">%s</script>' % breadcrumb_ld([('JetDesk.AI', 'https://www.jetdesk.ai/'), ('Airports', 'https://www.jetdesk.ai/airports/'), (stname, 'https://www.jetdesk.ai' + state_slug(st))])
-  return legal_page('airports/' + st.lower(), '%s airports' % stname, '%s airports for turboprop and light jet pilots: runways, elevation, density altitude margins and nearby alternates for %d fields, from JetDesk.AI.' % (stname, len(lst)), body, extra_head=extra)
+  return legal_page('airports/' + st.lower(), '%s airports' % stname, state_description(stname, len(lst)), body, extra_head=extra)
 
 def index_page(states):
   order = sorted(states.keys(), key=lambda s: STATES.get(s, s))

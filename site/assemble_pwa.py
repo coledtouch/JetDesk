@@ -90,7 +90,13 @@ def _hero_paths(text):
              .replace('__IMG_HERO_NIGHT__', IMG['hero-night']).replace('__IMG_HERO_NIGHT_800__', IMG['hero-night-800'])
 app_js = _hero_paths(app_js)
 markup = _hero_paths(markup)
+# The dataset cycle is written once, from the stamp file, so the app shell and the static
+# pages can never disagree about which NASR cycle the runway data came from.
+_cycle_label = airports.cycle_label()
+markup = markup.replace('__NASR_CYCLE__', _cycle_label)
+app_js = app_js.replace('__NASR_CYCLE__', _cycle_label)
 import legal as _legal_mod
+_legal_mod.FONTS_CSS = fonts_css
 _legal_mod.OG_IMAGE = og_image
 _legal_mod.LOGO_URL = 'https://www.jetdesk.ai' + icon_512
 
@@ -177,6 +183,16 @@ function shellFirst(req) {
 /* Public documents: network first and cached under their own URL for offline reading. A cached copy is served
    after 2.5 s on a slow connection; with no copy the request waits for the network, and if the network fails the
    honest offline page is returned instead of any other document. */
+const DOC_CAP = 120;   /* visited documents kept for offline reading, oldest evicted first */
+function putDocument(req, res) {
+  return caches.open(V).then((c) => c.put(req, res).then(() => c.keys()).then((keys) => {
+    /* CORE entries are precached first, so they sit at the front of the key order and survive.
+       Only visited documents past the cap are dropped, oldest first. */
+    const docs = keys.filter((k) => !CORE.includes(new URL(k.url).pathname));
+    const over = docs.length - DOC_CAP;
+    return over > 0 ? Promise.all(docs.slice(0, over).map((k) => c.delete(k))) : null;
+  })).catch(() => null);
+}
 function documentFirst(req) {
   return new Promise((resolve) => {
     let done = false;
@@ -184,7 +200,7 @@ function documentFirst(req) {
     const timer = setTimeout(() => { caches.match(req, { ignoreSearch: true }).then((hit) => { if (hit) finish(hit); }); }, 2500);
     fetch(req).then((res) => {
       clearTimeout(timer);
-      if (cacheable(res)) { const copy = res.clone(); caches.open(V).then((c) => c.put(req, copy)); }
+      if (cacheable(res)) putDocument(req, res.clone());
       finish(res);
     }).catch(() => {
       clearTimeout(timer);
@@ -378,6 +394,26 @@ for _slug, _html in _pages.items():
   os.makedirs('dist/' + _slug, exist_ok=True)
   open('dist/' + _slug + '/index.html', 'w', encoding='utf-8').write(_html)
 
+# Prune pages that a previous build wrote and this one did not. Airports close and identifiers
+# change, and a stale page left in dist is deployed, indexable and absent from the sitemap.
+import shutil as _shutil
+_kept = set(_pages)
+_pruned = 0
+for _parent in ('airports', 'notes'):
+  _dir = 'dist/' + _parent
+  if not os.path.isdir(_dir):
+    continue
+  for _name in sorted(os.listdir(_dir)):
+    _path = os.path.join(_dir, _name)
+    if not os.path.isdir(_path):
+      continue
+    if (_parent + '/' + _name) in _kept:
+      continue
+    _shutil.rmtree(_path)
+    _pruned += 1
+if _pruned:
+  print('pruned stale pages:', _pruned)
+
 # ---- manifest ----
 manifest = {
   "name": "JetDesk.AI: Trip Cost, Fuel and Runways",
@@ -420,6 +456,7 @@ open('dist/_headers', 'w', encoding='utf-8').write("""/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self'
+  Vary: Accept-Encoding
 
 /fonts/fonts.css
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
@@ -443,6 +480,10 @@ open('dist/_headers', 'w', encoding='utf-8').write("""/*
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
 
 /notes/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/notes/feed.xml
+  Content-Type: application/rss+xml; charset=utf-8
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
 
 /sw.js

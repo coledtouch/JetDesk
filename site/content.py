@@ -8,7 +8,7 @@ ARTICLES = [
   {
     'slug': 'fuel-stop-math',
     'title': 'What a fuel stop actually saves',
-    'description': 'The arithmetic behind the fuel stop decision: price gap times gallons, minus the cost of the extra cycle and detour, and the break-even gap that makes it worth it.',
+    'description': 'The fuel stop decision as arithmetic: price gap times gallons, minus the cost of the extra cycle and detour, and the break-even gap that makes it worth it.',
     'date': 'September 2026', 'iso': '2026-09-01',
     'body': """
 <p class="lead">Every pilot who manages an airplane has done this math on a napkin: the FBO at the destination wants $9.40 for Jet A, the field twenty miles back wants $7.10, and the tanks need 150 gallons. Is the stop worth it? Here is the math JetDesk runs, and the two places where napkins usually go wrong.</p>
@@ -35,7 +35,7 @@ ARTICLES = [
   {
     'slug': 'density-altitude-turboprops',
     'title': 'Density altitude for turboprop pilots',
-    'description': 'What hot days and high fields do to takeoff and landing distance, the rules of thumb JetDesk uses on airport pages, and why a 50 percent margin is the number to plan around.',
+    'description': 'What hot days and high fields do to takeoff and landing distance, and why a 50 percent margin is the number to plan around.',
     'date': 'September 2026', 'iso': '2026-09-01',
     'body': """
 <p class="lead">Turboprops are forgiving airplanes right up until a summer afternoon at a 5,000 ft field, when the book number you remember from sea level turns out to be a thousand feet short. JetDesk puts a runway estimate on every airport page so the surprise happens on the screen, not on the roll.</p>
@@ -53,7 +53,7 @@ ARTICLES = [
 <p>These are FAA rule-of-thumb factors applied to the sea level, ISA, max weight, 50 ft obstacle numbers you enter in Settings for your airplane. They are estimates for planning. The POH performance charts for your serial number are the authority, and JetDesk says so next to every number.</p>
 
 <h2><span class="num">03</span>Why 50 percent</h2>
-<p>Book numbers come from a new airplane, a test pilot and a dry runway. Most operators plan with a factor of 1.5 on the landing distance (some regulations require 1.67 for turbojets on wet runways). JetDesk shows the raw estimate and the 50 percent figure, and grades each runway: green at 1.5 times or better, amber down to 1.2, red under that. Red is not a prohibition; it is a reason to open the POH and think.</p>
+<p>Book numbers come from a new airplane, a test pilot and a dry runway. Most operators plan with a factor of 1.5 on the landing distance (14 CFR 135.385 requires 1.67 on a dry runway for turbojets, and another 15 percent on top of that when the runway is wet). JetDesk shows the raw estimate and the 50 percent figure, and grades each runway: green at 1.5 times or better, amber down to 1.2, red under that. Red is not a prohibition; it is a reason to open the POH and think.</p>
 
 <div class="callout safety"><b>Not a performance calculation.</b> JetDesk's runway math is a planning estimate. Verify takeoff and landing performance with your aircraft's approved flight manual before every flight.</div>
 
@@ -64,7 +64,7 @@ ARTICLES = [
   {
     'slug': 'how-jetdesk-computes-trip-cost',
     'title': 'How JetDesk computes trip cost',
-    'description': 'The inputs behind the per-leg cost on the Trip tab: distance, winds aloft, block overhead, taxi fuel, cruise burn and a planning price, plus what is deliberately left out.',
+    'description': 'The inputs behind the per-leg cost: distance, winds aloft, block overhead, taxi fuel, cruise burn and a planning price, and what is left out.',
     'date': 'September 2026', 'iso': '2026-09-01',
     'body': """
 <p class="lead">The Trip tab turns a list of airport codes into a number with a dollar sign. Here is exactly how, so you can tune the inputs to your airplane and trust the result.</p>
@@ -100,8 +100,8 @@ ARTICLES = [
   },
   {
     'slug': 'reserve-fuel-minutes-or-gallons',
-    'title': 'Reserve fuel: minutes, gallons, and the alternate nobody plans',
-    'description': 'How JetDesk decides whether a leg makes reserve: departure fuel, burn, alternate burn and a reserve you set in minutes or gallons, and why the alternate is where most fuel stops really come from.',
+    'title': 'Reserve fuel, and the alternate nobody plans',
+    'description': 'How JetDesk decides whether a leg makes reserve, and why the alternate is where most fuel stops really come from.',
     'date': 'September 2026', 'iso': '2026-09-02',
     'body': """
 <p class="lead">The regulation says 45 minutes at cruise for IFR. Most turboprop operators fly to a number that is bigger and personal. JetDesk lets you set that number once, then checks every leg against it before you file.</p>
@@ -114,11 +114,11 @@ ARTICLES = [
 <p>Reserve in minutes scales with your cruise burn, which is the honest way to state it when you fly more than one airplane. Reserve in gallons is what most pilots actually carry in their head for one airplane: "I do not land with less than forty." Settings takes either. If you enter gallons, that wins; leave it at zero and the minutes figure applies.</p>
 
 <h2><span class="num">03</span>The alternate is the whole story</h2>
-<p>A Meridian burning 40 an hour at 260 knots carries about 170 usable. Nantucket to White Plains is 22 gallons of burn. Nobody worries about reserve on that leg until the destination goes below minimums and the alternate is Bradley, 70 miles back the other way. That is another 20 gallons, and if you left with 60 because the ramp fee at the stop was not worth a top-off, you are now 10 short with the weather deciding for you.</p>
+<p>A Meridian burning 40 an hour at 260 knots carries about 170 usable. Nantucket to White Plains is 165 nm, about 50 minutes of block, which is 38 gallons with taxi. Nobody worries about reserve on that leg until the destination goes below minimums and the alternate is Bradley, 70 miles back the other way. That is another 20 gallons, and 45 minutes of reserve is another 30, so the leg really needs 88. If you left with 60 because the ramp fee at the stop was not worth a top-off, you are 28 short with the weather deciding for you.</p>
 <p>That is why the fuel line on a leg card names the alternate and its burn separately. Set it while you are still planning, and the app tells you what departure fuel it takes to make it work.</p>
 
 <h2><span class="num">04</span>Departure fuel by weight</h2>
-<p>Full usable is not always available. Five people and bags in a Meridian take the max fuel by weight to about 108 gallons, well under the tanks. When your profile has weights, JetDesk caps departure fuel at what max takeoff weight allows and the leg card says so, so the reserve check uses fuel you can actually load.</p>
+<p>Full usable is not always available. Five people in a Meridian take the max fuel by weight to about 108 gallons, well under the tanks, and 200 lb of bags takes it to 78. When your profile has weights, JetDesk caps departure fuel at what max takeoff weight allows and the leg card says so, so the reserve check uses fuel you can actually load.</p>
 
 <h2><span class="num">05</span>Habits that keep this honest</h2>
 <p>Log fuel used after each flight. Three legs in, JetDesk tells you whether your book burn is optimistic and offers to fix it. Reserve planning on a burn figure that is ten percent low is reserve planning on a lie.</p>
@@ -126,8 +126,8 @@ ARTICLES = [
   },
   {
     'slug': 'winds-aloft-block-time',
-    'title': 'Why block time swings twenty minutes: winds aloft, decoded',
-    'description': 'What the FAA winds and temperatures aloft forecast is, how JetDesk turns it into a groundspeed for each leg, and why the return leg costs more than the outbound one.',
+    'title': 'Why block time swings twenty minutes',
+    'description': 'How the FAA winds aloft forecast becomes a groundspeed for each leg, and why the return leg costs more than the outbound one.',
     'date': 'September 2026', 'iso': '2026-09-02',
     'body': """
 <p class="lead">Providence to Nantucket in a Meridian is 25 minutes one way and 31 the other on the same afternoon. Nothing changed but the wind. Here is how JetDesk knows before you do.</p>
@@ -148,11 +148,11 @@ ARTICLES = [
   },
   {
     'slug': 'weight-before-fuel',
-    'title': 'Weight before fuel: why the Meridian runs out of payload first',
-    'description': 'A weights-only walk through zero fuel weight, max fuel by weight and landing weight for a Piper Meridian with five aboard, and how JetDesk shows it on every leg.',
+    'title': 'Weight before fuel: payload runs out first',
+    'description': 'Zero fuel weight, max fuel by weight and landing weight for a Piper Meridian with five aboard, and how JetDesk shows it per leg.',
     'date': 'September 2026', 'iso': '2026-09-02',
     'body': """
-<p class="lead">A Meridian holds 170 gallons. With a family of five and a weekend of bags it can carry about 108 of them. Most owner-pilots know this in their bones; the app now does the arithmetic on every trip so the crew does too.</p>
+<p class="lead">A Meridian holds 170 gallons. With a family of five aboard and nothing in the lockers it can carry about 108 of them, and 200 lb of weekend bags takes that to 78. Most owner-pilots know this in their bones; the app now does the arithmetic on every trip so the crew does too.</p>
 
 <h2><span class="num">01</span>The four numbers</h2>
 <p>Basic empty weight, maximum takeoff weight, maximum landing weight and maximum zero fuel weight. Settings holds them per airplane and the presets load typical figures (a Meridian: about 3,420 empty, 5,092 takeoff, 4,850 landing and zero fuel). Replace them with the figures from your own weight and balance sheet; airplanes drift after avionics and interiors.</p>
@@ -171,7 +171,7 @@ ARTICLES = [
   {
     'slug': 'what-the-owner-report-should-say',
     'title': 'What the owner report should say',
-    'description': 'The monthly numbers an aircraft owner actually wants from the pilot who manages the airplane, why estimate versus actual matters more than the total, and how JetDesk builds the report from the flight log.',
+    'description': 'The monthly numbers an aircraft owner actually wants, and why estimate versus actual matters more than the total.',
     'date': 'September 2026', 'iso': '2026-09-02',
     'body': """
 <p class="lead">Owners do not want a spreadsheet. They want to know the airplane is being run well, and the fastest way to show that is a page with four numbers and a short table, every month, without being asked.</p>
@@ -198,7 +198,7 @@ ARTICLES = [
   {
     'slug': 'the-two-week-rule-for-fuel-prices',
     'title': 'The two-week rule for fuel prices',
-    'description': 'Why JetDesk marks a logged fuel price stale after fourteen days, how the market reference tells you when the whole board has moved, and how community prices fill the gaps without anyone scraping anything.',
+    'description': 'Why a logged fuel price goes stale after fourteen days, and how the market reference tells you when the whole board has moved.',
     'date': 'September 2026', 'iso': '2026-09-02',
     'body': """
 <p class="lead">A fuel price is a fact with a date on it. JetDesk treats a logged price as good for two weeks and says so plainly after that, because a stale $6.40 is worse than no number at all.</p>
@@ -251,7 +251,27 @@ def build_pages():
   return out
 
 def rss():
+  """RSS 2.0 with an atom:link self reference and lastBuildDate, the way feed readers expect."""
   from xml.sax.saxutils import escape
-  items = ''.join('<item><title>%s</title><link>https://www.jetdesk.ai/notes/%s/</link><guid>https://www.jetdesk.ai/notes/%s/</guid><pubDate>%s</pubDate><description>%s</description></item>' % (
-    escape(a['title']), a['slug'], a['slug'], __import__('email.utils', fromlist=['x']).format_datetime(__import__('datetime').datetime.fromisoformat(a['iso'] + 'T12:00:00+00:00')), escape(a['description'])) for a in ARTICLES)
-  return '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>JetDesk.AI field notes</title><link>https://www.jetdesk.ai/notes/</link><description>Short, useful notes on fuel stops, runway margins and trip cost for pilots who manage the airplane.</description><language>en-us</language>%s</channel></rss>' % items
+  from email.utils import format_datetime
+  import datetime
+  def when(a):
+    return datetime.datetime.fromisoformat(a['iso'] + 'T12:00:00+00:00')
+  arts = sorted(ARTICLES, key=when, reverse=True)
+  items = ''.join(
+    '<item><title>%s</title><link>https://www.jetdesk.ai/notes/%s/</link>'
+    '<guid isPermaLink="true">https://www.jetdesk.ai/notes/%s/</guid>'
+    '<pubDate>%s</pubDate><description>%s</description></item>' % (
+      escape(a['title']), a['slug'], a['slug'], format_datetime(when(a)), escape(a['description']))
+    for a in arts)
+  built = format_datetime(max(when(a) for a in arts)) if arts else format_datetime(datetime.datetime.now(datetime.timezone.utc))
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>'
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>'
+    '<title>JetDesk.AI field notes</title>'
+    '<link>https://www.jetdesk.ai/notes/</link>'
+    '<atom:link href="https://www.jetdesk.ai/notes/feed.xml" rel="self" type="application/rss+xml"/>'
+    '<description>Short, useful notes on fuel stops, runway margins and trip cost for pilots who manage the airplane.</description>'
+    '<language>en-us</language>'
+    '<lastBuildDate>%s</lastBuildDate>'
+    '%s</channel></rss>' % (built, items))

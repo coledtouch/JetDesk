@@ -2,7 +2,7 @@
 # Each page is a small static HTML document sharing the app's brand tokens and
 # self-hosted fonts. No scripts, no external hosts, works with the site CSP.
 
-EFFECTIVE = 'September 1, 2026'
+EFFECTIVE = 'September 23, 2026'
 
 PAGE_CSS = """
 :root{
@@ -87,6 +87,9 @@ MARK_SVG = '<svg class="mark" viewBox="0 0 72 72" fill="none" aria-hidden="true"
 
 OG_IMAGE = 'https://www.jetdesk.ai/img/og-jetdesk.jpg'  # replaced with the hashed path by assemble_pwa.py
 LOGO_URL = 'https://www.jetdesk.ai/icons/icon-512.png'  # same
+# The @font-face block, inlined rather than linked: one fewer round trip, and the static pages
+# keep their type offline without adding a stylesheet to the worker precache.
+FONTS_CSS = ''   # filled in by assemble_pwa.py before any page is built
 
 # Theme: the same setting the app keeps (localStorage mfd1.settings.theme = auto | light | dark), applied before
 # first paint and cycled by the header button. Kept tiny and inline so the pages stay a single request.
@@ -104,6 +107,7 @@ def breadcrumb_ld(items):
 
 def legal_page(slug, title, description, body_html, extra_head='', og_type='website', full_title=None, robots='index,follow,max-image-preview:large,max-snippet:-1', canonical=None):
   page_title = full_title or (title + ' | JetDesk.AI')
+  font_style = ('<style>%s</style>' % FONTS_CSS) if FONTS_CSS else '<link rel="stylesheet" href="/fonts/fonts.css">'
   canonical_tag = ('<link rel="canonical" href="%s">' % canonical) if canonical is not None else ('<link rel="canonical" href="https://www.jetdesk.ai/%s/">' % slug)
   return f"""<!doctype html>
 <html lang="en">
@@ -118,7 +122,7 @@ def legal_page(slug, title, description, body_html, extra_head='', og_type='webs
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070B14">
 {canonical_tag}
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
-<link rel="stylesheet" href="/fonts/fonts.css">
+{font_style}
 <meta property="og:type" content="{og_type}">
 <meta property="og:site_name" content="JetDesk.AI">
 <meta property="og:locale" content="en_US">
@@ -192,7 +196,7 @@ TERMS_BODY = f"""
 <p>You agree that you will not rely on the Service for navigation, terrain or obstacle avoidance, weight and balance, takeoff or landing performance calculations, or any decision where inaccurate information could endanger safety. JetDesk's runway "verdicts" are rough comfort labels based on the runway length preferences you configured, not performance calculations.</p>
 
 <h2 id="plans"><span class="num">04</span>Plans, trials and billing</h2>
-<p><b>Free and Pro.</b> The free tier includes airport lookup, weather, the calculators and one saved trip. Pro adds unlimited trips, winds aloft applied to legs, live crosswind and best runway, the market fuel reference, shared FBO and crew intel, and crew sharing for up to 10 people. Current pricing is shown on the site and at checkout: as of the effective date, $9.99 per month or $79 per year.</p>
+<p><b>Free and Pro.</b> The free tier includes airport lookup, weather, the fuel stop calculator and one saved trip. Pro adds unlimited trips, winds aloft applied to legs, live crosswind and best runway, runway performance for your airplane, the route fuel stop finder, the market fuel reference, shared FBO and crew intel, and crew sharing for up to 10 people. Current pricing is shown on the site and at checkout: as of the effective date, $9.99 per month or $79 per year.</p>
 <p><b>Trials.</b> New accounts start with a 14 day Pro trial, no card required. When a trial ends the account drops to the free tier unless you subscribe.</p>
 <p><b>Billing.</b> Payments are processed by Stripe. We never see or store your card number. Depending on how your purchase is processed, Stripe may act as merchant of record for the transaction, collect applicable sales tax, and appear together with JETDESK.AI on your card statement. Subscriptions renew automatically at the end of each billing period until cancelled.</p>
 <p><b>Cancelling.</b> You can cancel any time from the billing portal in your Account tab. Cancelling stops future charges; your Pro access continues to the end of the period you already paid for. Except where the law requires otherwise, payments already made are not refunded. If a charge looks wrong, write to <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a> and a human will sort it out.</p>
@@ -257,6 +261,7 @@ PRIVACY_BODY = f"""
 <li><a href="#location">Location stays on your device</a></li>
 <li><a href="#local">Data stored on your device</a></li>
 <li><a href="#crew">Crew sharing</a></li>
+<li><a href="#community">Community fuel prices</a></li>
 <li><a href="#processors">Service providers</a></li>
 <li><a href="#cookies">Cookies and tracking</a></li>
 <li><a href="#retention">Retention and deletion</a></li>
@@ -294,7 +299,12 @@ PRIVACY_BODY = f"""
 <h2 id="crew"><span class="num">05</span>Crew sharing</h2>
 <p>If you join or create a crew workspace, the fuel prices, FBO information, trips and notes in that workspace are shared with its members (up to 10 people). Members see the content itself; they do not see your password, email verification state or billing details. Content you contributed may remain with the workspace if you leave it or delete your account, the same way an email you sent stays with its recipients.</p>
 
-<h2 id="processors"><span class="num">06</span>Service providers</h2>
+<h2 id="community"><span class="num">06</span>Community fuel prices</h2>
+<p>Community price sharing is <b>off unless you turn it on</b> in the Account tab. While it is on, each Jet A price your workspace logs is also written to a shared pool as four fields: the airport code, the price, the date, and an opaque workspace id. No name, no email, no tail number and no trip information goes with it.</p>
+<p>Other customers never see your rows individually. The app reads the pool only as a median across workspaces, and only for an airport where at least two different workspaces have logged a price in the last 60 days, so a single workspace's price is never shown back to anyone. Reading the pool requires sharing into it.</p>
+<p>Turning sharing off stops new prices going to the pool. Rows already contributed stay in it, anonymized, the same way crew content stays with a workspace you leave. Write to <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a> if you want your workspace's contributed rows removed and we will delete them.</p>
+
+<h2 id="processors"><span class="num">07</span>Service providers</h2>
 <p>We use a small number of providers to run the Service, each receiving only what its job requires:</p>
 <div class="tablewrap"><table>
 <tr><th>Provider</th><th>Job</th><th>What it processes</th></tr>
@@ -305,16 +315,16 @@ PRIVACY_BODY = f"""
 </table></div>
 <p>We disclose personal data beyond this only if required by law or legal process, to protect the rights, safety or property of users or the public, or as part of a merger, acquisition or sale of assets (in which case this policy continues to apply to data collected under it).</p>
 
-<h2 id="cookies"><span class="num">07</span>Cookies and tracking</h2>
+<h2 id="cookies"><span class="num">08</span>Cookies and tracking</h2>
 <p>We set no advertising or analytics cookies and load no third party trackers, fonts, scripts or beacons: every asset the app loads comes from our own domain. The app keeps your session token and app data in browser storage as described above. Our infrastructure provider, Cloudflare, may set strictly operational cookies for security and bot mitigation on our domain.</p>
 
-<h2 id="retention"><span class="num">08</span>Retention and deletion</h2>
+<h2 id="retention"><span class="num">09</span>Retention and deletion</h2>
 <p>We keep account data for as long as your account exists. <b>You can delete your account yourself</b> in the app under Account, which permanently removes your profile, credentials, sessions and personal data from our production database; content you contributed to a shared crew workspace may remain with that workspace. Rate limit counters expire automatically within hours. Operational logs and backups roll off on short cycles. Email correspondence is kept as long as useful for support. If you cannot access the app, email <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a> from your account address and we will delete the account for you.</p>
 
-<h2 id="security"><span class="num">09</span>Security</h2>
+<h2 id="security"><span class="num">10</span>Security</h2>
 <p>All traffic to the Service is encrypted with TLS, with HSTS enforced. Passwords are stored only as salted, iterated hashes with a server side secret. Sessions are bearer tokens stored hashed on the server and expiring automatically. Sign in, sign up and verification attempts are rate limited. Payment card data never touches our servers. No system is perfectly secure, so if we learn of a breach affecting your personal data we will notify you as the law requires. Security reports are welcome at <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a>.</p>
 
-<h2 id="rights"><span class="num">10</span>Your rights and choices</h2>
+<h2 id="rights"><span class="num">11</span>Your rights and choices</h2>
 <ul>
 <li><b>Access and portability.</b> Your trips, prices and notes are visible in the app, and the backup tool in Settings exports your data as text you can keep.</li>
 <li><b>Correction.</b> Profile fields are editable in the app; anything else, ask us.</li>
@@ -324,16 +334,16 @@ PRIVACY_BODY = f"""
 </ul>
 <p>Residents of California and other U.S. states with privacy laws: we do not sell or share personal information as those laws define it, and we honor the rights those laws give you (access, deletion, correction, non discrimination) through the tools above. We will not treat you differently for exercising them.</p>
 
-<h2 id="children"><span class="num">11</span>Children</h2>
+<h2 id="children"><span class="num">12</span>Children</h2>
 <p>The Service is not directed to children under 13, and we do not knowingly collect personal data from them. If you believe a child under 13 has an account, tell us and we will delete it.</p>
 
-<h2 id="intl"><span class="num">12</span>International visitors</h2>
+<h2 id="intl"><span class="num">13</span>International visitors</h2>
 <p>The Service is operated from the United States and data is stored primarily on infrastructure there. If you use the Service from outside the U.S., you understand your data is processed in the U.S. For visitors from the EEA, UK or Switzerland: we process personal data to perform our contract with you (running the Service), for our legitimate interests in securing and improving it, and with your consent where required; the rights described above (access, correction, deletion, portability, objection) are available to you, and you may also complain to your local supervisory authority.</p>
 
-<h2 id="changes"><span class="num">13</span>Changes to this policy</h2>
+<h2 id="changes"><span class="num">14</span>Changes to this policy</h2>
 <p>When we change this policy we update the effective date at the top, and for material changes we will give notice in the app or by email before they take effect. The current version always lives at <a href="https://www.jetdesk.ai/privacy/">www.jetdesk.ai/privacy</a>.</p>
 
-<h2 id="contact"><span class="num">14</span>Contact</h2>
+<h2 id="contact"><span class="num">15</span>Contact</h2>
 <p>JetDesk.AI · Massachusetts, United States · <a href="mailto:hello@jetdesk.ai">hello@jetdesk.ai</a>. Privacy questions land with a human, not a queue.</p>
 """
 

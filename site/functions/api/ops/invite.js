@@ -1,4 +1,4 @@
-import { json, err, readJson, normEmail, validEmail, now } from '../../../lib/util.js';
+import { json, err, readJson, normEmail, validEmail, now, rateLimit, clientIp } from '../../../lib/util.js';
 import { getUser, activeOp, isPro, meShape, needsVerify } from '../../../lib/auth.js';
 import { sendEmail, inviteEmailHtml } from '../../../lib/email.js';
 
@@ -25,6 +25,10 @@ export async function onRequestPost({ request, env }) {
   if (existing && existing.role !== 'owner') {
     await env.DB.prepare('UPDATE op_members SET role = ? WHERE op_id = ? AND email = ?').bind(role, op.id, email).run();
   } else if (!existing) {
+    /* An invite sends branded mail from our domain, so it is rate limited the way the auth
+       routes are: per owner and per network, on top of the ten-crew cap. */
+    if (!(await rateLimit(env, 'inv:' + user.id, 20, 86400))) return err('Too many invites today. Try tomorrow.', 429);
+    if (!(await rateLimit(env, 'invip:' + clientIp(request), 40, 86400))) return err('Too many invites from this network. Try tomorrow.', 429);
     await env.DB.prepare('INSERT OR IGNORE INTO op_members (op_id, email, role, added) VALUES (?, ?, ?, ?)')
       .bind(op.id, email, role, now()).run();
     try {

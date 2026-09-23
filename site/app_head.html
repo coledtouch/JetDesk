@@ -91,6 +91,10 @@ header.app{
 #themeBtn svg{width:18px;height:18px;flex:none}
 @media (max-width:419px){.brand .sub{display:none}#themeBtn #themeLbl{display:none}#themeBtn{padding:0;width:44px;justify-content:center}}
 @media (max-width:479px){.is-welcome #headerStart{display:none}.brand .wordmark{font-size:clamp(12px,3.6vw,15px)}}
+.offbar{display:flex;align-items:center;gap:8px;margin:10px auto 0;max-width:640px;padding:8px 14px;font-size:12.5px;font-weight:700;letter-spacing:.01em;color:var(--ink);background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);border-radius:10px}
+.offbar[hidden]{display:none}
+.offbar .offdot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex:0 0 auto}
+@media (max-width:640px){.offbar{margin:10px 14px 0;font-size:12px;padding:7px 11px}}
 @media (max-width:340px){header.app{padding-left:10px;padding-right:10px;gap:8px}.brand{gap:8px}.brand .mark{width:30px;height:30px}.brand .wordmark{font-size:11.5px}}
 
 /* ============ LAYOUT ============ */
@@ -454,6 +458,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 .capmore-grid{display:grid;grid-template-columns:1fr;gap:14px}
 @media (min-width:700px){.capmore-grid{grid-template-columns:repeat(3,1fr);gap:20px}}
 .capmore .feat .ft{font-size:15px;font-weight:800;margin:0}
+.protag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;vertical-align:middle;color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);border:1px solid color-mix(in srgb,var(--acc) 38%,transparent)}
 .capmore .feat .fd{font-size:13.5px;line-height:1.5;margin-top:3px}
 .landing section.anchor{margin-top:10px}
 .plans.two{grid-template-columns:1fr;gap:12px;align-items:stretch}
@@ -496,6 +501,8 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
   </button>
 </header>
+
+<div id="offlineBar" class="offbar" role="status" hidden></div>
 
 <main id="appMain">
 <!-- ============ TRIP TAB ============ -->
@@ -641,28 +648,28 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
       <div class="row"><span class="mono" style="font-weight:700;font-size:15px">KMVY</span><span class="pill good">Wide open</span></div>
       <svg viewBox="0 0 260 96" width="100%" height="96" fill="none" aria-hidden="true"><g transform="translate(130 48)"><rect x="-92" y="-6" width="184" height="12" fill="var(--ink2)" transform="rotate(-30)"/><rect x="-52" y="-4" width="104" height="8" fill="var(--ink3)" transform="rotate(60)"/><text x="-122" y="40" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">06</text><text x="92" y="-30" fill="var(--acc)" font-family="B612 Mono,monospace" font-size="11" font-weight="700">24</text></g></svg>
       <div class="row"><span class="mono">06/24 · 5,504 × 100</span><span class="pill dim">Lit</span></div><div class="row"><span class="mono">15/33 · 3,327 × 75</span><span class="pill bad">Tight</span></div>
-    </div><h3 class="ct">Runway verdicts, to scale</h3><div class="cd">Every runway drawn from FAA geometry and graded wide open, workable or tight. Unlit fields flagged before an 11 p.m. arrival, not during one.</div></div>
+    </div><h3 class="ct">Runway verdicts, to scale</h3><div class="cd">Every runway drawn from FAA geometry and graded wide open, workable or tight, free. Unlit fields flagged before an 11 p.m. arrival, not during one. Takeoff and landing distance for your airplane on each runway is Pro.</div></div>
 
     <div class="card cap"><div class="demo"><span class="pill dim sample">Sample</span>
       <div class="wxline"><span class="pill vfr">VFR</span><span class="mono" style="font-weight:700">14009KT 10+ SM</span><span class="mono" style="color:var(--ink2)">25/14 A3012</span></div>
       <div class="lab" style="margin:2px 0 0">Runway winds now · <span style="color:var(--acc2)">best: 16</span></div>
       <div class="row"><span class="mono"><span class="dot good"></span> 16 · 9 kt head · 0 cross</span><span class="mono" style="color:var(--ink3)">6,081×150</span></div>
       <div class="row"><span class="mono"><span class="dot good"></span> 23 · 3 kt head · 9L cross</span><span class="mono" style="color:var(--ink3)">8,700×150</span></div>
-      <div class="micro muted">Field 55 ft · density altitude 1,320 ft</div>
-    </div><h3 class="ct">Live weather with a runway pick</h3><div class="cd">METAR and TAF on every airport and arrival, head and crosswind per runway from the live wind, density altitude, and the best runway right now.</div></div>
+      <div class="micro muted">Field 55 ft · density altitude 1,068 ft</div>
+    </div><h3 class="ct">Live weather with a runway pick</h3><div class="cd">METAR, TAF and density altitude on every airport and arrival, free. Head and crosswind per runway from the live wind, and the best runway right now, on Pro.</div></div>
 
     <div class="card cap"><div class="demo"><span class="pill dim sample">Sample</span>
       <div class="row"><span class="mono" style="font-weight:700;font-size:15px">KHPN <span style="color:var(--acc)">&#9656;</span> KPVD</span><span class="pill acc">FL260</span></div>
       <div class="legstats"><span class="stat nowrap"><span class="n">110</span><span class="u">nm</span></span><span class="stat nowrap"><span class="n">35</span><span class="u">min</span></span><span class="stat nowrap"><span class="n">292</span><span class="u">kt GS</span></span><span class="stat nowrap"><span class="n">28</span><span class="u">gal</span></span></div>
       <div class="micro muted">winds aloft 300/58 at FL260 (BDL)</div>
       <div class="row" style="background:var(--card);border-radius:10px;padding:8px 10px"><span class="mono" style="font-size:11px">05/23 · 8,700 × 150 · LIT</span><span class="pill vfr">VFR</span></div>
-    </div><h3 class="ct">Legs that know the wind</h3><div class="cd">FAA winds aloft at your cruise altitude give each leg its real groundspeed, block time, burn and cost. Out and back stop looking identical.</div></div>
+    </div><h3 class="ct">Legs that know the wind<span class="protag">PRO</span></h3><div class="cd">FAA winds aloft at your cruise altitude give each leg its real groundspeed, block time, burn and cost. Out and back stop looking identical.</div></div>
   </div>
   <div class="card capmore">
     <div class="capmore-grid">
       <div class="feat"><h3 class="ft">Near Me, with no bars</h3><div class="fd">GPS-sorted fields with distance and bearing, filtered to Jet A or big runways. The database rides on the phone, so it works where the signal does not.</div></div>
-      <div class="feat"><h3 class="ft">Crew intel that follows the airport</h3><div class="fd">Prices, FBOs, crew cars, fees and the quirks worth remembering, shared with your co-pilot or the owner and synced to every phone.</div></div>
-      <div class="feat"><h3 class="ft">Market floor and field facts</h3><div class="fd">The official Jet A spot price and WTI crude, fetched live with their observation time, so you know when the whole market moves. Plus FAA-file fuel types, repair services and landing-fee flags per airport.</div></div>
+      <div class="feat"><h3 class="ft">Crew intel that follows the airport<span class="protag">PRO</span></h3><div class="fd">FBOs, crew cars, fees and the quirks worth remembering, shared with your co-pilot or the owner and synced to every phone. Your own price log is free.</div></div>
+      <div class="feat"><h3 class="ft">Market floor and field facts</h3><div class="fd">FAA-file fuel types, repair services and landing-fee flags on every airport, free. The EIA Gulf Coast jet fuel wholesale spot and WTI crude, fetched live with their observation time, on Pro.</div></div>
     </div>
   </div>
 </section>
@@ -738,7 +745,7 @@ footer.disc .full{display:none}.is-welcome footer.disc .full{display:inline}.is-
 </div>
 
 <footer class="disc" id="appFoot">
-  <span class="full">Planning aid only, not for navigation. Runway data: FAA NASR via OurAirports, Sep 2026 cycle. Verify fuel prices, weather, NOTAMs and performance through official briefing sources before flight.<br>
+  <span class="full">Planning aid only, not for navigation. Runway data: FAA NASR via OurAirports, __NASR_CYCLE__ cycle. Verify fuel prices, weather, NOTAMs and performance through official briefing sources before flight.<br>
   <a href="/airports/" style="color:inherit">Airport directory</a> · <a href="/notes/" style="color:inherit">Field notes</a> · <a href="/terms/" style="color:inherit">Terms</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="mailto:hello@jetdesk.ai" style="color:inherit">hello@jetdesk.ai</a></span>
   <span class="compact">Planning aid only, not for navigation · <a href="/terms/" style="color:inherit">Terms</a> · <a href="/privacy/" style="color:inherit">Privacy</a></span>
 </footer>

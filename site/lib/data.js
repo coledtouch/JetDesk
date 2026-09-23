@@ -44,6 +44,17 @@ function cleanLeg(l) {
   return out;
 }
 
+function cleanTrip(t) {
+  return {
+    id: String(t.id || newId()).slice(0, 40),
+    name: String(t.name || 'Trip').slice(0, 60),
+    date: /^\d{4}-\d{2}-\d{2}$/.test(String(t.date || '')) ? String(t.date) : undefined,
+    pax: Math.max(0, Math.min(19, parseInt(t.pax, 10) || 0)) || undefined,
+    bags: Math.max(0, Math.min(5000, Math.round(parseFloat(t.bags) || 0))) || undefined,
+    legs: (Array.isArray(t.legs) ? t.legs : []).slice(0, MAX_LEGS).map(cleanLeg),
+  };
+}
+
 /* Returns {blob} or {error, status} */
 export function applyOp(blob, b, pro) {
   const op = b.op;
@@ -75,19 +86,31 @@ export function applyOp(blob, b, pro) {
     const code = codeOf(b); if (!code) return { error: 'bad code' };
     const list = (blob.fbos[code] || []).filter((e) => e.id !== String(b.id || ''));
     if (list.length) blob.fbos[code] = list; else delete blob.fbos[code];
+  } else if (op === 'trip_set') {
+    /* One trip at a time, merged by id: two crew editing different trips no longer overwrite
+       each other, and a rejected trip leaves the rest of the operation alone. */
+    const t = b.trip && typeof b.trip === 'object' ? b.trip : null;
+    if (!t || !t.id) return { error: 'bad trip' };
+    const id = String(t.id).slice(0, 40);
+    const at = blob.trips.findIndex((x) => x.id === id);
+    if (at < 0) {
+      if (!pro && blob.trips.length >= 1) return { error: 'Free accounts keep one trip. Upgrade for unlimited.', status: 402 };
+      if (blob.trips.length >= MAX_TRIPS) return { error: 'too many trips' };
+      blob.trips.push(cleanTrip(t));
+    } else {
+      blob.trips[at] = cleanTrip(t);
+    }
+  } else if (op === 'trip_del') {
+    const id = String(b.id || '').slice(0, 40);
+    if (!id) return { error: 'bad trip' };
+    blob.trips = blob.trips.filter((x) => x.id !== id);
   } else if (op === 'trips_set') {
+    /* Legacy whole-array replace: still accepted so ops queued by an older build flush cleanly. */
     const trips = Array.isArray(b.trips) ? b.trips : null;
     if (!trips) return { error: 'bad trips' };
     if (!pro && trips.length > 1) return { error: 'Free accounts keep one trip. Upgrade for unlimited.', status: 402 };
     if (trips.length > MAX_TRIPS) return { error: 'too many trips' };
-    blob.trips = trips.slice(0, MAX_TRIPS).map((t) => ({
-      id: String(t.id || newId()).slice(0, 40),
-      name: String(t.name || 'Trip').slice(0, 60),
-      date: /^\d{4}-\d{2}-\d{2}$/.test(String(t.date || '')) ? String(t.date) : undefined,
-      pax: Math.max(0, Math.min(19, parseInt(t.pax, 10) || 0)) || undefined,
-      bags: Math.max(0, Math.min(5000, Math.round(parseFloat(t.bags) || 0))) || undefined,
-      legs: (Array.isArray(t.legs) ? t.legs : []).slice(0, MAX_LEGS).map(cleanLeg),
-    }));
+    blob.trips = trips.slice(0, MAX_TRIPS).map(cleanTrip);
   } else if (op === 'note_set') {
     const code = codeOf(b); if (!code) return { error: 'bad code' };
     const text = String(b.text || '').slice(0, 600);

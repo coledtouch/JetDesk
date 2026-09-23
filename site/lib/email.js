@@ -140,7 +140,7 @@ export function trialEndedHtml(brand, name) {
   brand = escHtml(brand); name = escHtml(name);
   return WRAP_OPEN +
     '<h2 style="' + H2 + '">Your Pro trial has ended' + (name ? ', ' + name : '') + '</h2>' +
-    '<p>Your account is on the Free plan now. Airport lookup, weather, the calculators, your price log and one saved trip keep working. Your other trips and crew data are kept and unlock again the moment you go Pro.</p>' +
+    '<p>Your account is on the Free plan now. Airport lookup, weather, the fuel stop calculator, your price log and one saved trip keep working. Your other trips and crew data are kept and unlock again the moment you go Pro.</p>' +
     '<p style="margin:22px 0"><a href="https://www.jetdesk.ai/" style="' + BTN + '">Go Pro</a></p>' +
     '<p>Not the right time? No problem. Reply to this email if something did not work the way you expected; it lands with a human.</p>' +
     WRAP_CLOSE;
