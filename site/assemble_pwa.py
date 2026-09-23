@@ -447,7 +447,10 @@ sw = SW_TEMPLATE % (app_v, json.dumps(core), icon_192, icon_badge)
 open('dist/sw.js', 'w', encoding='utf-8').write(sw)
 
 # ---- headers ----
+# "! Access-Control-Allow-Origin" detaches the Access-Control-Allow-Origin: * that Pages adds to every
+# static asset by default. Nothing on the site is meant to be read cross-origin; /api/wx sets its own.
 open('dist/_headers', 'w', encoding='utf-8').write("""/*
+  ! Access-Control-Allow-Origin
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
