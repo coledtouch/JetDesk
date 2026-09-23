@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 6, 2026, app version `vc57b1933` (Rounds 6, 6b and 6c, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 23, 2026, app version `v5010c54c` (Rounds 7 and 7b, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -143,7 +143,23 @@ Deployed September 6, 2026 17:20 UTC as deployment `25e1f6c9-a809-422c-8d61-9fd2
 2. Day and Night share one `object-position` at every breakpoint; only the veil differs. Night on phones: image opacity .84 to .96 with a lighter veil over the band.
 3. The `<picture>` source and the head preload both carry `800w, 1600w` with `sizes="115vw"` describing the real slot, so a high-density phone loads the 1600 px file. They disagreed before (`imagesizes` said 800 px, the source had no descriptors), which could fetch both files.
 
+### Round 7 (v36e1c178): September 22 review
+
+Deployed September 23, 2026 (recorded 01:18 UTC) as deployment `20581eed-09c6-4122-9e65-d622a014e6e2` (commit `a0addbc`), the exact artifact tested on the `review-2026-09-22` preview. Rollback target: `745e2366` (v4942261f, the Sep 10 weekly NASR refresh). Changes: offline identity, sync integrity, per-runway wind, field access flags, Pro pill contrast and the brand link's accessible name; airport data refreshed to NASR cycle 2026-09-03. Full verification notes are in the message of commit `6412c9d`.
+
+### Round 7b (v5010c54c): weather outages no longer cached as "no weather"
+
+Deployed September 23, 2026 about 14:30 UTC as deployment `bf2f8f5c-b426-4732-abf6-8f61456a6af8` (commit `9371421`) with `wrangler.toml` moved aside and `--branch main`. Rollback target: `20581eed-09c6-4122-9e65-d622a014e6e2` (v36e1c178).
+
+1. Found in the September 23 smoke test: `/api/wx?ids=KBOS,KTEB` once returned empty METAR and TAF lists that were fine seconds later. `functions/api/wx.js` turned any AWC failure (network error, non-2xx, unparseable body) into `[]` and returned it as a 200 cached 120 s, and the app then kept the empty result for its own 5 minutes.
+2. A METAR feed failure now returns 502 with `no-store`; the app's existing handling shows the weather error and retries on the next lookup. A TAF-only failure returns the METARs with `partial: true`, cached 30 s. An all-empty METAR answer is retried once with `cache: 'no-store'` past the edge cache and is never cached. Upstream 4xx replies are no longer edge-cached. A 2xx empty body is still a real "no TAF" answer.
+3. Only the Function changed. The static build differs from v36e1c178 only in `APP_V` (the build hash picked up Windows line endings), so the service worker refreshes once.
+4. Verified on production: weather for KBOS, KTEB and KHPN, the 400 for missing ids, `no-store` on an empty answer, D1-backed login, auth-gated endpoints, security headers, robots and sitemap.
+
 ### Known gaps for the next round
+
+- Hero preload unused (September 23 smoke test): the script-injected hero preload carries `imagesrcset` 800w/1600w but the live `<img id="heroImg">` has no `srcset`, so Chrome warns that the preload is unused and the hero is fetched twice. Round 6c had them matching; recheck after the September 22 changes.
+- The homepage HTML is sent with `Access-Control-Allow-Origin: *`, which it does not need; the empty `jetdesk-sw-gen2` cache is never deleted by the service worker.
 
 - NOTAMs still wait on FAA NMS credentials (three secrets, no code change).
 - Push on iPhone requires the app to be added to the Home Screen first (iOS rule); the card says so.
