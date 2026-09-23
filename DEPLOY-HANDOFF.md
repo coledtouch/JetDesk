@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 23, 2026, app version `v5010c54c` (Rounds 7 and 7b, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 23, 2026, app version `v97d4ed99` (Rounds 7, 7b and 7c, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -156,9 +156,17 @@ Deployed September 23, 2026 about 14:30 UTC as deployment `bf2f8f5c-b426-4732-ab
 3. Only the Function changed. The static build differs from v36e1c178 only in `APP_V` (the build hash picked up Windows line endings), so the service worker refreshes once.
 4. Verified on production: weather for KBOS, KTEB and KHPN, the 400 for missing ids, `no-store` on an empty answer, D1-backed login, auth-gated endpoints, security headers, robots and sitemap.
 
+### Round 7c (v97d4ed99): Day theme no longer downloads the Night hero
+
+Deployed September 23, 2026 as deployment `64650aeb-fbad-48ff-88a0-d0462ea2f785` (commit `93b8c2a`), same method as 7b. Rollback target: `bf2f8f5c-b426-4732-abf6-8f61456a6af8` (v5010c54c).
+
+1. The hero `<source>` and `<img>` in `app_head.html` carried the Night files in the markup, and an inline script swapped in Day afterwards. The preload scanner fetches the markup's `src` before that script runs, so every Day-theme load downloaded both photos (about 42 KB wasted on desktop). Night-theme loads were unaffected. The preload's `imagesrcset`/`imagesizes` already matched the `<picture>` (the `srcset` lives on `<source>`, not `<img>`), so Round 6c's fix was intact.
+2. The markup now carries no `src` or `srcset`; the inline script sets the Day or Night set from `data-hero`, which the head script has already decided while preloading the same file, so the fetch still starts early. The photo is decorative (`aria-hidden`), so a no-JS load shows the hero without it. `syncHero()` in `app.js` still handles runtime theme changes.
+3. Verified on production with the service worker in control: Day at 1440 px and Night at 390 px each fetch exactly one hero file, through the preload, with a clean console. Day and Night at both widths and the runtime theme button were checked on a local build first.
+4. Testing note: Chrome's "cross-world service worker resource mismatch" preload warning appears when a DevTools or automation script fetches the hero file from an isolated world, and resizing one tab across breakpoints leaves "preloaded but not used" warnings behind. Judge preload health from a fresh tab at a fixed width.
+
 ### Known gaps for the next round
 
-- Hero preload unused (September 23 smoke test): the script-injected hero preload carries `imagesrcset` 800w/1600w but the live `<img id="heroImg">` has no `srcset`, so Chrome warns that the preload is unused and the hero is fetched twice. Round 6c had them matching; recheck after the September 22 changes.
 - The homepage HTML is sent with `Access-Control-Allow-Origin: *`, which it does not need; the empty `jetdesk-sw-gen2` cache is never deleted by the service worker.
 
 - NOTAMs still wait on FAA NMS credentials (three secrets, no code change).
