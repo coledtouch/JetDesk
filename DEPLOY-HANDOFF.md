@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 23, 2026, app version `v97d4ed99` (Rounds 7, 7b and 7c, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 23, 2026, app version `v97d4ed99` (Rounds 7 through 7d, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -165,9 +165,17 @@ Deployed September 23, 2026 as deployment `64650aeb-fbad-48ff-88a0-d0462ea2f785`
 3. Verified on production with the service worker in control: Day at 1440 px and Night at 390 px each fetch exactly one hero file, through the preload, with a clean console. Day and Night at both widths and the runtime theme button were checked on a local build first.
 4. Testing note: Chrome's "cross-world service worker resource mismatch" preload warning appears when a DevTools or automation script fetches the hero file from an isolated world, and resizing one tab across breakpoints leaves "preloaded but not used" warnings behind. Judge preload health from a fresh tab at a fixed width.
 
+### Round 7d (v97d4ed99): no default CORS header on static assets
+
+Deployed September 23, 2026 as deployment `597a1885-a65c-4c57-aa9b-4d80ec88c246` (commit `6f43b5e`), same method as 7b. Rollback target: `64650aeb-fbad-48ff-88a0-d0462ea2f785` (v97d4ed99). The build hash is unchanged, so the service worker did not refresh.
+
+1. Cloudflare Pages adds `Access-Control-Allow-Origin: *` to every static asset by default, so pages, images, fonts and robots.txt were all readable cross-origin. Nothing on the site needs that. The `_headers` template in `assemble_pwa.py` now detaches it in the `/*` block (`! Access-Control-Allow-Origin`). Function responses never carried it; `/api/wx` keeps its own explicit header.
+2. Checked on `wrangler pages dev` with and without the line, then on production: `/`, `/robots.txt`, `/sitemap.xml`, `/airports/kteb/`, `/notes/`, `/manifest.webmanifest`, `/fonts/fonts.css`, the 404 page and `/api/me` carry no CORS header, the other security headers are unchanged, and `/api/wx` still has its own. The deployment's own URL is clean for every path.
+3. Not a gap after all: `jetdesk-sw-gen2` is the service worker's deliberate, always-empty marker cache (see `GEN` in `SW_TEMPLATE`). `install` checks for it to decide whether to take over immediately, and `activate` keeps it. Do not delete it.
+
 ### Known gaps for the next round
 
-- The homepage HTML is sent with `Access-Control-Allow-Origin: *`, which it does not need; the empty `jetdesk-sw-gen2` cache is never deleted by the service worker.
+- Purge the jetdesk.ai zone cache (dashboard: Caching, Configuration, Custom Purge, by prefix `www.jetdesk.ai/img/`, `www.jetdesk.ai/fonts/`, `www.jetdesk.ai/icons/`, plus the URLs `https://www.jetdesk.ai/sw.js` and `https://www.jetdesk.ai/favicon.ico`). Those edge-cached copies predate Round 7d and still carry `Access-Control-Allow-Origin: *`; the immutable ones would otherwise keep it for up to a year. The Wrangler OAuth token has only `zone (read)`, so this needs the dashboard or a token with Cache Purge. Harmless in the meantime: the header grants no credentialed access.
 
 - NOTAMs still wait on FAA NMS credentials (three secrets, no code change).
 - Push on iPhone requires the app to be added to the Home Screen first (iOS rule); the card says so.
