@@ -174,6 +174,27 @@ Deployed September 23, 2026 as deployment `597a1885-a65c-4c57-aa9b-4d80ec88c246`
 3. Not a gap after all: `jetdesk-sw-gen2` is the service worker's deliberate, always-empty marker cache (see `GEN` in `SW_TEMPLATE`). `install` checks for it to decide whether to take over immediately, and `activate` keeps it. Do not delete it.
 4. Edge cache: copies cached before this round kept the old header, because Cloudflare caches images, fonts, `.js`, `.css`, `.txt` and `.ico` by default, and a revalidation that returns 304 keeps the stored headers. Cole purged the zone cache from the dashboard on September 23 (prefixes `www.jetdesk.ai/img/`, `/fonts/`, `/icons/`; URLs `/sw.js`, `/favicon.ico`, `/robots.txt`, `/mark-email.png`). The Wrangler OAuth token has only `zone (read)` and cannot purge. Rechecked across the IAD and EWR edges afterwards: every image, font, icon, `sw.js`, `favicon.ico` and `mark-email.png` is clean. `/robots.txt` survived that first purge at IAD (EWR was clean) and cleared after a second purge of that one URL; 20 requests across both edges then came back clean, each edge's first one a MISS. After any future header-only change, purge these same paths and recheck more than one edge: an unchanged file's ETag never changes, so a stale copy that a purge misses keeps its old headers indefinitely.
 
+### Smoke test after Round 7d (September 23, 2026)
+
+Run against production (`597a1885`, v97d4ed99) after the edge cache purge. Non-destructive checks only: nothing that creates an account, sends email or starts a checkout. Every check passed.
+
+| Area | Result |
+|---|---|
+| HTTPS and redirects | http, apex and `meridian-flight-desk.pages.dev` reach `https://www.jetdesk.ai/`; `/AIRPORTS/KTEB/` and `/Notes` fold to canonical in one hop |
+| Security headers | HSTS, CSP, COOP, CORP, Permissions-Policy, Referrer-Policy, nosniff and `X-Frame-Options: DENY` on the homepage |
+| CORS | No `Access-Control-Allow-Origin` on `/`, `robots.txt`, `sw.js`, `favicon.ico`, images or fonts; `/api/wx` keeps its own |
+| Static and SEO files | `robots.txt`, `sitemap.xml`, `sitemap-pages.xml`, `sitemap-airports.xml`, favicon, manifest, `sw.js`, `/offline`, OG image, `/airports/kteb/`, `/notes/`, `/terms/`, `/privacy/` all 200 with the right types |
+| Metadata | Title, description, canonical, OG and Twitter tags; JSON-LD parses (Organization, WebSite, SoftwareApplication, FAQPage) |
+| `/api/wx` | KBOS,KTEB and KHPN,KPVD return 2 METARs and 2 TAFs, KTEB 1 and 1, all `max-age=120`; `BOS` returns empty with `no-store`; no ids returns 400 |
+| Gated endpoints | `/api/me`, `/api/data`, `/api/market`, `/api/winds`, `/api/auth/verify`, `/api/billing/checkout` and `/api/billing/portal` return 401; `/api/admin/comp` 403; the webhook rejects an unsigned post with 400; login and register return clean validation errors |
+| Layout | No horizontal overflow at 320, 390, 768 and 1440 px |
+| Hero | Night 1440, Day 1440, Night 320, Day 390 and Night 768 (fresh loads, fixed sizes) each fetch exactly one hero file, the right theme and size, through the preload |
+| Landing | One `h1`, four trial CTAs, no broken images, all five FAQ items toggle, the theme button cycles light, dark, auto and swaps the hero |
+| PWA | Service worker in control, cache `jetdesk-v97d4ed99` holds the shell and 19 other entries, `jetdesk-sw-gen2` marker present |
+| Console | No errors or warnings on any of the six fresh loads |
+
+Not covered, and still owed from the checklist below: registration, sign-in, verification delivery, wrong-code and resend limits (item 4) and the `verify` and `viewer` 403s (item 4a); in-app airport search and the Pro-gated winds, route and fuel calculations (item 5, where only weather and a static airport page were checked); the owner brief page and `/api/notams` (item 6, `/notes/` was checked); Stripe checkout, webhook fulfillment, subscription state and the customer portal (item 7); PWA installation and a repeat visit with the network actually off (item 8); Cloudflare logs (item 9).
+
 ### Known gaps for the next round
 
 - NOTAMs still wait on FAA NMS credentials (three secrets, no code change).
