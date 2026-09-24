@@ -2,7 +2,7 @@
 
 ## Current status
 
-This package is the deployed production source of truth as of September 23, 2026, app version `v97d4ed99` (Rounds 7 through 7d, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
+This package is the deployed production source of truth as of September 24, 2026, app version `vd81ae6d8` (Rounds 7 through 7e, below), live at https://www.jetdesk.ai. It contains the Codex production-polish pass (originally `v2236becd`) plus the fixes and additions recorded below. No secret values are included; `site/wrangler.toml` carries placeholders.
 
 - Deployment project: `meridian-flight-desk` (Cloudflare Pages)
 - App and deployment directory: `site`
@@ -193,15 +193,47 @@ Run against production (`597a1885`, v97d4ed99) after the edge cache purge. Non-d
 | PWA | Service worker in control, cache `jetdesk-v97d4ed99` holds the shell and 19 other entries, `jetdesk-sw-gen2` marker present |
 | Console | No errors or warnings on any of the six fresh loads |
 
-Not covered, and still owed from the checklist below: registration, sign-in, verification delivery, wrong-code and resend limits (item 4) and the `verify` and `viewer` 403s (item 4a); in-app airport search and the Pro-gated winds, route and fuel calculations (item 5, where only weather and a static airport page were checked); the owner brief page and `/api/notams` (item 6, `/notes/` was checked); Stripe checkout, webhook fulfillment, subscription state and the customer portal (item 7); PWA installation and a repeat visit with the network actually off (item 8); Cloudflare logs (item 9).
+Not covered, and still owed from the checklist below: registration, sign-in, verification delivery, wrong-code and resend limits (item 4) and the `verify` and `viewer` 403s (item 4a); in-app airport search and the Pro-gated winds, route and fuel calculations (item 5, where only weather and a static airport page were checked); the owner brief page and `/api/notams` (item 6, `/notes/` was checked); Stripe checkout, webhook fulfillment, subscription state and the customer portal (item 7); PWA installation and a repeat visit with the network actually off (item 8); Cloudflare logs (item 9). Items 4 and 7 were then run in Stripe test mode on September 24; see below.
+
+### Account and checkout test in Stripe test mode (September 24, 2026)
+
+Run on the `review-2026-09-22` preview alias (https://review-2026-09-22.meridian-flight-desk.pages.dev), redeployed with the production build so the existing test-mode webhook endpoint could be reused. Cole typed every email, password, code and card; Claude checked state in the preview D1 and the code.
+
+Preview environment (Pages, Preview): its own D1 `jetdesk-preview` and KV `PRICES-preview`, so test accounts never touch production data. Secrets: `STRIPE_SECRET_KEY` (test), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL` (test prices), `STRIPE_WEBHOOK_SECRET` (test endpoint `https://review-2026-09-22.meridian-flight-desk.pages.dev/api/billing/webhook`), `EMAIL_API_TOKEN`, plus `ADMIN_EMAILS`, `AUTH_PEPPER` and the VAPID keys. The Stripe account's API version is `2026-08-26.dahlia`. Inspect preview accounts with `npx wrangler@4 d1 execute jetdesk-preview --remote` (move `wrangler.toml` aside first).
+
+| Step | Result |
+|---|---|
+| Sign up and verify | Account created with a 14-day trial; code email delivered; the right code verifies |
+| Monthly checkout | Session was `cs_test_`; the webhook set Pro, monthly, customer and subscription |
+| App and portal | App showed Pro; Manage billing opened the test-mode portal |
+| Cancels | Portal cancel scheduled the end; an immediate cancel in the dashboard downgraded to free within 15 s |
+| Annual checkout | Pro, yearly, same Stripe customer reused |
+| Sign out, sign in, password reset | All worked; the reset left exactly one session |
+| Delete account | Account, sessions and operation removed, but the Stripe subscription stayed active (bug 1 below) |
+
+The wrong-code limit and the unverified `verify` 403 were not exercised (the account was verified straight away), nor were the referral reward path or `viewer` 403s.
+
+### Round 7e (vd81ae6d8): billing fixes from the test-mode run
+
+Deployed September 24, 2026 as deployment `ff9a2a84-7650-49dc-a1f2-f72591253fcd` (commit `25fd763`), same method as 7b. Rollback target: `597a1885-a65c-4c57-aa9b-4d80ec88c246` (v97d4ed99).
+
+1. Deleting an account never touched Stripe, so a Pro subscriber who deleted their account kept being charged. `DELETE /api/me` now lists the customer's subscriptions (plus `stripe_sub`) and cancels every live one immediately before deleting anything; if Stripe fails it returns 502 `cancel_failed`, and without a Stripe key 503 `billing_unavailable`, and deletes nothing. The app's second click reads "Delete everything and cancel Pro?" for paying accounts. No refund is issued; that stays a support decision.
+2. From Stripe API 2025-03-31 onward `current_period_end` lives on the subscription items, so `applySubscription` stored `plan_until = NULL` for every subscriber: Pro never expired unless the final `customer.subscription.deleted` arrived, the 3-day grace never applied, and scheduled cancels were undated. `subscriptionEnd()` in `lib/stripe.js` reads `cancel_at`, then the legacy field, then the items. Account now says "Pro, monthly, paid through <date>" (true whether it renews or ends). The Stripe API version is still unpinned; the code reads both shapes instead.
+3. `/api/billing/checkout` refused nothing, so a stale page or second tab could start a second subscription. It now returns 409 `already_pro` for active Pro and comp accounts.
+4. Verified: 17 mocked cases (including Stripe failure and a stray second subscription), then the same flow on the test-mode preview. Monthly checkout stored `plan_until` Oct 27 (period end Oct 24 plus grace), the stale tab's annual click got the `already_pro` message with no session, the portal cancel kept the Oct 24 end, and deleting the account left the subscription Canceled in Stripe. On production: build `vd81ae6d8` live, delete warning and "paid through" present, auth-gated and webhook endpoints unchanged. No live account was on Pro, so nothing needed backfilling.
 
 ### Known gaps for the next round
+
+- Check the live Stripe webhook listens to `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` and `invoice.paid`. The test endpoint delivers them; the live one was not inspected, and `deleted` is what ends access when a renewal lapses.
+- The Stripe customer portal has no plan switching, so customers cannot move between monthly and annual themselves (Settings, Billing, Customer portal, "Customers can switch plans", add both prices).
+- The test-mode monthly price showed as $10.61, presumably $9.99 plus tax from Managed Payments; confirm that is intended.
+- `ciprari@gmail.com` exists as a verified free test account in the production D1 (created September 24 by signing up on the live site by mistake); delete it from Account if it is not wanted.
 
 - NOTAMs still wait on FAA NMS credentials (three secrets, no code change).
 - Push on iPhone requires the app to be added to the Home Screen first (iOS rule); the card says so.
 - The community price pool is empty until a second operation shares; the UI says so rather than showing one operation's data.
 - Weight and balance has no CG arm math on purpose; add station arms per profile if pilots ask.
-- No real paid subscription has been completed yet; do one live purchase and refund it, then check the referral reward path with a referred test account.
+- No real paid subscription has been completed yet (the full flow passed in test mode on September 24); do one live purchase and refund it, then check the referral reward path with a referred test account.
 - Legal pages were drafted without lawyer review.
 
 ## Post-deployment smoke test checklist
