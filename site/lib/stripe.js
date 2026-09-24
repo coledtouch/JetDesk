@@ -40,11 +40,28 @@ export async function verifyStripeSignature(env, rawBody, header) {
   return sigs.some((s) => safeEqual(s, expected));
 }
 
+/* When the paid period ends, in epoch seconds. From API version 2025-03-31 (basil) Stripe reports
+   current_period_end on each subscription item instead of the subscription; read both. A scheduled
+   cancellation (cancel_at, set by cancel-at-period-end or a dated cancel) ends access at that time. */
+export function subscriptionEnd(sub) {
+  if (sub.cancel_at) return sub.cancel_at;
+  if (sub.current_period_end) return sub.current_period_end;
+  const ends = ((sub.items && sub.items.data) || []).map((i) => i.current_period_end).filter(Boolean);
+  return ends.length ? Math.max(...ends) : null;
+}
+
+/* Subscriptions that still bill or can still start billing */
+export function isLiveSubscription(sub) {
+  return !!sub && sub.status !== 'canceled' && sub.status !== 'incomplete_expired';
+}
+
 /* Apply a Stripe subscription object to a user row */
 export async function applySubscription(env, userId, sub) {
   const status = sub.status;
   const active = status === 'active' || status === 'trialing' || status === 'past_due';
-  const end = sub.current_period_end ? sub.current_period_end * 1000 + 3 * 86400000 : null;
+  /* plan_until carries three days of grace past the paid period so a late renewal webhook never locks a pilot out */
+  const periodEnd = subscriptionEnd(sub);
+  const end = periodEnd ? periodEnd * 1000 + 3 * 86400000 : null;
   const interval = sub.items && sub.items.data && sub.items.data[0] && sub.items.data[0].price &&
                    sub.items.data[0].price.recurring ? sub.items.data[0].price.recurring.interval : null;
   if (active) {

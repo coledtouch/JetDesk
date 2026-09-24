@@ -1,4 +1,4 @@
-import { json, err, readJson } from '../../../lib/util.js';
+import { json, err, readJson, now } from '../../../lib/util.js';
 import { getUser, billingReady, needsVerify } from '../../../lib/auth.js';
 import { bump } from '../../../lib/metrics.js';
 import { stripe } from '../../../lib/stripe.js';
@@ -9,6 +9,10 @@ export async function onRequestPost({ request, env }) {
   if (!user) return err('Sign in first.', 401);
   if (needsVerify(user, env)) return err('Verify your email before subscribing.', 403, 'verify');
   if (!billingReady(env)) return err('Billing is not connected yet. Your trial keeps running until it is.', 503, 'billing_not_ready');
+  /* the app hides the plans for Pro accounts; a stale page or second tab must not start a second subscription */
+  if (user.plan === 'comp' || (user.plan === 'pro' && (!user.plan_until || user.plan_until > now()))) {
+    return err('You already have Pro. Manage your plan from Account, Manage billing.', 409, 'already_pro');
+  }
   const b = (await readJson(request)) || {};
   const price = b.plan === 'annual' ? env.STRIPE_PRICE_ANNUAL : env.STRIPE_PRICE_MONTHLY;
   const origin = new URL(request.url).origin;

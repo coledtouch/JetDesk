@@ -3141,7 +3141,9 @@ function renderAccount() {
 
   var planLine, planPill;
   if (u.plan === 'comp') { planLine = 'Complimentary Pro. Enjoy.'; planPill = '<span class="pill good">Pro</span>'; }
-  else if (u.plan === 'pro') { planLine = 'Pro, ' + (u.sub_interval === 'year' ? 'annual' : 'monthly') + ', renews ' + fmtDate(u.plan_until ? u.plan_until - 3 * 86400000 : null) + '.'; planPill = '<span class="pill good">Pro</span>'; }
+  /* plan_until is the paid period's end (or a scheduled cancel) plus three days of grace; "paid through"
+     is true whether the plan renews or ends there, and Manage billing shows which */
+  else if (u.plan === 'pro') { planLine = 'Pro, ' + (u.sub_interval === 'year' ? 'annual' : 'monthly') + (u.plan_until ? ', paid through ' + fmtDate(u.plan_until - 3 * 86400000) : '') + '.'; planPill = '<span class="pill good">Pro</span>'; }
   else if (me.trial_days_left > 0) { planLine = 'Pro trial, ' + me.trial_days_left + ' day' + (me.trial_days_left === 1 ? '' : 's') + ' left. Everything unlocked.'; planPill = '<span class="pill acc">Trial</span>'; }
   else { planLine = 'Free plan. One trip, no winds, no market data, no crew sharing.'; planPill = '<span class="pill dim">Free</span>'; }
 
@@ -3381,7 +3383,8 @@ function renderAccount() {
   });
   on('acDel', function () {
     var b = $('acDel');
-    if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Really delete everything?'; setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = 'Delete account'; } }, 4000); return; }
+    var paying = !!(AUTH.me && AUTH.me.user && AUTH.me.user.plan === 'pro' && AUTH.me.user.has_billing);
+    if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = paying ? 'Delete everything and cancel Pro?' : 'Really delete everything?'; setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = 'Delete account'; } }, 4000); return; }
     api('/api/me', { method: 'DELETE' }).then(function (r) {
       if (!r.ok) { showToast(r.data.error || 'Could not delete.'); return; }
       setTok(null); AUTH.me = null; S = JSON.parse(JSON.stringify(DEF)); save(); showToast('Account deleted.'); renderGate();
